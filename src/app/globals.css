@@ -1,26 +1,349 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ============================================================
+   PrintX — "Premium Press" design tokens (ported from Stitch).
+   Tailwind v4 CSS-based theme. Material-style token names so the
+   Stitch markup (bg-primary-container, text-on-surface-variant,
+   text-display-lg, px-gutter …) converts 1:1.
+   ============================================================ */
+@theme {
+  /* ── Colors ── */
+  --color-primary: #00000b;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #1a1a2e;
+  --color-on-primary-container: #83829b;
+  --color-primary-fixed: #e2e0fc;
+  --color-primary-fixed-dim: #c6c4df;
+  --color-on-primary-fixed: #1a1a2e;
+  --color-on-primary-fixed-variant: #45455b;
+  --color-inverse-primary: #c6c4df;
+  --color-surface-tint: #5d5c74;
+
+  --color-secondary: #b71d3f;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #fc536d;
+  --color-on-secondary-container: #5b0017;
+  --color-secondary-fixed: #ffdadb;
+  --color-secondary-fixed-dim: #ffb2b7;
+  --color-on-secondary-fixed: #40000e;
+  --color-on-secondary-fixed-variant: #91002b;
+
+  --color-tertiary: #000103;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #0f1d2c;
+  --color-on-tertiary-container: #788598;
+  --color-tertiary-fixed: #d6e4f9;
+  --color-tertiary-fixed-dim: #bac8dc;
+  --color-on-tertiary-fixed: #0f1c2c;
+  --color-on-tertiary-fixed-variant: #3a4859;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  --color-background: #f8f9fd;
+  --color-on-background: #191c1f;
+  --color-surface: #f8f9fd;
+  --color-on-surface: #191c1f;
+  --color-on-surface-variant: #47464c;
+  --color-surface-dim: #d9dade;
+  --color-surface-bright: #f8f9fd;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f3f7;
+  --color-surface-container: #edeef2;
+  --color-surface-container-high: #e7e8ec;
+  --color-surface-container-highest: #e1e2e6;
+  --color-surface-variant: #e1e2e6;
+  --color-inverse-surface: #2e3134;
+  --color-inverse-on-surface: #eff1f5;
+
+  --color-outline: #78767d;
+  --color-outline-variant: #c8c5cd;
+
+  /* ── Font families (all Inter; keeps Stitch font-* utilities valid) ── */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display-lg: var(--font-inter), sans-serif;
+  --font-display-lg-mobile: var(--font-inter), sans-serif;
+  --font-headline-lg: var(--font-inter), sans-serif;
+  --font-headline-md: var(--font-inter), sans-serif;
+  --font-price-lg: var(--font-inter), sans-serif;
+  --font-button: var(--font-inter), sans-serif;
+  --font-body-lg: var(--font-inter), sans-serif;
+  --font-body-md: var(--font-inter), sans-serif;
+  --font-label-caps: var(--font-inter), sans-serif;
+
+  /* ── Font sizes (with line-height + weight + tracking) ── */
+  --text-display-lg: 48px;
+  --text-display-lg--line-height: 1.1;
+  --text-display-lg--letter-spacing: -0.02em;
+  --text-display-lg--font-weight: 800;
+
+  --text-display-lg-mobile: 36px;
+  --text-display-lg-mobile--line-height: 1.2;
+  --text-display-lg-mobile--font-weight: 800;
+
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 1.3;
+  --text-headline-lg--font-weight: 700;
+
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 1.3;
+  --text-headline-md--font-weight: 700;
+
+  --text-price-lg: 28px;
+  --text-price-lg--line-height: 1;
+  --text-price-lg--letter-spacing: 0.02em;
+  --text-price-lg--font-weight: 800;
+
+  --text-button: 16px;
+  --text-button--line-height: 24px;
+  --text-button--font-weight: 600;
+
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 28px;
+  --text-body-lg--font-weight: 500;
+
+  --text-body-md: 16px;
+  --text-body-md--line-height: 24px;
+  --text-body-md--font-weight: 400;
+
+  --text-label-caps: 12px;
+  --text-label-caps--line-height: 16px;
+  --text-label-caps--letter-spacing: 0.05em;
+  --text-label-caps--font-weight: 600;
+
+  /* ── Radius (Stitch overrides) ── */
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* ── Named spacing + container ── */
+  --spacing-gutter: 24px;
+  --spacing-margin-mobile: 16px;
+  --spacing-margin-desktop: 40px;
+  --spacing-unit: 8px;
+  --container-container-max: 1280px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ============================================================
+   Custom utility classes used across Stitch exports
+   ============================================================ */
+.primary-gradient {
+  background: linear-gradient(135deg, #fc536d 0%, #ff6b81 100%);
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+.primary-gradient-text {
+  background: linear-gradient(135deg, #fc536d 0%, #ff6b81 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hero-gradient {
+  background: radial-gradient(circle at top right, #1a1a2e 0%, #00000b 100%);
+}
+.coral-gradient {
+  background: linear-gradient(135deg, #fc536d 0%, #b71d3f 100%);
+}
+.coral-text-gradient {
+  background: linear-gradient(135deg, #fc536d 0%, #b71d3f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.highlight-bar {
+  position: relative;
+  z-index: 1;
+}
+.highlight-bar::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  width: 100%;
+  height: 12px;
+  background: linear-gradient(90deg, rgba(252, 83, 109, 0.3) 0%, rgba(183, 29, 63, 0.3) 100%);
+  z-index: -1;
+}
+.custom-shadow {
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.05);
+}
+.primary-accent-gradient {
+  background: linear-gradient(135deg, #fc536d 0%, #b71d3f 100%);
+}
+.header-deep-gradient {
+  background: linear-gradient(160deg, #1a1a2e 0%, #0f1d2c 100%);
+}
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e1e2e6;
+  border-radius: 10px;
+}
+.header-gradient {
+  background: linear-gradient(to right, #1a1a2e, #0f1d2c);
+}
+.bento-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.bento-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+}
+.sticky-summary {
+  position: sticky;
+  top: 100px;
+}
+.deep-navy-gradient {
+  background: radial-gradient(circle at top right, #2a2a4a 0%, #1a1a2e 100%);
+}
+.confetti-pattern {
+  background-image: url("https://www.transparenttextures.com/patterns/cubes.png");
+  opacity: 0.05;
+}
+.spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
+.tonal-layer {
+  background: #f2f3f7;
+  border: 1px solid #e1e2e6;
+}
+.premium-gradient {
+  background: linear-gradient(135deg, #fc536d 0%, #b71d3f 100%);
+}
+.navy-glow {
+  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
+}
+.canvas-bg {
+  background-color: #f7f8fc;
+}
+.premium-shadow {
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.05);
+}
+.dark-navy-panel {
+  background: #1a1a2e;
+}
+.status-timeline-line {
+  position: absolute;
+  left: 11px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #e1e2e6;
+  z-index: 0;
+}
+.upload-dashed {
+  border: 2px dashed #c8c5cd;
+}
+.upload-dashed:hover {
+  border-color: #fc536d;
+  background-color: rgba(252, 83, 109, 0.02);
+}
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: auto;
+  gap: 24px;
+}
+.active-nav-indicator {
+  box-shadow: inset 4px 0 0 0 #fc536d;
+}
+.admin-canvas-gradient {
+  background: radial-gradient(circle at 50% 0%, #1a1a2e 0%, #00000b 100%);
+}
+.input-focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #fc536d;
+  border-color: #fc536d;
+}
+.animate-float {
+  animation: float-subtle 4s ease-in-out infinite;
+}
+@keyframes float-subtle {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+.pulse-dot {
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+}
+.header-deep {
+  background: linear-gradient(135deg, #1a1a2e 0%, #00000b 100%);
+}
+.glass-card {
+  background: rgba(26, 26, 46, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }
