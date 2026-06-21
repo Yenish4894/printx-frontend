@@ -3,6 +3,11 @@ import Link from "next/link";
 
 export const metadata: Metadata = { title: "PrintX | Premium Business Cards Configurator" };
 
+// Pre-rendered product pages for static export
+export function generateStaticParams() {
+  return [{ slug: "business-cards" }, { slug: "letterheads" }];
+}
+
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
 const paperTypes: [string, string, boolean][] = [

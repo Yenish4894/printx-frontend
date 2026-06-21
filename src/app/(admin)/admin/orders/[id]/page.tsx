@@ -3,6 +3,11 @@ import Link from "next/link";
 
 export const metadata: Metadata = { title: "PrintX Admin | Order Detail" };
 
+// Pre-rendered admin order pages for static export
+export function generateStaticParams() {
+  return [{ id: "PX-2023-8901" }, { id: "PX-2024-08471" }];
+}
+
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
 const steps = [

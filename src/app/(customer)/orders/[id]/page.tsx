@@ -3,6 +3,11 @@ import Link from "next/link";
 
 export const metadata: Metadata = { title: "PrintX | Order Details" };
 
+// Pre-rendered order pages for static export
+export function generateStaticParams() {
+  return [{ id: "PX-2024-08471" }, { id: "PX-2024-07210" }];
+}
+
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
 const items = [
