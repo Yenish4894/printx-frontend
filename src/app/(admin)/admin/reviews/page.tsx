@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "PrintX Admin | Reviews" };
+export const metadata: Metadata = { title: "Bhagini Graphics Admin | Reviews" };
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
@@ -20,7 +20,7 @@ type Review = {
 };
 
 const reviews: Review[] = [
-  { product: "Business Cards - Matte", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCaa2-iDKwWRgW2NoupqNQDcchzF7CF7cTMhpZAgHLTXIjYPfUus-h93YclvPdPCSUFgST2xjBmsRdBQG0CyhOXemykZ4W8K0ul0rV5yslxKqtrb5OLOQXpBMfK_BZzqm6xvkhGTWSoy6jWr2WN9FDfL-r-n24DvRLD9Ddbb6o7QojST15a9CXaBL4B1Bdvr_2gRv9g6QAQF6l3joXLO-Gsdaea31lP63OhACT4JI1ziqVODFEoA8DDjSkH4n8e0uqYohngyMrLyqQ", customer: "Sarah Jenkins", verified: true, order: "Order #98321", rating: 5, comment: "The quality of the cardstock is absolutely phenomenal. I've ordered from four different places and PrintX is by far the best...", date: "2 days ago", status: "Published", statusClass: "bg-green-100 text-green-700", rowClass: "" },
+  { product: "Business Cards - Matte", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCaa2-iDKwWRgW2NoupqNQDcchzF7CF7cTMhpZAgHLTXIjYPfUus-h93YclvPdPCSUFgST2xjBmsRdBQG0CyhOXemykZ4W8K0ul0rV5yslxKqtrb5OLOQXpBMfK_BZzqm6xvkhGTWSoy6jWr2WN9FDfL-r-n24DvRLD9Ddbb6o7QojST15a9CXaBL4B1Bdvr_2gRv9g6QAQF6l3joXLO-Gsdaea31lP63OhACT4JI1ziqVODFEoA8DDjSkH4n8e0uqYohngyMrLyqQ", customer: "Sarah Jenkins", verified: true, order: "Order #98321", rating: 5, comment: "The quality of the cardstock is absolutely phenomenal. I've ordered from four different places and Bhagini Graphics is by far the best...", date: "2 days ago", status: "Published", statusClass: "bg-green-100 text-green-700", rowClass: "" },
   { product: "Tri-fold Brochures", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBG7k1PUTM6kVIk7InT4BcsKefpJ1psY9EKLfPgub8QuJIJr7Dk9GExl_CH4Bok_Dt9wMCmOywCB7JTl980HELcnvEUbU1TUT2bE93TWQi07TYEuSemALdeUsZ4XJ25Rg5IaaODNTYz5J35ylX8wwXmX90J0PMFhF1NN46PzgGWsNRTPFtrE7x_efUuFdlCPWr5IEJWWVTzBrXiqGE8EpN2si1CD7t8PWPp3ZLR_CNTq76PNG83bu0EB37WvQz2bVfx0dR-qpyYvlw", customer: "Mark Stevens", order: "Order #98445", rating: 1, comment: "The colors were way off compared to what I saw on my screen. Very disappointed with the final result...", date: "5 hours ago", status: "Pending", statusClass: "border border-secondary text-secondary", rowClass: "bg-secondary/5", pending: true },
   { product: "Glossy Posters", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuB7sZgcR7lSs9S_KtZC-2j_guJtTUUs-UF1bNaev7nh97sEKmgpoJ1tOPZhDOTxTj3oPeXPTCVYek8eDuhOqYSOH6Yv2-2NQT35ZCnBh26hEEl5G-PEPCx--5qIu2iiyUuNlnBwrNOAr9bdSNZelMt4TVW6SkOGPPpDit4kSVUD4StHjSpMRUpSPK-z7WG7vHe-HUhtwc_IU5376-dt_X-lmGXmtqUrOXgZVgoGaBi--teDNINzij-8G24Zfa8V55VDNjWYA_TSt5U", customer: "Anonymous", order: "Order #98210", rating: 1, comment: "[Content hidden by moderator due to violation of community guidelines]", date: "1 week ago", status: "Hidden", statusClass: "bg-surface-variant text-on-surface-variant", rowClass: "opacity-60" },
 ];

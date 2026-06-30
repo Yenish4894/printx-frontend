@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Cart & Checkout | PrintX" };
+export const metadata: Metadata = { title: "Cart & Checkout | Bhagini Graphics" };
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
@@ -9,9 +9,7 @@ type CartItem = {
   name: string;
   tags: string[];
   express?: boolean;
-  oldPrice?: string;
   price: string;
-  saves: string;
   img: string;
   file: { ready: boolean; label: string };
 };
@@ -21,9 +19,7 @@ const items: CartItem[] = [
     name: "500 Business Cards",
     tags: ["Matte 350gsm", "Standard Size"],
     express: true,
-    oldPrice: "₹1,200",
     price: "₹850",
-    saves: "Wallet saves ₹68",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCk7K43-ei5jYgwW1e7pXHnntslvOerw11CJ7xmQJx-_JeV5PgDsUk7PIyI6JxzQNJax0VntBfTLrcsZ4JZ9Vec7Dj_DX-s_ynfF5VNBVSNPJ17EjjheqOHX9gJ9f4jdJhSpBH8g0-4ZY51QDI5Tks-XTLX1PSZ3Us2kBDpwCbhtTlIOO3UeGPj_sgjJ8FRQazgvH_09hxW2S5WKucfYQkmgjX9SUWCLRMTl-B-e0EDdG4pKrIqUUyqEmTWNXUQ6Fsoawllg7Cdw3M",
     file: { ready: true, label: "design.pdf · Ready for print" },
   },
@@ -31,7 +27,6 @@ const items: CartItem[] = [
     name: "100 Trifold Brochures",
     tags: ["Glossy 170gsm", "A4 Tri-fold"],
     price: "₹549",
-    saves: "Wallet saves ₹44",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDauKwOTVZWbp4cQQLD5jW5g6vATfdCChkD06yFByYhoiubQKZuEgLxpjtY_xhBI9n46bg1E21qgSetDVa2Tdi7JY5zk5-3Luv-xFQ_1b0cxHzAWaThLYDImg1FO1jWOYQNf3cGPhBVMzdouIoIMLXjpSu6OomgwqUEYNmAsR5wj4dWoktVKNX5iFpQ2WOStTZ9YZ_gAX_YzVViT5VgurNdVou96gIsPdHOWbddXPBXUtPRnxYY72DX7P_bC-DBkqNJNijno_oO-eI",
     file: { ready: false, label: "Design file not uploaded" },
   },
@@ -39,17 +34,11 @@ const items: CartItem[] = [
     name: "50 Luxury Packaging",
     tags: ["Rigid Box", "Custom Size"],
     price: "₹288",
-    saves: "Wallet saves ₹23",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOeVDxHAGkMFi1WTBeBKKfsfm2NYUF_uKKzc_VPpyfn3rD50SlNh9HEKs8iGA0kr3bVkXWEueNP4zSOyKH1nXEx4PQ7TLT5S_mjoVLVg3F0Abeak8I_fOa-whHjvB-5ot4dV8Kv9IHqWEZghPaj_hqmPoPg-G3imlpNgzjxjl-jYsqvuSzulWZ_H3TSjYDa1W_Qztp1br17ryvGlrI2l-AW7jq-9tPIBiqm2d9qIwV_FVEtStsP_KOrF0aqiCMadX-ybYCk8Q2wVg",
     file: { ready: true, label: "box_template.ai · Ready for print" },
   },
 ];
 
-const payments: [string, string, boolean][] = [
-  ["payments", "UPI (PhonePe, GPay, Paytm)", false],
-  ["credit_card", "Credit / Debit Card", false],
-  ["account_balance", "Net Banking", false],
-];
 
 export default function CartCheckout() {
   return (
@@ -82,15 +71,15 @@ export default function CartCheckout() {
           <div className="lg:col-span-8 space-y-8">
             <div className="space-y-4">
               {items.map((it) => (
-                <div key={it.name} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex gap-6">
-                    <div className="w-32 h-32 rounded-lg overflow-hidden bg-surface-container shrink-0 border border-outline-variant">
+                <div key={it.name} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex gap-4 sm:gap-6">
+                    <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-lg overflow-hidden bg-surface-container shrink-0 border border-outline-variant">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img className="w-full h-full object-cover" alt={it.name} src={it.img} />
                     </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="min-w-0">
                           <h3 className="font-headline-md text-headline-md text-on-surface">{it.name}</h3>
                           <div className="flex flex-wrap gap-2 mt-2">
                             {it.tags.map((t) => (
@@ -103,10 +92,8 @@ export default function CartCheckout() {
                             )}
                           </div>
                         </div>
-                        <div className="text-right">
-                          {it.oldPrice && <p className="text-on-surface-variant line-through text-label-caps">{it.oldPrice}</p>}
+                        <div className="text-right shrink-0">
                           <p className="font-price-lg text-price-lg text-primary">{it.price}</p>
-                          <p className="text-secondary text-label-caps font-bold mt-1">{it.saves}</p>
                         </div>
                       </div>
                       <div className="flex items-center justify-between mt-6">
@@ -175,7 +162,7 @@ export default function CartCheckout() {
             <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 shadow-sm">
               <h2 className="font-headline-md text-headline-md text-on-surface mb-4">Order Notes</h2>
               <label className="block mb-2 text-label-caps font-label-caps text-on-surface-variant">Add any specific delivery or print instructions</label>
-              <textarea className="w-full rounded-lg border border-outline-variant focus:border-secondary focus:ring-secondary/20" placeholder="e.g., Deliver after 10 AM, use heavy duty outer packaging..." rows={3}></textarea>
+              <textarea className="w-full rounded-lg border border-outline-variant focus:border-secondary focus:ring-secondary/20" placeholder="e.g., Call before delivery, use heavy duty outer packaging..." rows={3}></textarea>
             </section>
           </div>
 
@@ -197,15 +184,10 @@ export default function CartCheckout() {
                       <div key={k} className="flex justify-between text-body-md"><span className="text-on-surface-variant">{k}</span><span className="text-on-surface">{v}</span></div>
                     ))}
                   </div>
-                  <div className="flex items-center gap-2 py-4">
-                    <input className="flex-1 rounded-lg border border-outline-variant text-body-md px-3 py-2" placeholder="Promo Code" type="text" />
-                    <button className="bg-primary text-white font-button text-button px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Apply</button>
-                  </div>
-                  <div className="pt-4 border-t-2 border-dashed border-outline-variant">
+                  <div className="pt-4 mt-4 border-t-2 border-dashed border-outline-variant">
                     <div className="flex justify-between items-center">
                       <span className="font-headline-md text-headline-md">Total Payable</span>
                       <div className="text-right">
-                        <span className="text-on-surface-variant line-through text-label-caps block">₹2,481 MRP</span>
                         <span className="font-price-lg text-price-lg text-secondary">₹2,139</span>
                       </div>
                     </div>
@@ -215,43 +197,25 @@ export default function CartCheckout() {
 
               {/* Payment */}
               <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
-                <h3 className="font-headline-md text-headline-md text-on-surface mb-6">Payment Method</h3>
-                <div className="space-y-4">
-                  <label className="block group cursor-pointer relative">
-                    <input defaultChecked className="hidden peer" name="payment" type="radio" />
-                    <div className="border-2 border-outline-variant peer-checked:border-secondary peer-checked:bg-secondary/5 rounded-xl p-4 transition-all">
-                      <div className="flex justify-between items-center mb-3">
-                        <div className="flex items-center gap-3">
-                          <span className="material-symbols-outlined text-secondary" style={fill1}>wallet</span>
-                          <span className="font-button text-button">PrintX Wallet</span>
-                        </div>
-                        <span className="material-symbols-outlined text-secondary">radio_button_checked</span>
-                      </div>
-                      <div className="space-y-1 pl-9">
-                        <p className="text-label-caps font-label-caps text-on-surface-variant">Wallet Balance: ₹2,450</p>
-                        <p className="text-label-caps font-bold text-secondary">Wallet Discount: 8% (₹171 Saved)</p>
-                      </div>
+                <h3 className="font-headline-md text-headline-md text-on-surface mb-2">Payment Method</h3>
+                <p className="text-label-caps font-label-caps text-on-surface-variant mb-6">Orders are paid using your prepaid wallet balance.</p>
+                <div className="border-2 border-secondary bg-secondary/5 rounded-xl p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-secondary" style={fill1}>wallet</span>
+                      <span className="font-button text-button">Bhagini Wallet</span>
                     </div>
-                  </label>
-                  {payments.map(([icon, label]) => (
-                    <label key={label} className="block group cursor-pointer">
-                      <input className="hidden peer" name="payment" type="radio" />
-                      <div className="border border-outline-variant peer-checked:border-secondary peer-checked:bg-secondary/5 rounded-xl p-4 transition-all">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-3">
-                            <span className="material-symbols-outlined text-on-surface-variant">{icon}</span>
-                            <span className="font-button text-button">{label}</span>
-                          </div>
-                          <span className="material-symbols-outlined text-outline-variant">radio_button_unchecked</span>
-                        </div>
-                      </div>
-                    </label>
-                  ))}
+                    <span className="material-symbols-outlined text-secondary">check_circle</span>
+                  </div>
+                  <div className="flex items-center justify-between pl-9">
+                    <p className="text-label-caps font-label-caps text-on-surface-variant">Available Balance</p>
+                    <p className="font-price-lg text-body-md text-secondary">₹2,450</p>
+                  </div>
                 </div>
-                <div className="mt-6 p-4 rounded-lg bg-surface-container-low border border-dashed border-outline-variant flex items-center justify-between">
-                  <span className="text-body-md text-on-surface-variant">Top Up Wallet &amp; Save 8%</span>
-                  <button className="text-secondary font-bold text-body-md hover:underline">Recharge</button>
-                </div>
+                <Link href="/wallet" className="mt-4 p-4 rounded-lg bg-surface-container-low border border-dashed border-outline-variant flex items-center justify-between hover:border-secondary transition-colors">
+                  <span className="text-body-md text-on-surface-variant">Low balance? Top up your wallet</span>
+                  <span className="text-secondary font-bold text-body-md">Recharge</span>
+                </Link>
               </div>
             </div>
           </div>
@@ -263,7 +227,6 @@ export default function CartCheckout() {
         <div className="max-w-container-max mx-auto px-margin-desktop flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-center md:text-left">
             <p className="font-headline-md text-headline-md text-on-surface">Total to Pay ₹2,139</p>
-            <p className="text-secondary font-bold text-label-caps">You save ₹342 with wallet &amp; promo</p>
           </div>
           <div className="flex flex-col items-center md:items-end gap-2">
             <div className="flex items-center gap-6 mb-1">

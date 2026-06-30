@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "PrintX — Online Printing Platform",
+  title: "Bhagini Graphics — Online Printing Platform",
   description:
     "Professional quality printing with live pricing, prepaid wallet, and real-time order tracking.",
 };
@@ -24,6 +24,12 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/*
+          Material Symbols icon font loaded via <link> in the root layout (loads app-wide).
+          display=block is intentional: it avoids a flash of the ligature text
+          (e.g. "account_balance_wallet") before the icon font swaps in.
+        */}
+        {/* eslint-disable-next-line @next/next/google-font-display, @next/next/no-page-custom-font */}
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"

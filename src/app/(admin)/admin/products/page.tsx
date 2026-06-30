@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "PrintX Admin | Products" };
+export const metadata: Metadata = { title: "Bhagini Graphics Admin | Products" };
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 

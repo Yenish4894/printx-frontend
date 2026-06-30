@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "PrintX Admin | Product Editor" };
+export const metadata: Metadata = { title: "Bhagini Graphics Admin | Product Editor" };
 
 const SwitchOn = () => (
   <button className="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent bg-secondary-container">
@@ -186,7 +186,7 @@ export default function ProductEditor() {
       </div>
 
       {/* Sticky save bar */}
-      <div className="fixed bottom-0 left-64 right-0 z-30 bg-surface border-t border-outline-variant px-margin-desktop py-4 flex items-center justify-end gap-4">
+      <div className="fixed bottom-0 left-0 md:left-64 right-0 z-30 bg-surface border-t border-outline-variant px-4 md:px-margin-desktop py-4 flex items-center justify-end gap-4">
         <Link href="/admin/products" className="px-6 py-3 rounded-lg border border-outline-variant font-button text-on-surface-variant hover:bg-surface-container transition-colors">Cancel</Link>
         <button className="px-6 py-3 rounded-lg bg-white border border-outline-variant font-button text-on-surface hover:bg-surface-container transition-colors">Save</button>
         <Link href="/admin/spec-config" className="px-6 py-3 rounded-lg primary-accent-gradient text-white font-button shadow-lg shadow-secondary/20">Save &amp; Configure Specs</Link>

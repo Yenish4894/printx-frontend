@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "PrintX | Wallet Management" };
+export const metadata: Metadata = { title: "Bhagini Graphics | Wallet Management" };
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
@@ -9,7 +9,7 @@ const amounts = ["₹500", "₹1,000", "₹2,000", "₹5,000", "₹10,000", "₹
 const transactions = [
   { icon: "add_circle", iconBg: "bg-green-100 text-green-600", title: "Top up via UPI", meta: "ID: TXN-98234-AX • 24 Oct 2024, 11:30 AM", type: "Credit", typeBg: "bg-green-100 text-green-700", amount: "+₹5,000.00", amountColor: "text-green-600", balance: "₹5,970.00" },
   { icon: "shopping_cart", iconBg: "bg-red-100 text-red-600", title: "Order Payment #PRX-4421", meta: "ID: TXN-98201-AX • 23 Oct 2024, 04:15 PM", type: "Debit", typeBg: "bg-red-100 text-red-700", amount: "-₹4,200.00", amountColor: "text-red-600", balance: "₹970.00" },
-  { icon: "stars", iconBg: "bg-amber-100 text-amber-600", title: "Loyalty Bonus Applied", meta: "ID: TXN-98155-AX • 21 Oct 2024, 09:00 AM", type: "Bonus", typeBg: "bg-amber-100 text-amber-700", amount: "+₹250.00", amountColor: "text-green-600", balance: "₹5,170.00", badge: true },
+  { icon: "add_circle", iconBg: "bg-green-100 text-green-600", title: "Top up via Card", meta: "ID: TXN-98155-AX • 21 Oct 2024, 09:00 AM", type: "Credit", typeBg: "bg-green-100 text-green-700", amount: "+₹2,000.00", amountColor: "text-green-600", balance: "₹5,170.00" },
 ];
 
 const chart: [string, string, string][] = [
@@ -42,7 +42,7 @@ export default function WalletManagement() {
       <div className="header-deep-gradient rounded-xl p-8 mb-8 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl relative overflow-hidden">
         <div className="z-10">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-headline-lg font-headline-lg">My PrintX Wallet</h1>
+            <h1 className="text-headline-lg font-headline-lg">My Bhagini Wallet</h1>
             <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1">
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Active
             </span>
@@ -78,16 +78,12 @@ export default function WalletManagement() {
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 grid-rows-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/30 flex flex-col justify-center hover:shadow-md transition-shadow">
-                <p className="text-on-surface-variant text-label-caps uppercase mb-1">Savings</p><p className="text-headline-md text-secondary font-bold">₹1,240</p><p className="text-[10px] text-green-600 font-bold">↑ 12% vs last month</p>
+                <p className="text-on-surface-variant text-label-caps uppercase mb-1">Avg Order</p><p className="text-headline-md text-primary font-bold">₹438</p><p className="text-[10px] text-on-surface-variant opacity-60">Per order</p>
               </div>
               <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/30 flex flex-col justify-center hover:shadow-md transition-shadow">
-                <p className="text-on-surface-variant text-label-caps uppercase mb-1">Prints Done</p><p className="text-headline-md text-primary font-bold">42</p><p className="text-[10px] text-on-surface-variant opacity-60">Corporate Tier</p>
-              </div>
-              <div className="bg-primary-container col-span-2 p-4 rounded-xl shadow-sm flex items-center justify-between">
-                <div><p className="text-on-primary-container text-label-caps uppercase mb-1">Bonus Credits</p><p className="text-body-lg text-white font-bold">₹150.00</p></div>
-                <div className="w-12 h-12 rounded-full border-4 border-secondary/30 border-t-secondary spin-slow flex items-center justify-center"><span className="material-symbols-outlined text-secondary">redeem</span></div>
+                <p className="text-on-surface-variant text-label-caps uppercase mb-1">Prints Done</p><p className="text-headline-md text-primary font-bold">42</p><p className="text-[10px] text-on-surface-variant opacity-60">Lifetime orders</p>
               </div>
             </div>
           </div>
@@ -104,10 +100,6 @@ export default function WalletManagement() {
                 {amounts.map((a) => (
                   <button key={a} className={a === "₹2,000" ? "py-3 px-2 border-2 border-secondary bg-secondary/5 rounded-lg font-bold text-secondary transition-all" : "py-3 px-2 border border-outline-variant rounded-lg font-bold text-on-surface hover:border-secondary hover:text-secondary transition-all"}>{a}</button>
                 ))}
-              </div>
-              <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg mb-6 flex items-center gap-3">
-                <span className="material-symbols-outlined text-amber-600">stars</span>
-                <span className="text-amber-800 text-body-md font-bold">Add ₹5,000+ and get 5% bonus credits instantly!</span>
               </div>
               <div className="flex flex-col md:flex-row gap-6 items-start">
                 <div className="w-full md:w-1/2">
@@ -177,7 +169,6 @@ export default function WalletManagement() {
                           <div>
                             <div className="flex items-center gap-2">
                               <p className="font-bold text-on-surface">{t.title}</p>
-                              {t.badge && <span className="bg-secondary text-white text-[8px] px-1.5 py-0.5 rounded uppercase font-extrabold">Bonus</span>}
                             </div>
                             <p className="text-[10px] text-on-surface-variant opacity-60">{t.meta}</p>
                           </div>

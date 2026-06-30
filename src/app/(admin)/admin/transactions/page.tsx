@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "PrintX Admin | Wallet & Transactions" };
+export const metadata: Metadata = { title: "Bhagini Graphics Admin | Wallet & Transactions" };
 
 const summary: [string, string, string, string][] = [
   ["Wallet Liability", "₹8,42,500", "Total customer balances", "text-primary"],

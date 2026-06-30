@@ -7,10 +7,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="bg-background font-body-md text-on-surface">
       <AdminSidebar />
-      <main className="ml-64 min-h-screen">
+      <main className="md:ml-64 min-h-screen">
         {/* Top App Bar */}
-        <header className="sticky top-0 z-40 flex justify-between items-center px-margin-desktop py-4 bg-surface border-b border-outline-variant">
-          <div className="flex items-center flex-1 max-w-xl">
+        <header className="sticky top-0 z-40 flex justify-between items-center px-4 md:px-margin-desktop py-4 bg-surface border-b border-outline-variant">
+          <div className="flex items-center flex-1 max-w-xl pl-12 md:pl-0">
             <div className="relative w-full">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
               <input className="w-full pl-10 pr-4 py-2 bg-surface-container border-none rounded-lg focus:ring-2 focus:ring-secondary-container text-body-md font-body-md" placeholder="Search orders, clients, or SKU..." type="text" />
@@ -26,7 +26,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <span className="material-symbols-outlined text-on-surface-variant">mail</span>
               </button>
             </div>
-            <div className="h-8 w-[1px] bg-outline-variant"></div>
+            <div className="h-8 w-px bg-outline-variant"></div>
             <div className="flex items-center gap-3 cursor-pointer">
               <div className="text-right hidden sm:block">
                 <p className="font-button text-on-surface leading-none">Alexander Pierce</p>

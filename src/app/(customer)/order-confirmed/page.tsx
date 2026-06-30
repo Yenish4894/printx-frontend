@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Order Confirmed | PrintX" };
+export const metadata: Metadata = { title: "Order Confirmed | Bhagini Graphics" };
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
@@ -18,14 +18,14 @@ export default function OrderConfirmed() {
       <section className="relative deep-navy-gradient py-20 overflow-hidden">
         <div className="absolute inset-0 confetti-pattern"></div>
         <div className="relative max-w-container-max mx-auto px-margin-desktop text-center">
-          <div className="inline-flex items-center gap-2 bg-on-primary-fixed/10 backdrop-blur-md px-6 py-2 rounded-full border border-on-primary-fixed/20 mb-8 animate-bounce">
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-6 py-2 rounded-full border border-white/20 mb-8 animate-bounce">
             <span className="material-symbols-outlined text-secondary-container" style={fill1}>check_circle</span>
-            <span className="font-label-caps text-label-caps text-on-primary-fixed">Order Placed Successfully</span>
+            <span className="font-label-caps text-label-caps text-white">Order Placed Successfully</span>
           </div>
           <h1 className="font-display-lg text-display-lg text-white mb-4">Thank you, Priya! 🎉</h1>
-          <p className="font-body-lg text-body-lg text-on-primary-container mb-8">Order Number <span className="font-bold text-on-primary-fixed">#PX-2024-08471</span></p>
-          <div className="inline-block bg-primary-container text-on-primary-fixed font-button px-8 py-3 rounded-xl shadow-xl border border-outline/20">
-            Paid via Wallet <span className="font-black">₹3,930</span>
+          <p className="font-body-lg text-body-lg text-on-primary-container mb-8">Order Number <span className="font-bold text-secondary-container">#PX-2024-08471</span></p>
+          <div className="inline-block bg-white/10 backdrop-blur-md text-white font-button px-8 py-3 rounded-xl shadow-xl border border-white/20">
+            Paid via Wallet <span className="font-black text-secondary-container">₹3,930</span>
           </div>
         </div>
       </section>
@@ -133,11 +133,9 @@ export default function OrderConfirmed() {
             <div className="bg-white p-8 rounded-xl shadow-lg border border-outline-variant">
               <h3 className="font-headline-md text-lg mb-6">Payment Summary</h3>
               <div className="space-y-4 text-sm">
-                {[["Item Subtotal", "₹3,495"], ["Delivery Fee", "₹148"], ["GST (18%)", "₹629"]].map(([k, v]) => (
+                {[["Item Subtotal", "₹3,301"], ["Shipping", "FREE"], ["GST (18%)", "₹629"]].map(([k, v]) => (
                   <div key={k} className="flex justify-between text-on-surface-variant"><span>{k}</span><span>{v}</span></div>
                 ))}
-                <div className="pt-4 border-t border-outline-variant flex justify-between text-on-surface-variant"><span>MRP Total</span><span>₹4,272</span></div>
-                <div className="flex justify-between text-green-600 font-bold"><span>Wallet Discount (8%)</span><span>-₹342</span></div>
                 <div className="pt-4 border-t-2 border-primary flex justify-between items-center">
                   <span className="font-black text-lg text-primary">Total Paid</span>
                   <span className="font-price-lg text-price-lg text-primary">₹3,930</span>
@@ -145,21 +143,16 @@ export default function OrderConfirmed() {
               </div>
             </div>
 
-            <div className="bg-primary-container text-on-primary-fixed p-6 rounded-xl border border-on-primary-fixed/10">
+            <div className="bg-primary-container text-white p-6 rounded-xl border border-white/10">
               <div className="flex items-center gap-3 mb-4">
-                <span className="material-symbols-outlined" style={fill1}>account_balance_wallet</span>
-                <span className="font-bold">PrintX Wallet Payment</span>
+                <span className="material-symbols-outlined text-secondary-container" style={fill1}>account_balance_wallet</span>
+                <span className="font-bold">Bhagini Wallet Payment</span>
               </div>
               <div className="space-y-3">
                 <div className="flex justify-between items-center opacity-70"><span className="text-xs">Balance Before</span><span className="font-mono text-sm">₹4,900</span></div>
                 <div className="flex justify-between items-center py-2 border-y border-white/10"><span className="text-xs font-bold">Debited Amount</span><span className="font-mono text-lg font-black text-secondary-container">-₹3,930</span></div>
                 <div className="flex justify-between items-center"><span className="text-xs">Remaining Balance</span><span className="font-mono text-sm font-bold">₹970</span></div>
               </div>
-            </div>
-
-            <div className="bg-green-600 text-white p-4 rounded-xl flex items-center gap-3 shadow-md">
-              <span className="material-symbols-outlined">celebration</span>
-              <p className="font-bold text-sm">You saved ₹342 on this order!</p>
             </div>
 
             <div className="space-y-3">

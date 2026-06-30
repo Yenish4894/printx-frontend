@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "PrintX Admin | Order Detail" };
+export const metadata: Metadata = { title: "Bhagini Graphics Admin | Order Detail" };
 
 // Pre-rendered admin order pages for static export
 export function generateStaticParams() {
@@ -43,11 +43,11 @@ export default function AdminOrderDetail() {
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-8 pb-24">
+      <div className="grid grid-cols-12 gap-5 sm:gap-8 pb-24">
         {/* Left */}
         <div className="col-span-12 lg:col-span-8 space-y-8">
           {/* Progress timeline */}
-          <section className="bg-surface-container-lowest p-8 rounded-xl premium-shadow">
+          <section className="bg-surface-container-lowest p-5 sm:p-8 rounded-xl premium-shadow">
             <div className="flex justify-between items-center mb-10">
               <h3 className="font-headline-md text-lg text-primary">Order Progress</h3>
               <button className="text-secondary font-button text-sm flex items-center gap-2"><span className="material-symbols-outlined text-sm">history</span> View Detailed Log</button>
@@ -64,7 +64,7 @@ export default function AdminOrderDetail() {
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-outline-variant/30">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8 pt-8 border-t border-outline-variant/30">
               <div>
                 <label className="font-label-caps text-label-caps text-on-surface-variant block mb-2 uppercase">Internal Processing Note</label>
                 <textarea className="w-full bg-surface border border-outline-variant rounded-lg p-3 text-sm focus:ring-secondary h-24 placeholder:italic" placeholder="Add specific instructions for the printing floor..."></textarea>
@@ -82,13 +82,13 @@ export default function AdminOrderDetail() {
 
           {/* Order items */}
           <section className="bg-surface-container-lowest rounded-xl premium-shadow overflow-hidden">
-            <div className="px-8 py-5 bg-surface-container border-b border-outline-variant flex justify-between items-center">
+            <div className="px-5 sm:px-8 py-5 bg-surface-container border-b border-outline-variant flex justify-between items-center">
               <h3 className="font-headline-md text-lg text-primary uppercase tracking-tight">Order Items &amp; Configuration</h3>
               <span className="text-sm font-medium text-on-surface-variant">2 Items Total</span>
             </div>
             {/* Item 1 */}
-            <div className="p-8 border-b border-outline-variant/30">
-              <div className="flex flex-col md:flex-row gap-8">
+            <div className="p-5 sm:p-8 border-b border-outline-variant/30">
+              <div className="flex flex-col md:flex-row gap-5 sm:gap-8">
                 <div className="w-32 h-32 rounded-lg bg-surface flex-shrink-0 overflow-hidden border border-outline-variant/20">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img className="w-full h-full object-cover" alt="Business Cards" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA26YWGmQblm-NLb8k_efd2zDf9Y_q3erquXmkW5aM2CeiKXn1oN5cHodvHzHQ9nLC2reZ7sJY7pCq9Bm29A5tzd940iZDhgk4JOEnzacadz28pfH0jbMHbt18LfV9cm58DlmmuBG2WqOTP2E6bCYX-gvgmRXklCcgYjurcxM5rJC0xQ2Km2HfVVJLz5kRJVv67qqvA2kwrL5isfJvBuHbmUkdyu9vJ-d2EQfIXmlDm3bPrq0UbSOfu5tfZEnGatW2rfPkM82CoK38" />
@@ -117,8 +117,8 @@ export default function AdminOrderDetail() {
               </div>
             </div>
             {/* Item 2 */}
-            <div className="p-8 bg-error-container/20">
-              <div className="flex flex-col md:flex-row gap-8">
+            <div className="p-5 sm:p-8 bg-error-container/20">
+              <div className="flex flex-col md:flex-row gap-5 sm:gap-8">
                 <div className="w-32 h-32 rounded-lg bg-error-container/30 border-2 border-dashed border-error/40 flex flex-col items-center justify-center text-error">
                   <span className="material-symbols-outlined text-4xl mb-1">warning</span><span className="text-[10px] font-bold uppercase">Missing</span>
                 </div>
@@ -141,7 +141,7 @@ export default function AdminOrderDetail() {
         {/* Right */}
         <div className="col-span-12 lg:col-span-4 space-y-8">
           {/* Customer */}
-          <section className="bg-primary-container p-8 rounded-xl shadow-lg relative overflow-hidden">
+          <section className="bg-primary-container p-5 sm:p-8 rounded-xl shadow-lg relative overflow-hidden">
             <div className="absolute -right-10 -top-10 w-40 h-40 bg-secondary/20 blur-[60px] rounded-full"></div>
             <div className="relative z-10">
               <div className="flex items-center gap-4 mb-6">
@@ -164,7 +164,7 @@ export default function AdminOrderDetail() {
           </section>
 
           {/* Payment */}
-          <section className="bg-surface-container-lowest p-8 rounded-xl premium-shadow">
+          <section className="bg-surface-container-lowest p-5 sm:p-8 rounded-xl premium-shadow">
             <h3 className="font-headline-md text-lg text-primary mb-6 uppercase tracking-tight">Payment Summary</h3>
             <div className="space-y-3 mb-8">
               {[["Subtotal", "₹1,450.00", ""], ["Delivery Fee", "₹100.00", ""], ["GST (18%)", "₹279.00", "text-error"], ["Wallet Discount", "-₹116.00", "text-secondary"]].map(([k, v, c]) => (
@@ -176,7 +176,7 @@ export default function AdminOrderDetail() {
           </section>
 
           {/* Control center */}
-          <section className="bg-surface-container-lowest p-8 rounded-xl premium-shadow border-t-4 border-secondary">
+          <section className="bg-surface-container-lowest p-5 sm:p-8 rounded-xl premium-shadow border-t-4 border-secondary">
             <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-6 uppercase">Control Center</h3>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
@@ -201,8 +201,8 @@ export default function AdminOrderDetail() {
       </div>
 
       {/* Sticky footer */}
-      <div className="fixed bottom-0 left-64 right-0 z-30 bg-surface/90 backdrop-blur-md px-10 py-4 border-t border-outline-variant flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div className="flex items-center gap-8">
+      <div className="fixed bottom-0 left-0 md:left-64 right-0 z-30 bg-surface/90 backdrop-blur-md px-4 md:px-10 py-4 border-t border-outline-variant flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-5 sm:gap-8">
           <div><p className="text-[10px] uppercase font-bold text-on-surface-variant">Placed On</p><p className="text-sm font-medium">Oct 24, 02:30 PM</p></div>
           <div><p className="text-[10px] uppercase font-bold text-on-surface-variant">Target Delivery</p><p className="text-sm font-medium">Oct 28, 2024</p></div>
           <div className="hidden sm:block h-8 w-px bg-outline-variant"></div>
@@ -210,7 +210,7 @@ export default function AdminOrderDetail() {
         </div>
         <div className="flex gap-4">
           <button className="px-6 py-2 border border-outline rounded-lg text-sm font-button hover:bg-surface-container transition-colors">Process Refund</button>
-          <button className="px-8 py-2 coral-gradient text-white rounded-lg text-sm font-button shadow-md active:scale-95 transition-transform">Update Status</button>
+          <button className="px-5 sm:px-8 py-2 coral-gradient text-white rounded-lg text-sm font-button shadow-md active:scale-95 transition-transform">Update Status</button>
         </div>
       </div>
     </>

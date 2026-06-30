@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "PrintX | Order Details" };
+export const metadata: Metadata = { title: "Bhagini Graphics | Order Details" };
 
 // Pre-rendered order pages for static export
 export function generateStaticParams() {
@@ -25,7 +25,7 @@ const items = [
 
 const timeline = [
   { icon: "check", title: "Order Placed", desc: "Your order has been received and added to the queue.", time: "02:45 PM", done: true },
-  { icon: "check", title: "Payment Verified", desc: "TXN-9928374 · Paid via PrintX Wallet", time: "03:10 PM", done: true },
+  { icon: "check", title: "Payment Verified", desc: "TXN-9928374 · Paid via Bhagini Wallet", time: "03:10 PM", done: true },
 ];
 
 const future = [
@@ -277,8 +277,8 @@ export default function OrderDetails() {
             <p className="font-bold text-body-lg mb-1">Need Help?</p>
             <p className="text-on-surface-variant text-sm mb-6">Our average response time is under 2 hours.</p>
             <div className="grid grid-cols-3 gap-3">
-              {[["chat", "WhatsApp"], ["call", "Call"], ["mail", "Email"]].map(([icon, label]) => (
-                <a key={label} className="flex flex-col items-center gap-2 group" href="#">
+              {[["chat", "WhatsApp", "https://wa.me/917203000701"], ["call", "Call", "tel:+917203000701"], ["mail", "Email", "mailto:bhaginigraphics@gmail.com"]].map(([icon, label, href]) => (
+                <a key={label} className="flex flex-col items-center gap-2 group" href={href} target={href.startsWith("http") ? "_blank" : undefined} rel={href.startsWith("http") ? "noopener noreferrer" : undefined}>
                   <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center group-hover:bg-secondary group-hover:text-white transition-colors">
                     <span className="material-symbols-outlined">{icon}</span>
                   </div>

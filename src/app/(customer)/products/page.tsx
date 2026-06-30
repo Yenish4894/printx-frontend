@@ -1,19 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "PrintX | Print Catalog" };
+export const metadata: Metadata = { title: "Bhagini Graphics | Print Catalog" };
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
 const categories: [string, string, boolean][] = [
-  ["layers", "All Services", true],
-  ["description", "Paper Types", false],
-  ["style", "Design Tools", false],
-  ["package_2", "Bulk Orders", false],
-  ["location_on", "Track Order", false],
+  ["apps", "All Products", true],
+  ["badge", "Business Cards", false],
+  ["description", "Brochures & Flyers", false],
+  ["label", "Stickers & Labels", false],
+  ["flag", "Posters & Banners", false],
+  ["package_2", "Packaging", false],
+  ["draft", "Stationery", false],
 ];
 
 type Product = {
+  slug: string;
   name: string;
   desc: string;
   rating: string;
@@ -25,6 +28,7 @@ type Product = {
 
 const products: Product[] = [
   {
+    slug: "business-cards",
     name: "Premium Business Cards",
     desc: 'Standard 3.5" x 2.0" with luxury matte finish and triple-layer cardstock.',
     rating: "4.9",
@@ -33,6 +37,7 @@ const products: Product[] = [
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAgdpKD5ombdeWroMGXbdOtUZ5E6k7VpUsnSZU2z6iWVUaFsZIHH5loB-ujTdJSZPB_ybeKb8aREceYp6eKoQUVhwVbcfe3caRTzRIgA6fsmx6jsw9Cm5fKcanYofNW5LjYfDfdN3GyRzI8Aoo0VPbMK6gRE6B_zQEnvubDPOBxHcsfnsCWuAb0aJ7JXxkTEjNb7o3Z9_4S7tJMEcjFi848j8qeYBCB2YO9cwtarxNkBkJNhHib47vW8fRbbrraQNRMYiAng_THHnA",
   },
   {
+    slug: "executive-stationery",
     name: "Executive Stationery",
     desc: "Bonded 120gsm paper with custom gold foil embossing for corporate identity.",
     rating: "4.7",
@@ -41,6 +46,7 @@ const products: Product[] = [
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCMd-bEzzAR4c7MA4RjLyc2BathZWU54zo46QjEApb3quT5MURup6e1jkjUtZMmknRqtmujSXZyakeeOjACP5RggO56Cp6IkZAiufwa5MfWxPpVKKeWFTCURLod2bAiOPJfDdxO_6JY25Dzyar1N_dmO2RCk_1Zr99cBVQRDPl6m-XGTrT3F9LfRm6wD1JGvL0P4m_1UucGs4r7aqIFoM0eMAEif7EhQgaNJrw9CIM87xnvYrxiH13i1AsxPu2gL7C07zy3v1YaDnk",
   },
   {
+    slug: "trifold-brochures",
     name: "Trifold Brochures",
     desc: "Glossy 170gsm art paper with high-fidelity color reproduction.",
     rating: "4.8",
@@ -49,6 +55,7 @@ const products: Product[] = [
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCL3F0ONaV6xSuJEQKtpJvZXkjV85aPnUS8H5KFgm3fQfJfva5yHG4DgYO9UL-J-JZZuJC3S518pQl2vkjzFKzIH-I7n-1qwTWHrqleU50srav9GyzkJpwlC37Ml5QVQ0k-3Cvq-B2pEKD2mX2E82qJb_qtMxSrOCDX6fZGlj_ltfPbAXNFjRwF_3tKhdW4kq2FyF70XtP4paLmBbH684R-8biqfPRQKt4zh-adE30PsNCbZrt3N2s82j9G2xpjV8S3fJuXgODvj_k",
   },
   {
+    slug: "event-posters",
     name: "Event Posters",
     desc: "A2-A0 sizes on UV resistant synthetic paper. Perfect for indoors & outdoors.",
     rating: "4.9",
@@ -58,6 +65,7 @@ const products: Product[] = [
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBePVDm5i4NTZ74p79vqqYHdh6Qki45IfxUmb5I4ceoxtduj3NfxKjl5AJn3-QF5XQswhAxwEMJr_LsQfBFZHVzA1Tt16a1602jznScavCkYxPRwXBWmH2UBng9XKcisP2yPHUO0vNqJifwagSI_zzbOHZF2ok6jubuv_wwXAAAr7NQ7P6l2Wr7ZM84Oaf4YRTC6-WzVJKhowQzqs9jtQQBrckP0_-jj4AW_D4O5upkaBeJE0agziVaaYYRwLkbGoR3fGTLtY8wiBc",
   },
   {
+    slug: "luxury-packaging",
     name: "Luxury Packaging",
     desc: "Custom die-cut boxes with soft-touch lamination and magnetic closures.",
     rating: "5.0",
@@ -82,12 +90,8 @@ function ProductCard({ p }: { p: Product }) {
         </button>
       </div>
       <div className="p-6 flex flex-col flex-1">
-        <div className="flex justify-between items-start mb-2">
+        <div className="mb-2">
           <h3 className="font-headline-md text-[20px]">{p.name}</h3>
-          <div className="flex items-center gap-1 text-secondary">
-            <span className="material-symbols-outlined text-[18px]" style={fill1}>star</span>
-            <span className="font-bold text-sm">{p.rating}</span>
-          </div>
         </div>
         <p className="text-on-surface-variant text-sm mb-6 line-clamp-2">{p.desc}</p>
         <div className="mt-auto pt-6 border-t border-outline-variant flex items-center justify-between">
@@ -95,7 +99,7 @@ function ProductCard({ p }: { p: Product }) {
             <span className="text-on-surface-variant text-[10px] font-bold uppercase tracking-widest">STARTING FROM</span>
             <span className="font-price-lg text-price-lg">{p.price}</span>
           </div>
-          <Link href="/products/business-cards" className="w-12 h-12 bg-primary-container text-white rounded-full flex items-center justify-center hover:bg-secondary transition-all active:scale-90">
+          <Link href={`/products/${p.slug}`} className="w-12 h-12 bg-primary-container text-white rounded-full flex items-center justify-center hover:bg-secondary transition-all active:scale-90">
             <span className="material-symbols-outlined">arrow_forward</span>
           </Link>
         </div>
@@ -151,15 +155,6 @@ export default function ProductsListing() {
       <main className="max-w-container-max mx-auto px-gutter py-12 flex flex-col lg:flex-row gap-10">
         {/* Sidebar Filters */}
         <aside className="w-full lg:w-72 flex-none space-y-8">
-          <div className="primary-gradient rounded-2xl p-6 text-white shadow-xl overflow-hidden relative group">
-            <div className="relative z-10">
-              <span className="bg-white/20 px-2 py-1 rounded text-[10px] font-bold tracking-widest uppercase mb-4 inline-block">LIMITED OFFER</span>
-              <h3 className="font-headline-md text-headline-md mb-2">30% OFF BULK</h3>
-              <p className="text-white/80 text-sm mb-6">On all business cards and stationery sets above 500 units.</p>
-              <button className="w-full bg-white text-secondary font-button text-button py-2.5 rounded-lg active:scale-95 transition-transform">Claim Code</button>
-            </div>
-            <span className="material-symbols-outlined absolute -bottom-6 -right-6 text-[120px] opacity-10 rotate-12 group-hover:scale-110 transition-transform">print</span>
-          </div>
 
           <div className="bg-surface-container-low rounded-2xl p-6 border border-outline-variant">
             <div className="flex items-center justify-between mb-6">
@@ -200,7 +195,7 @@ export default function ProductsListing() {
             <div>
               <h5 className="font-button text-white mb-1">Need specialized help?</h5>
               <p className="text-xs text-on-tertiary-container leading-relaxed mb-3">Our print experts are online to assist with custom configurations.</p>
-              <a className="text-xs font-bold text-secondary-container hover:underline uppercase tracking-wider" href="#">Start Chat</a>
+              <a className="text-xs font-bold text-secondary-container hover:underline uppercase tracking-wider" href="tel:+917203000701">Call an Expert</a>
             </div>
           </div>
         </aside>
@@ -220,7 +215,7 @@ export default function ProductsListing() {
             <div className="flex items-center gap-4">
               <div className="hidden md:flex bg-primary-container text-white px-3 py-1.5 rounded-lg items-center gap-2">
                 <span className="material-symbols-outlined text-sm">bolt</span>
-                <span className="text-[11px] font-bold uppercase tracking-widest">Flash Delivery Available</span>
+                <span className="text-[11px] font-bold uppercase tracking-widest">Express Delivery Available</span>
               </div>
               <div className="flex border border-outline-variant rounded-lg overflow-hidden">
                 <button className="p-2 bg-surface-container-high border-r border-outline-variant text-secondary"><span className="material-symbols-outlined text-[20px]">grid_view</span></button>

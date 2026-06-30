@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import CountdownTimer from "@/components/customer/CountdownTimer";
 
-export const metadata: Metadata = { title: "PrintX | Customer Dashboard" };
+export const metadata: Metadata = { title: "Bhagini Graphics | Customer Dashboard" };
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
@@ -12,7 +11,7 @@ const quickActions: [string, string, string, string][] = [
   ["payments", "Top Up Wallet", "bg-emerald-500 text-white", "/wallet"],
   ["local_shipping", "Track Order", "bg-orange-500 text-white", "/orders"],
   ["replay", "Reorder Last", "bg-purple-500 text-white", "/orders"],
-  ["support_agent", "Get Support", "bg-cyan-500 text-white", "/wallet"],
+  ["support_agent", "Get Support", "bg-cyan-500 text-white", "tel:+917203000701"],
 ];
 
 const chart = [
@@ -77,7 +76,7 @@ export default function CustomerDashboard() {
       </section>
 
       {/* Stats */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="bg-surface-container-lowest p-6 rounded-xl custom-shadow border border-outline-variant/10 hover:-translate-y-1 transition-transform">
           <div className="flex justify-between items-start mb-4">
             <span className="text-label-caps font-label-caps text-on-surface-variant">Wallet Balance</span>
@@ -108,17 +107,7 @@ export default function CustomerDashboard() {
             <span className="material-symbols-outlined text-on-primary-fixed-variant">payments</span>
           </div>
           <div className="flex items-baseline gap-2"><span className="font-price-lg text-headline-lg text-on-surface">₹18,340</span></div>
-          <p className="text-xs font-bold text-secondary mt-2">₹3,200 saved with wallet</p>
-        </div>
-        <div className="bg-surface-container-lowest p-6 rounded-xl custom-shadow border border-outline-variant/10 hover:-translate-y-1 transition-transform">
-          <div className="flex justify-between items-start mb-4">
-            <span className="text-label-caps font-label-caps text-on-surface-variant">Reward Points</span>
-            <span className="material-symbols-outlined text-amber-500">military_tech</span>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="font-price-lg text-headline-lg text-on-surface">1,240 <span className="text-sm font-medium text-on-surface-variant">pts</span></span>
-          </div>
-          <p className="text-xs font-bold text-on-surface-variant mt-2">Gold Tier, 260 to Platinum</p>
+          <p className="text-xs font-bold text-on-surface-variant mt-2">Across 47 orders in 2024</p>
         </div>
       </section>
 
@@ -137,10 +126,9 @@ export default function CustomerDashboard() {
                   </h2>
                   <p className="text-on-primary-container/60 text-xs mt-2">Active &amp; Verified Digital Account</p>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div><p className="text-[10px] text-on-primary-container/50 font-bold uppercase">Bonus Credit</p><p className="text-sm text-on-primary font-bold">₹450</p></div>
+                <div className="grid grid-cols-2 gap-4">
                   <div><p className="text-[10px] text-on-primary-container/50 font-bold uppercase">Used This Month</p><p className="text-sm text-on-primary font-bold">₹2,100</p></div>
-                  <div><p className="text-[10px] text-on-primary-container/50 font-bold uppercase">Total Savings</p><p className="text-sm text-green-400 font-bold">₹3,200</p></div>
+                  <div><p className="text-[10px] text-on-primary-container/50 font-bold uppercase">Last Top-Up</p><p className="text-sm text-on-primary font-bold">₹500</p></div>
                 </div>
               </div>
               <div className="flex flex-col gap-3 justify-end">
@@ -152,10 +140,6 @@ export default function CustomerDashboard() {
                 </Link>
               </div>
             </div>
-            <div className="mt-8 bg-amber-500/10 border-t border-amber-500/20 py-3 px-8 -mx-8 -mb-8 flex items-center gap-3">
-              <span className="material-symbols-outlined text-amber-500 text-sm">stars</span>
-              <span className="text-amber-500 font-bold text-xs uppercase tracking-wider">You&apos;ve saved ₹3,200 this year with PrintX Wallet!</span>
-            </div>
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3"></div>
           </div>
 
@@ -163,14 +147,22 @@ export default function CustomerDashboard() {
           <section>
             <h3 className="font-headline-md text-on-surface mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {quickActions.map(([icon, label, color, href]) => (
-                <Link key={label} href={href} className="bg-surface-container p-6 rounded-xl border border-outline-variant/10 hover:border-secondary/30 transition-all cursor-pointer group text-center flex flex-col items-center justify-center gap-3">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform ${color}`}>
-                    <span className="material-symbols-outlined">{icon}</span>
-                  </div>
-                  <span className="font-bold text-sm">{label}</span>
-                </Link>
-              ))}
+              {quickActions.map(([icon, label, color, href]) => {
+                const cls = "bg-surface-container p-6 rounded-xl border border-outline-variant/10 hover:border-secondary/30 transition-all cursor-pointer group text-center flex flex-col items-center justify-center gap-3";
+                const inner = (
+                  <>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform ${color}`}>
+                      <span className="material-symbols-outlined">{icon}</span>
+                    </div>
+                    <span className="font-bold text-sm">{label}</span>
+                  </>
+                );
+                return href.startsWith("tel:") || href.startsWith("mailto:") ? (
+                  <a key={label} href={href} className={cls}>{inner}</a>
+                ) : (
+                  <Link key={label} href={href} className={cls}>{inner}</Link>
+                );
+              })}
             </div>
           </section>
 
@@ -204,59 +196,6 @@ export default function CustomerDashboard() {
             </div>
           </section>
 
-          {/* Recent Activity */}
-          <section>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-headline-md text-on-surface">Recent Activity</h3>
-              <Link className="text-secondary font-bold text-xs hover:underline" href="/orders">View All</Link>
-            </div>
-            <div className="bg-white rounded-xl border border-outline-variant/10 divide-y divide-outline-variant/10 overflow-hidden shadow-sm">
-              {[
-                { icon: "description", iconBg: "bg-primary/5 text-primary", title: "#PX-1024 Business Cards (500pcs)", sub: "Order placed · Today, 10:45 AM", amt: "₹1,250", amtColor: "text-on-surface", badge: "Processing", badgeColor: "bg-blue-100 text-blue-700" },
-                { icon: "account_balance_wallet", iconBg: "bg-green-50 text-green-600", title: "Wallet Top-up", sub: "Transaction ID: TXN-88219 · Yesterday", amt: "+₹500", amtColor: "text-green-600", badge: "Success", badgeColor: "bg-green-100 text-green-700" },
-                { icon: "book", iconBg: "bg-primary/5 text-primary", title: "#PX-1002 Premium Brochures", sub: "Order Delivered · June 12, 2024", amt: "₹4,800", amtColor: "text-on-surface", badge: "Delivered", badgeColor: "bg-green-100 text-green-700" },
-              ].map((a) => (
-                <div key={a.title} className="p-5 flex items-center justify-between hover:bg-surface transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${a.iconBg}`}>
-                      <span className="material-symbols-outlined text-xl">{a.icon}</span>
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm text-on-surface">{a.title}</p>
-                      <p className="text-xs text-on-surface-variant">{a.sub}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`font-bold text-sm ${a.amtColor}`}>{a.amt}</p>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${a.badgeColor}`}>{a.badge}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Popular */}
-          <section>
-            <h3 className="font-headline-md text-on-surface mb-4">Popular for Business</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              {popular.map((p) => (
-                <div key={p.name} className="bg-white rounded-xl overflow-hidden shadow-md border border-outline-variant/10 group">
-                  <div className="h-32 bg-surface-variant relative">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={p.name} src={p.img} />
-                  </div>
-                  <div className="p-4">
-                    <h4 className="font-bold text-sm mb-1">{p.name}</h4>
-                    <p className="text-xs text-on-surface-variant mb-3">{p.sub}</p>
-                    <div className="flex justify-between items-center">
-                      <p className="font-bold text-xs">{p.price} <span className="font-normal text-[10px]">{p.unit}</span></p>
-                      <Link href="/products" className="text-secondary font-bold text-xs flex items-center gap-1 group-hover:gap-2 transition-all">Order <span className="material-symbols-outlined text-xs">arrow_forward</span></Link>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
         </div>
 
         {/* Right sidebar */}
@@ -288,18 +227,6 @@ export default function CustomerDashboard() {
             </div>
           </div>
 
-          <div className="header-deep-gradient rounded-xl p-6 text-on-primary shadow-xl relative overflow-hidden">
-            <div className="relative z-10 text-center space-y-4">
-              <div className="bg-secondary-container/20 text-secondary-fixed-dim px-4 py-1.5 rounded-full inline-block text-xs font-bold uppercase tracking-widest border border-secondary/30">Limited Time Offer</div>
-              <h4 className="text-2xl font-black">Get 10% Bonus Credit</h4>
-              <p className="text-sm text-on-primary-container/80">Valid on wallet top-ups over ₹1,000. Don&apos;t miss out!</p>
-              <CountdownTimer />
-              <Link href="/wallet" className="block text-center w-full primary-accent-gradient py-3 rounded-lg font-bold text-sm shadow-lg transition-all active:scale-95">Claim Offer Now</Link>
-            </div>
-            <div className="absolute -top-10 -left-10 w-32 h-32 bg-secondary/20 rounded-full blur-2xl"></div>
-            <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-primary/30 rounded-full blur-2xl"></div>
-          </div>
-
           <div className="bg-surface-container p-6 rounded-xl border border-outline-variant/10 text-center space-y-4">
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-md">
               <span className="material-symbols-outlined text-3xl text-secondary">headset_mic</span>
@@ -308,10 +235,64 @@ export default function CustomerDashboard() {
               <h4 className="font-bold text-sm">Need a Custom Quote?</h4>
               <p className="text-xs text-on-surface-variant mt-1">Our printing experts are available for bulk orders and special requirements.</p>
             </div>
-            <Link href="/wallet" className="block text-center w-full bg-primary-container text-white py-2.5 rounded-lg font-bold text-xs hover:bg-black transition-colors">Chat with Support</Link>
+            <a href="mailto:bhaginigraphics@gmail.com" className="block text-center w-full bg-primary-container text-white py-2.5 rounded-lg font-bold text-xs hover:bg-black transition-colors">Chat with Support</a>
           </div>
         </aside>
       </div>
+
+      {/* Recent Activity (full width) */}
+      <section>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-headline-md text-on-surface">Recent Activity</h3>
+          <Link className="text-secondary font-bold text-xs hover:underline" href="/orders">View All</Link>
+        </div>
+        <div className="bg-white rounded-xl border border-outline-variant/10 divide-y divide-outline-variant/10 overflow-hidden shadow-sm">
+          {[
+            { icon: "description", iconBg: "bg-primary/5 text-primary", title: "#PX-1024 Business Cards (500pcs)", sub: "Order placed · Today, 10:45 AM", amt: "₹1,250", amtColor: "text-on-surface", badge: "Processing", badgeColor: "bg-blue-100 text-blue-700" },
+            { icon: "account_balance_wallet", iconBg: "bg-green-50 text-green-600", title: "Wallet Top-up", sub: "Transaction ID: TXN-88219 · Yesterday", amt: "+₹500", amtColor: "text-green-600", badge: "Success", badgeColor: "bg-green-100 text-green-700" },
+            { icon: "book", iconBg: "bg-primary/5 text-primary", title: "#PX-1002 Premium Brochures", sub: "Order Delivered · June 12, 2024", amt: "₹4,800", amtColor: "text-on-surface", badge: "Delivered", badgeColor: "bg-green-100 text-green-700" },
+          ].map((a) => (
+            <div key={a.title} className="p-5 flex items-center justify-between hover:bg-surface transition-colors">
+              <div className="flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${a.iconBg}`}>
+                  <span className="material-symbols-outlined text-xl">{a.icon}</span>
+                </div>
+                <div>
+                  <p className="font-bold text-sm text-on-surface">{a.title}</p>
+                  <p className="text-xs text-on-surface-variant">{a.sub}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className={`font-bold text-sm ${a.amtColor}`}>{a.amt}</p>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${a.badgeColor}`}>{a.badge}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Popular (full width) */}
+      <section>
+        <h3 className="font-headline-md text-on-surface mb-4">Popular for Business</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {popular.map((p) => (
+            <div key={p.name} className="bg-white rounded-xl overflow-hidden shadow-md border border-outline-variant/10 group">
+              <div className="h-32 bg-surface-variant relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={p.name} src={p.img} />
+              </div>
+              <div className="p-4">
+                <h4 className="font-bold text-sm mb-1">{p.name}</h4>
+                <p className="text-xs text-on-surface-variant mb-3">{p.sub}</p>
+                <div className="flex justify-between items-center">
+                  <p className="font-bold text-xs">{p.price} <span className="font-normal text-[10px]">{p.unit}</span></p>
+                  <Link href="/products" className="text-secondary font-bold text-xs flex items-center gap-1 group-hover:gap-2 transition-all">Order <span className="material-symbols-outlined text-xs">arrow_forward</span></Link>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }

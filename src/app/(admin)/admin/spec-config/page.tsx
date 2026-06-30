@@ -12,6 +12,13 @@ const inr = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDi
 let _id = 100;
 const nid = () => ++_id;
 
+// Static delivery options (no in-page editing yet) — module-scoped so they
+// keep a stable reference across renders.
+const delivery: Delivery[] = [
+  { id: 1, name: "Standard Delivery (Free)", fee: 0 },
+  { id: 2, name: "Express (1–2 days)", fee: 149 },
+];
+
 export default function SpecConfiguration() {
   const [tiers, setTiers] = useState<Tier[]>([
     { id: 1, qty: 100, price: 499, label: "Startup Pack", active: true },
@@ -21,11 +28,6 @@ export default function SpecConfiguration() {
     { id: 11, name: "300 GSM Matte", desc: "Smooth, premium non-reflective finish", type: "Included", value: 0, def: true },
     { id: 12, name: "350 GSM Silk", desc: "Slight sheen, extra rigid cardstock", type: "Per-unit", value: 0.8, def: false },
   ]);
-  const delivery: Delivery[] = [
-    { id: 1, name: "Standard Delivery (Free)", fee: 0 },
-    { id: 2, name: "Express (1–2 days)", fee: 149 },
-  ];
-
   // Simulator selections
   const [simQtyId, setSimQtyId] = useState(2);
   const [simOptId, setSimOptId] = useState(12);
@@ -110,11 +112,11 @@ export default function SpecConfiguration() {
             <div className="bg-surface-container-lowest rounded-xl premium-shadow border border-outline-variant/30">
               <div className="p-4 flex flex-wrap items-center gap-4 bg-surface-container-low rounded-t-xl">
                 <span className="material-symbols-outlined text-on-surface-variant cursor-grab">drag_indicator</span>
-                <div className="flex-1 flex items-center gap-3">
-                  <input className="font-bold text-on-surface border-none bg-transparent focus:ring-0 w-48" type="text" defaultValue="Paper Quality" />
+                <div className="flex-1 min-w-0 flex items-center gap-3">
+                  <input className="font-bold text-on-surface border-none bg-transparent focus:ring-0 w-32 sm:w-48 min-w-0" type="text" defaultValue="Paper Quality" />
                   <span className="material-symbols-outlined text-[18px] text-on-surface-variant hover:text-primary cursor-pointer">edit</span>
                 </div>
-                <div className="flex items-center gap-4 text-label-caps text-on-surface-variant">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-label-caps text-on-surface-variant">
                   <div className="flex items-center gap-2 bg-white px-2 py-1 rounded border border-outline-variant/50"><span>Selection:</span><select className="border-none p-0 text-[11px] font-bold uppercase bg-transparent focus:ring-0"><option>Single</option><option>Multi</option></select></div>
                   <label className="flex items-center gap-2 cursor-pointer"><input defaultChecked className="rounded text-secondary focus:ring-secondary" type="checkbox" /> Required</label>
                   <button className="p-1 hover:bg-surface-container-highest rounded transition-colors"><span className="material-symbols-outlined text-[20px]">palette</span></button>

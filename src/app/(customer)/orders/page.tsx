@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Order History | PrintX" };
+export const metadata: Metadata = { title: "Order History | Bhagini Graphics" };
 
-const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
 const tabs = ["All Orders (12)", "Current (3)", "Completed (8)", "Cancelled (1)"];
 
@@ -102,7 +101,8 @@ export default function MyOrders() {
                 <div className="flex flex-wrap gap-2 mb-6">
                   <span className="px-3 py-1 bg-surface-variant rounded-lg text-sm text-on-surface-variant font-medium">500 Business Cards x 1</span>
                   <span className="px-3 py-1 bg-surface-variant rounded-lg text-sm text-on-surface-variant font-medium">100 Trifold Brochures x 1</span>
-                  <span className="px-3 py-1 border border-outline-variant rounded-lg text-sm text-on-surface-variant">Total Items: 2</span>
+                  <span className="px-3 py-1 bg-surface-variant rounded-lg text-sm text-on-surface-variant font-medium">50 A4 Flyers x 1</span>
+                  <span className="px-3 py-1 border border-outline-variant rounded-lg text-sm text-on-surface-variant">Total Items: 3</span>
                 </div>
                 {/* Progress */}
                 <div className="mb-8 px-4">
@@ -180,10 +180,9 @@ export default function MyOrders() {
                 </div>
                 <div className="flex items-center gap-4 mb-6">
                   <span className="px-3 py-1 bg-surface-variant rounded-lg text-sm text-on-surface-variant font-medium">50 Luxury Packaging x 1</span>
-                  <div className="flex items-center gap-1 text-amber-500">
-                    <span className="material-symbols-outlined text-[18px]" style={fill1}>star</span>
-                    <span className="font-bold">4.8</span>
-                    <span className="text-on-surface-variant text-sm ml-1">• Quality Verified</span>
+                  <div className="flex items-center gap-1 text-green-600">
+                    <span className="material-symbols-outlined text-[18px]">verified</span>
+                    <span className="text-on-surface-variant text-sm">Quality Verified</span>
                   </div>
                 </div>
                 <div className="flex gap-3">
@@ -237,28 +236,19 @@ export default function MyOrders() {
           <h3 className="font-headline-md text-on-tertiary mb-8 flex items-center gap-2">
             <span className="material-symbols-outlined">analytics</span> Order Summary
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-gutter">
             {[
               { label: "Total Spent", value: "₹18,470", valueColor: "text-white", sub: "Lifetime Value", subColor: "text-green-400", subIcon: "trending_up" },
-              { label: "Total Saved", value: "₹1,477", valueColor: "text-secondary-container", sub: "Via loyalty discounts", subColor: "text-on-tertiary-container" },
               { label: "Items Printed", value: "6,625", valueColor: "text-white", sub: "Pages & Units", subColor: "text-on-tertiary-container" },
-              { label: "Avg Delivery", value: "4.2 days", valueColor: "text-white", stars: true },
+              { label: "Avg Delivery", value: "4.2 days", valueColor: "text-white", sub: "Fast turnaround", subColor: "text-on-tertiary-container" },
             ].map((s) => (
               <div key={s.label} className="bg-white/5 p-6 rounded-xl border border-white/10 hover:border-secondary-container transition-colors">
                 <p className="font-label-caps text-on-tertiary-container mb-2">{s.label}</p>
                 <p className={`font-price-lg ${s.valueColor}`}>{s.value}</p>
-                {s.stars ? (
-                  <div className="flex mt-2">
-                    {[0, 1, 2, 3, 4].map((i) => (
-                      <span key={i} className={`material-symbols-outlined text-[14px] ${i < 4 ? "text-secondary-container" : "text-white/20"}`} style={fill1}>star</span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className={`text-[10px] mt-2 flex items-center gap-1 ${s.subColor}`}>
-                    {s.subIcon && <span className="material-symbols-outlined text-[12px]">{s.subIcon}</span>}
-                    {s.sub}
-                  </p>
-                )}
+                <p className={`text-[10px] mt-2 flex items-center gap-1 ${s.subColor}`}>
+                  {s.subIcon && <span className="material-symbols-outlined text-[12px]">{s.subIcon}</span>}
+                  {s.sub}
+                </p>
               </div>
             ))}
           </div>

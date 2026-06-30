@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "PrintX Admin | Refunds" };
+export const metadata: Metadata = { title: "Bhagini Graphics Admin | Refunds" };
 
 const tabs: [string, string, boolean][] = [
   ["Pending", "12", true],

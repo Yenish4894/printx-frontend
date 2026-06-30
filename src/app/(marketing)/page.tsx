@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import MarketingNav from "@/components/marketing/MarketingNav";
+import BrandLogo from "@/components/BrandLogo";
 
 export const metadata: Metadata = {
-  title: "PrintX | India's Fastest Online Printing Platform",
+  title: "Bhagini Graphics | India's Fastest Online Printing Platform",
 };
 
 const products = [
@@ -14,11 +17,6 @@ const products = [
     name: "Brochures & Flyers",
     price: "₹599",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuD2P0iCJTrBuWi1M0KCehRnlc--tlvw8UZwJ7FHOaxmsY72md1mYuEmse_hF0memPpqFRpICTtM-4EOmWPjqaBtG939cT_Z-j802G3feTRf3OZU5iD1SuXdD323dfJc_OiTnf9oswi5mhkiNb0QQ5npBTqBHkrC2faP6mnucEBjm29l_347qiIRPzZ3k7vq1omZrRUjmxVyQ37XqVOcihK_pupbQ9bdlZPGeGFgqa6ZM1WnmdOOiJNbnUOa4IpxUJcNzVCryuJ6Hiw",
-  },
-  {
-    name: "Banners & Flex",
-    price: "₹1,299",
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuC5kfUWa4byvkkxf3T-Y5pv-jJ16x0y9OeHO8T1JtYST9_BDcpxoI1AGqLXeem9zGkR_5XY0pzRHdPWG-vSnoERiapIRPkrsekrWEOkKzFwgDc0d0hmcfMqNQL5hzOBHJxicrtrm3a5HRfZES7vuIidWcr2p5dhs_uduv0Ie4qqGK1SslyJTYOqGywTkhm-iAf98Z6VHrNhK3OUAz4QmZf_KyTBqDvVbZDhaURnOsLv29mBAwG8w7PguAMUiJNcZe3_XvOpnPnEVn4",
   },
   {
     name: "Catalogues & Books",
@@ -35,41 +33,35 @@ const products = [
     price: "₹299",
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBIB9U7dB2eixN1p08-0qm1uKXQO7VKpaTiWW7ileKpQbl7pt8Ev2ByFRNBYX1MqaHQvDFinQhVnfEsJRaQrksemT4I8jyDjoaWZ_cqmU54l2lbFRhRyMKnRClVpaD3sn9AMpZS1M8ncqGuvHCWsW7sULiLy3Xej5vIxxR24IvaOLl8pV6ASiH1cRBxqvtYG5TzZbVziFtHzA5vX-I-uh7QlECtiFRbGtv_6-wVVu96bir0Q12eZR1_yef094S1a2LuXP6SAxriiU0",
   },
-  {
-    name: "T-Shirt Printing",
-    price: "₹499",
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDBda4PbVD0Sb_P_OhsLA-QVmfxz0F0MDHRt2f5cxmD89jaHp4fYDJCL1jMrTYC6wTFsUG9lWsVKtV8hG_irLwRVsCywdrvJBGhqPFe7K2S-3PyYCHeNl_9Pgzpb8ouxBG1M4TraiiJy3hsLkGmDH9Rz5yku2238RoE5Y48pAzkjVyV_8QI0LX2Ii1gHSAtPgj4nBz5gYdI-0UXPM9gcn6UU3TUZ_VzhWArcsbQ_0iUwEVeUZVMOtLVbcjfhKkEFXt7ZpiyjbJefH4",
-  },
 ];
 
 const testimonials = [
   {
     quote:
       "The real-time pricing is a game-changer. I can quote my clients instantly without waiting hours for a sales rep to call back. Quality is always impeccable.",
-    name: "Anirudh Sharma",
-    role: "Creative Director, Apex Design",
+    name: "Punjab & Sind Bank",
+    role: "Corporate Banking Client",
     half: false,
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBcRirdy-tasuZV2aQQtVEZdGVwNQ-ezISvmTxgNHVyNBP-q8U76MsLvr8ZPTe5u_Bv0HIDy57LANQ4Jbvcn6en16aQknFBk203SpQ0S7zXSpxYBiqmZkZwCeTSt5BuAcsIIvESs4nBJJIk_Kx1cDFK_tb0vMX6EfV0k1v3mzrhEwcyCpCTlPFGci9yifDGTmkpheN3OClXVIRu2JSiBAvElui92iHnfouOwnXMzEiIDC3UfMHcSPVLhp9DQ2mWpg5PTpx9i2XQuoY",
   },
   {
     quote:
       "The prepaid wallet makes our procurement process so much easier. No more chasing accounts for every small order. Tracking is very precise.",
-    name: "Priya Kapoor",
-    role: "Marketing Manager, TechFlow",
+    name: "Creative Digital",
+    role: "Creative & Branding Agency",
     half: false,
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuB27yeD01Ulaxq2b5cgOs5UPerGpArzxBoiML8zToCfF84QYuozq4FDNk_YN7UdEimc9lrGVv0vcA93x7y7ADFgjLdBgUPD2x3O_LQdbLOG6FzuxhXq-sev6eBy9pZx1rrA7reTu_2YdTnu3JZ-zavfIxxB3E_Kx6V8abt8IWMvHyd4_oSGWY57qB_x1w_kuj6hlvMaA3YA9CJTB5YExjO1k-P4Q6kdEap5rdM_pyNrQl6RHDKhfw1iaG47tlKCvcHSW54rATuHPiE",
   },
   {
     quote:
-      "Best finishing in the industry. We've tried multiple vendors for our book printing, but PrintX's binding and color accuracy are unmatched.",
-    name: "Vikram Mehta",
-    role: "Founder, Mehta Publishing",
+      "Best finishing in the industry. We've tried multiple vendors for our book printing, but Bhagini Graphics' binding and color accuracy are unmatched.",
+    name: "K D International",
+    role: "Export House",
     half: true,
     img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDKk5RRyLhI7r9nFaebmTP7WOxJ9Vtn-8nUFqsmmCVn0TdAlC1gXeJ9qiAiazRVPQF-23FAH8lH9uKBiT39HW-vjIyDfiOv5yal8ViIRUQYM5BhEJ5MCGEE4N3ynqFvG71XMlMxT8bPm1IvNrknDHho0tHVNmGlLZVYJYYV65OUwshvr48g1VvFvjUMsWJkso1NxtiSTNRjScTlxvW279yUOdoG6lcoPpbwE-imTAS__us1IMYNqPioW9D80kyG1K94Lsq1epT1utM",
   },
 ];
 
-const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
 export default function LandingPage() {
   return (
@@ -79,62 +71,26 @@ export default function LandingPage() {
         <div className="max-w-container-max mx-auto px-gutter flex flex-col md:flex-row justify-between items-center font-label-caps text-label-caps">
           <div className="flex gap-4 items-center">
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px]">call</span> +91 1800-PRINT-X
+              <span className="material-symbols-outlined text-[14px]">call</span> +91 7203000701
             </span>
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px]">mail</span> support@printx.in
-            </span>
-          </div>
-          <div className="flex gap-4 items-center mt-2 md:mt-0">
-            <span className="opacity-80">Mon–Sat 9AM–7PM</span>
-            <span className="h-1 w-1 bg-secondary-container rounded-full"></span>
-            <span className="flex items-center gap-1 font-bold text-white">
-              <span className="material-symbols-outlined text-secondary-container text-[14px]" style={fill1}>
-                star
-              </span>
-              4.9/5 Rated
+              <span className="material-symbols-outlined text-[14px]">mail</span> bhaginigraphics@gmail.com
             </span>
           </div>
         </div>
       </div>
 
       {/* Main Navbar */}
-      <nav className="bg-primary-container text-white sticky top-0 z-50 shadow-lg">
-        <div className="max-w-container-max mx-auto px-gutter py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="font-display-lg text-headline-md tracking-tighter flex items-center">
-              <span className="text-white">Print</span>
-              <span className="text-secondary-container">X</span>
-            </div>
-            <div className="hidden lg:block h-6 w-px bg-white/20 ml-2"></div>
-            <span className="hidden lg:block font-label-caps text-label-caps text-on-primary-container uppercase tracking-widest mt-1">
-              Online Printing
-            </span>
-          </div>
-          <div className="hidden md:flex items-center gap-8 font-button text-button">
-            <a className="text-secondary-container border-b-2 border-secondary-container" href="#">Home</a>
-            <a className="hover:text-secondary-container transition-colors" href="#">Services</a>
-            <a className="hover:text-secondary-container transition-colors" href="#">Pricing</a>
-            <a className="hover:text-secondary-container transition-colors" href="#">How It Works</a>
-            <a className="hover:text-secondary-container transition-colors" href="#">Contact</a>
-          </div>
-          <div className="flex items-center gap-6">
-            <a className="font-button text-button hover:text-secondary-container transition-colors" href="/login">Sign In</a>
-            <a href="/login" className="primary-gradient text-white px-8 py-3 rounded-lg font-button text-button shadow-lg shadow-secondary-container/20 active:scale-95 transition-transform">
-              Register
-            </a>
-          </div>
-        </div>
-      </nav>
+      <MarketingNav />
 
       {/* Hero */}
-      <section className="hero-gradient relative overflow-hidden py-24 md:py-32">
+      <section id="home" className="hero-gradient relative overflow-hidden py-24 md:py-32 scroll-mt-24">
         <div className="max-w-container-max mx-auto px-gutter relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div className="text-white">
             <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-8">
               <span className="w-2 h-2 rounded-full primary-gradient animate-pulse"></span>
               <span className="font-label-caps text-label-caps tracking-wider uppercase">
-                India's Fastest Online Printing Platform
+                India&apos;s Fastest Online Printing Platform
               </span>
             </div>
             <h1 className="font-display-lg text-display-lg mb-6 leading-[1.1]">
@@ -144,25 +100,25 @@ export default function LandingPage() {
                 <span className="absolute bottom-2 left-0 w-full h-4 bg-secondary-container/40 -z-10"></span>
               </span>
               <br />
-              Pay Less.
+              Deliver Faster.
             </h1>
             <p className="font-body-lg text-body-lg text-on-primary-container mb-10 max-w-lg">
-              Real-time quotes, prepaid wallet benefits, and end-to-end order tracking. Experience industrial
+              Real-time quotes, prepaid wallet payments, and end-to-end order tracking. Experience industrial
               precision from the comfort of your studio.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <a href="/login" className="primary-gradient text-white px-8 py-4 rounded-xl font-button text-button shadow-xl shadow-secondary-container/30 flex items-center justify-center gap-2 group">
+              <Link href="/login" className="primary-gradient text-white px-8 py-4 rounded-xl font-button text-button shadow-xl shadow-secondary-container/30 flex items-center justify-center gap-2 group">
                 Start Printing Now
                 <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-              </a>
-              <a href="/login" className="border border-white/20 hover:bg-white/5 text-white px-8 py-4 rounded-xl font-button text-button transition-colors text-center">
+              </Link>
+              <Link href="/login" className="border border-white/20 hover:bg-white/5 text-white px-8 py-4 rounded-xl font-button text-button transition-colors text-center">
                 See How It Works
-              </a>
+              </Link>
             </div>
           </div>
 
           {/* Interactive Price Card */}
-          <div className="relative group">
+          <div id="pricing" className="relative group scroll-mt-24">
             <div className="absolute -bottom-4 -right-4 bg-white rounded-xl py-3 px-6 shadow-2xl z-20 flex items-center gap-3 border border-green-100">
               <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
                 <span className="material-symbols-outlined text-white text-[20px]">check_circle</span>
@@ -209,9 +165,9 @@ export default function LandingPage() {
                     <p className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-1">Total (GST Inc.)</p>
                     <p className="font-display-lg text-display-lg text-primary">₹849<span className="text-headline-md font-bold">.00</span></p>
                   </div>
-                  <a href="/login" className="primary-gradient text-white px-8 py-4 rounded-xl font-button text-button shadow-lg shadow-secondary-container/20">
+                  <Link href="/login" className="primary-gradient text-white px-8 py-4 rounded-xl font-button text-button shadow-lg shadow-secondary-container/20">
                     Add to Cart
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -243,9 +199,7 @@ export default function LandingPage() {
             {[
               ["shield_lock", "SECURE PAYMENTS"],
               ["local_shipping", "PAN-INDIA DELIVERY"],
-              ["refresh", "REPRINT GUARANTEE"],
               ["calculate", "INSTANT QUOTES"],
-              ["support_agent", "DEDICATED SUPPORT"],
               ["account_balance_wallet", "PREPAID WALLET"],
             ].map(([icon, label]) => (
               <div className="flex items-center gap-3 text-on-surface-variant" key={label}>
@@ -258,16 +212,16 @@ export default function LandingPage() {
       </div>
 
       {/* Product Grid */}
-      <section className="py-24 bg-surface-container-low">
+      <section id="services" className="py-24 bg-surface-container-low scroll-mt-20">
         <div className="max-w-container-max mx-auto px-gutter">
           <div className="flex justify-between items-end mb-16">
             <div>
               <p className="font-label-caps text-label-caps text-secondary font-extrabold uppercase tracking-[0.2em] mb-4">Our Catalog</p>
               <h2 className="font-display-lg text-headline-lg md:text-display-lg text-primary">Everything You Need to Print</h2>
             </div>
-            <a href="/products" className="hidden md:flex items-center gap-2 font-button text-button text-primary hover:text-secondary-container transition-colors">
+            <Link href="/products" className="hidden md:flex items-center gap-2 font-button text-button text-primary hover:text-secondary-container transition-colors">
               Explore All Products <span className="material-symbols-outlined">arrow_right_alt</span>
-            </a>
+            </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
             {products.map((p) => (
@@ -281,9 +235,9 @@ export default function LandingPage() {
                   <p className="text-on-surface-variant font-body-md text-sm mb-4">
                     Starting from <span className="font-bold text-primary">{p.price}</span>
                   </p>
-                  <a href="/products" className="block text-center w-full border border-secondary-container text-secondary font-bold py-2 rounded-lg group-hover:bg-secondary-container group-hover:text-white transition-colors">
+                  <Link href="/products" className="block text-center w-full border border-secondary-container text-secondary font-bold py-2 rounded-lg group-hover:bg-secondary-container group-hover:text-white transition-colors">
                     Order Now
-                  </a>
+                  </Link>
                 </div>
               </div>
             ))}
@@ -293,18 +247,18 @@ export default function LandingPage() {
                 <span className="material-symbols-outlined text-secondary-container text-[48px] mb-4">add_circle</span>
                 <h4 className="font-headline-md text-white mb-2">&amp; Many More 50+</h4>
                 <p className="text-on-primary-container font-body-md mb-6">Discover our full range of custom printing solutions.</p>
-                <a href="/products" className="inline-block bg-white text-primary font-bold px-6 py-2 rounded-lg hover:bg-secondary-container hover:text-white transition-colors">View All</a>
+                <Link href="/products" className="inline-block bg-white text-primary font-bold px-6 py-2 rounded-lg hover:bg-secondary-container hover:text-white transition-colors">View All</Link>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* How PrintX Works */}
-      <section className="bg-primary py-24 text-white overflow-hidden">
+      {/* How Bhagini Graphics Works */}
+      <section id="how-it-works" className="bg-primary py-24 text-white overflow-hidden scroll-mt-20">
         <div className="max-w-container-max mx-auto px-gutter">
           <div className="text-center mb-20">
-            <h2 className="font-display-lg text-display-lg mb-4">How PrintX Works</h2>
+            <h2 className="font-display-lg text-display-lg mb-4">How Bhagini Graphics Works</h2>
             <p className="font-body-lg text-on-primary-container max-w-2xl mx-auto">
               Seamlessly go from concept to delivery with our state-of-the-art workflow designed for creative efficiency.
             </p>
@@ -315,7 +269,7 @@ export default function LandingPage() {
               {[
                 ["01", "Create Account", "Sign up and access your specialized dashboard and wallet."],
                 ["02", "Configure & Price", "Select specifications and get instant, dynamic pricing."],
-                ["03", "Pay via Wallet", "Enjoy 1-click payments and cashback with your prepaid wallet."],
+                ["03", "Pay via Wallet", "Enjoy fast 1-click payments with your prepaid wallet."],
                 ["04", "Track & Receive", "Real-time status updates until it reaches your doorstep."],
               ].map(([num, title, desc]) => (
                 <div className="relative flex flex-col items-center text-center group" key={num}>
@@ -336,24 +290,13 @@ export default function LandingPage() {
       <section className="bg-primary-container py-24 border-t border-white/5">
         <div className="max-w-container-max mx-auto px-gutter">
           <div className="text-center mb-16">
-            <div className="flex justify-center mb-4">
-              {["star", "star", "star", "star", "star_half"].map((s, i) => (
-                <span className="material-symbols-outlined text-secondary-container text-[32px]" style={fill1} key={i}>{s}</span>
-              ))}
-            </div>
-            <h2 className="font-display-lg text-headline-lg md:text-display-lg text-white mb-4">4.9/5 from 3,200+ reviews</h2>
-            <p className="text-on-primary-container font-body-lg">Trusted by India's leading agencies and innovative startups.</p>
+            <h2 className="font-display-lg text-headline-lg md:text-display-lg text-white mb-4">What Our Clients Say</h2>
+            <p className="text-on-primary-container font-body-lg">Trusted by India&apos;s leading agencies and innovative startups.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {testimonials.map((t) => (
               <div className="bg-white/5 border border-white/10 p-8 rounded-2xl" key={t.name}>
-                <div className="flex gap-1 mb-6">
-                  {[0, 1, 2, 3, 4].map((i) => (
-                    <span className="material-symbols-outlined text-secondary-container text-[18px]" style={fill1} key={i}>
-                      {t.half && i === 4 ? "star_half" : "star"}
-                    </span>
-                  ))}
-                </div>
+                <span className="material-symbols-outlined text-secondary-container/40 text-[40px] mb-2 block">format_quote</span>
                 <p className="text-white font-body-md mb-8 italic">&ldquo;{t.quote}&rdquo;</p>
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full overflow-hidden">
@@ -376,28 +319,26 @@ export default function LandingPage() {
         <div className="max-w-container-max mx-auto px-gutter relative z-10 text-center">
           <h2 className="font-display-lg text-display-lg text-white mb-6">Ready to Print Smarter?</h2>
           <p className="text-on-primary-container font-body-lg mb-12 max-w-xl mx-auto">
-            Join 12,000+ businesses and creative professionals who trust PrintX for their high-end printing needs.
+            Join 12,000+ businesses and creative professionals who trust Bhagini Graphics for their high-end printing needs.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-6">
-            <a href="/login" className="primary-gradient text-white px-10 py-4 rounded-xl font-button text-button shadow-2xl shadow-secondary-container/40 active:scale-95 transition-transform">
+            <Link href="/login" className="primary-gradient text-white px-10 py-4 rounded-xl font-button text-button shadow-2xl shadow-secondary-container/40 active:scale-95 transition-transform">
               Create Free Account
-            </a>
-            <a href="/login" className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-10 py-4 rounded-xl font-button text-button transition-colors">
+            </Link>
+            <Link href="/login" className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-10 py-4 rounded-xl font-button text-button transition-colors">
               Sign In to Workspace
-            </a>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-primary-container text-white py-16 border-t border-white/5">
+      <footer id="contact" className="bg-primary-container text-white py-16 border-t border-white/5 scroll-mt-20">
         <div className="max-w-container-max mx-auto px-gutter grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           <div className="space-y-6">
-            <div className="font-display-lg text-headline-md tracking-tighter">
-              <span>Print</span><span className="text-secondary-container">X</span>
-            </div>
+            <BrandLogo textClass="text-headline-md" iconSize={30} />
             <p className="text-on-primary-container text-sm leading-relaxed">
-              India's leading cloud-based printing infrastructure. High-fidelity prints, industrial scale, and creative freedom in every pixel.
+              India&apos;s leading cloud-based printing infrastructure. High-fidelity prints, industrial scale, and creative freedom in every pixel.
             </p>
             <div className="flex gap-4">
               {["share", "public", "chat"].map((icon) => (
@@ -424,7 +365,7 @@ export default function LandingPage() {
         </div>
         <div className="max-w-container-max mx-auto px-gutter pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-on-primary-container text-[12px]">
-            © 2024 PrintX India Pvt Ltd. All rights reserved. GSTIN: 27AAAAA0000A1Z5
+            © 2024 Bhagini Graphics. All rights reserved. GSTIN: 24CHLPB0341K1ZO
           </div>
           <div className="flex items-center gap-6 grayscale opacity-50">
             <span className="material-symbols-outlined" title="Visa">credit_card</span>

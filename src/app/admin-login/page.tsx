@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import BrandLogo from "@/components/BrandLogo";
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
@@ -19,10 +20,7 @@ export default function AdminLogin() {
       <div className="relative z-10 w-full max-w-[440px] animate-float">
         <div className="flex flex-col items-center mb-10">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2.5 coral-gradient rounded-lg shadow-lg">
-              <span className="material-symbols-outlined text-white text-3xl" style={fill1}>print</span>
-            </div>
-            <h1 className="font-headline-lg text-headline-lg text-white tracking-tighter">Print<span className="text-secondary-container">X</span></h1>
+            <BrandLogo textClass="text-headline-lg" iconSize={40} />
           </div>
           <div className="h-0.5 w-12 coral-gradient rounded-full"></div>
         </div>

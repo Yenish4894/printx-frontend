@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "PrintX Admin | Settings" };
+export const metadata: Metadata = { title: "Bhagini Graphics Admin | Settings" };
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 const inp = "w-full px-4 py-2.5 rounded-lg border border-outline-variant font-medium";
@@ -139,12 +139,11 @@ export default function AdminSettings() {
                 <label className="font-label-caps text-on-surface-variant uppercase tracking-wider mb-4 block">Store Logo</label>
                 <div className="w-full h-40 border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center gap-2 hover:border-secondary transition-colors cursor-pointer group"><span className="material-symbols-outlined text-4xl text-outline-variant group-hover:text-secondary">cloud_upload</span><p className="text-xs font-medium text-on-surface-variant">SVG, PNG or WEBP (Max 2MB)</p></div>
               </div>
-              <div className="flex flex-col gap-1.5"><label className="font-label-caps text-on-surface-variant uppercase tracking-wider">Business GST Number</label><input className="w-full px-4 py-2.5 rounded-lg border border-outline-variant font-mono text-sm tracking-widest bg-surface" type="text" defaultValue="07AAAAA0000A1Z5" /></div>
+              <div className="flex flex-col gap-1.5"><label className="font-label-caps text-on-surface-variant uppercase tracking-wider">Business GST Number</label><input className="w-full px-4 py-2.5 rounded-lg border border-outline-variant font-mono text-sm tracking-widest bg-surface" type="text" defaultValue="24CHLPB0341K1ZO" /></div>
             </div>
             <div className="space-y-4">
-              <div className="flex flex-col gap-1.5"><label className="font-label-caps text-on-surface-variant uppercase tracking-wider">Support Phone</label><input className={inp} type="text" defaultValue="1800-PRINT-X" /></div>
-              <div className="flex flex-col gap-1.5"><label className="font-label-caps text-on-surface-variant uppercase tracking-wider">Support Email</label><input className={inp} type="email" defaultValue="support@printx.in" /></div>
-              <div className="flex flex-col gap-1.5"><label className="font-label-caps text-on-surface-variant uppercase tracking-wider">Business Hours</label><input className={inp} type="text" defaultValue="Mon–Sat, 9AM–7PM" /></div>
+              <div className="flex flex-col gap-1.5"><label className="font-label-caps text-on-surface-variant uppercase tracking-wider">Support Phone</label><input className={inp} type="text" defaultValue="+91 7203000701" /></div>
+              <div className="flex flex-col gap-1.5"><label className="font-label-caps text-on-surface-variant uppercase tracking-wider">Support Email</label><input className={inp} type="email" defaultValue="bhaginigraphics@gmail.com" /></div>
             </div>
             <div className="space-y-4">
               <label className="font-label-caps text-on-surface-variant uppercase tracking-wider">Social Links</label>

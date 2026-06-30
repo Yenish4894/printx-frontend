@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "PrintX Admin | Orders" };
+export const metadata: Metadata = { title: "Bhagini Graphics Admin | Orders" };
 
 const statusFilters: [string, string, boolean][] = [
   ["All", "1,248", true],
