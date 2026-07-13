@@ -32,9 +32,9 @@ export default function AdminCustomers() {
             <select className="bg-surface-container border-none rounded-lg text-body-md py-2 px-4 focus:ring-2 focus:ring-secondary/20 min-w-[160px]"><option>Total Spent</option><option>Total Orders</option><option>Recently Joined</option></select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="font-label-caps text-on-surface-variant">Reward Tier</label>
+            <label className="font-label-caps text-on-surface-variant">Status</label>
             <div className="flex bg-surface-container p-1 rounded-lg">
-              {["All", "Silver", "Gold", "Platinum"].map((t, i) => (
+              {["All", "Active", "Inactive"].map((t, i) => (
                 <button key={t} className={`px-4 py-1.5 rounded-md text-xs font-bold ${i === 0 ? "bg-white shadow-sm text-secondary" : "text-on-surface-variant hover:bg-white/50"}`}>{t}</button>
               ))}
             </div>
@@ -48,7 +48,7 @@ export default function AdminCustomers() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-surface-container-low border-b border-surface-container">
-                {["Customer", "Contact Details", "Wallet Balance", "Tier", "Orders", "Total Spent", "Status", ""].map((h, i) => (
+                {["Customer", "Contact Details", "Wallet Balance", "Orders", "Total Spent", "Status", ""].map((h, i) => (
                   <th key={i} className={`px-6 py-4 font-label-caps text-on-surface-variant ${h === "Total Spent" ? "text-right" : ""} ${h === "Status" ? "text-center" : ""}`}>{h}</th>
                 ))}
               </tr>
@@ -65,7 +65,6 @@ export default function AdminCustomers() {
                   </td>
                   <td className="px-6 py-4"><div className="text-sm"><p className="text-on-surface">{c.email}</p><p className="text-on-surface-variant">{c.phone}</p></div></td>
                   <td className="px-6 py-4 font-bold text-on-surface">{c.wallet}</td>
-                  <td className="px-6 py-4"><span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${c.tierColor}`}>{c.tier}</span></td>
                   <td className="px-6 py-4 text-on-surface">{c.orders}</td>
                   <td className="px-6 py-4 font-bold text-on-surface text-right">{c.spent}</td>
                   <td className="px-6 py-4">
@@ -111,7 +110,6 @@ export default function AdminCustomers() {
                     <div>
                       <h4 className="font-headline-md text-on-surface">{active.name}</h4>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 uppercase">Platinum Member</span>
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span><span className="text-xs font-bold text-green-600">Active</span>
                       </div>
                     </div>
@@ -141,7 +139,7 @@ export default function AdminCustomers() {
                   </div>
                   <div className="flex flex-col gap-1 mb-4">
                     <label className="text-[10px] font-bold uppercase text-on-surface-variant ml-1">Reason</label>
-                    <select className="border border-surface-container bg-white rounded-lg p-2 text-sm"><option>Refund for Cancelled Order</option><option>Loyalty Bonus</option><option>Dispute Resolution</option><option>Other</option></select>
+                    <select className="border border-surface-container bg-white rounded-lg p-2 text-sm"><option>Refund for Cancelled Order</option><option>Dispute Resolution</option><option>Other</option></select>
                   </div>
                   <button className="w-full primary-accent-gradient text-white py-2 rounded-lg font-button text-sm shadow-md">Apply Adjustment</button>
                 </div>

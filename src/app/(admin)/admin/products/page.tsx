@@ -3,7 +3,6 @@ import Link from "next/link";
 
 export const metadata: Metadata = { title: "Bhagini Graphics Admin | Products" };
 
-const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
 const products = [
   { name: "Business Cards", sku: "PC-BC-001", badge: { label: "Best Seller", color: "bg-secondary-container/10 text-secondary-container" }, category: "Stationery", pricing: "Tiered", from: "₹1,450", rating: "4.9", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDyFuzOFei4RSupRp-Y_aAUF0qn7hnWzPUYnu3YwbV7qezvsnE4L5Tl28FkW_LL03MY-6g2vEJxphsnU-su7knpcB4We-DpOThBIqFQBtjorP3WS4yIYu4ncRt6j6j9WU9SDMArBbQqjauxOES_o8NNQt6kQ7b-WJDJrSiZveHQWTIkkfJzQGw-8mS7_0tYnJwA9rDW6hg_7CAHJwAJxWLoNGorJy6-Y6z-T0z0uBitJobAHd6ejvDqcz_I6rI4qV2D8K7u7YWt6qo" },
@@ -64,7 +63,7 @@ export default function AdminProducts() {
             <thead>
               <tr className="bg-surface-container-low border-b border-surface-container-highest">
                 <th className="p-6 w-12"><input className="rounded border-outline-variant text-secondary focus:ring-secondary" type="checkbox" /></th>
-                {["Product Info", "Category", "Pricing", "Starting From", "Rating", "Status", ""].map((h, i) => (
+                {["Product Info", "Category", "Pricing", "Starting From", "Status", ""].map((h, i) => (
                   <th key={i} className="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -91,7 +90,6 @@ export default function AdminProducts() {
                   <td className="py-4 px-6 text-body-md text-on-surface">{p.category}</td>
                   <td className="py-4 px-6"><span className="px-3 py-1 bg-surface-container-highest rounded-full text-label-caps font-bold text-on-surface-variant">{p.pricing}</span></td>
                   <td className="py-4 px-6 font-price-lg text-[18px] text-primary">{p.from}</td>
-                  <td className="py-4 px-6"><div className="flex items-center gap-1 text-secondary"><span className="material-symbols-outlined text-[18px]" style={fill1}>star</span><span className="font-body-md font-bold">{p.rating}</span></div></td>
                   <td className="py-4 px-6"><Toggle /></td>
                   <td className="py-4 px-6 text-right"><Link href="/admin/products/new" className="inline-block p-2 hover:bg-surface-container-high rounded-full transition-all text-on-surface-variant"><span className="material-symbols-outlined">more_vert</span></Link></td>
                 </tr>

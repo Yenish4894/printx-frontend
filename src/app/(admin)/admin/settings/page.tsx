@@ -35,11 +35,10 @@ export default function AdminSettings() {
 
       <div className="grid grid-cols-12 gap-6">
         {/* Pricing & Tax */}
-        <section className="col-span-12 lg:col-span-4 bg-surface-container-lowest rounded-xl premium-shadow p-6 border border-outline-variant/10">
+        <section className="col-span-12 lg:col-span-6 bg-surface-container-lowest rounded-xl premium-shadow p-6 border border-outline-variant/10">
           <CardHead icon="receipt_long" title="Pricing & Tax" />
           <div className="space-y-4">
             <div className="flex flex-col gap-1.5"><label className="font-label-caps text-on-surface-variant uppercase tracking-wider">GST Percentage (%)</label><input className={inp} type="number" defaultValue={18} /></div>
-            <div className="flex flex-col gap-1.5"><label className="font-label-caps text-on-surface-variant uppercase tracking-wider">Wallet Discount (%)</label><input className={inp} type="number" defaultValue={8} /></div>
             <div className="flex flex-col gap-1.5">
               <label className="font-label-caps text-on-surface-variant uppercase tracking-wider">Free Shipping Threshold</label>
               <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-on-surface-variant">₹</span><input className="w-full pl-8 pr-4 py-2.5 rounded-lg border border-outline-variant font-medium" type="number" defaultValue={999} /></div>
@@ -48,39 +47,14 @@ export default function AdminSettings() {
           </div>
         </section>
 
-        {/* Wallet & Bonus */}
-        <section className="col-span-12 lg:col-span-4 bg-surface-container-lowest rounded-xl premium-shadow p-6 border border-outline-variant/10">
-          <CardHead icon="account_balance_wallet" title="Wallet & Bonus" fill />
+        {/* Wallet */}
+        <section className="col-span-12 lg:col-span-6 bg-surface-container-lowest rounded-xl premium-shadow p-6 border border-outline-variant/10">
+          <CardHead icon="account_balance_wallet" title="Wallet Settings" fill />
           <div className="space-y-4">
-            <div className="flex flex-col gap-1.5"><label className="font-label-caps text-on-surface-variant uppercase tracking-wider">Signup Credit</label><div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-on-surface-variant">₹</span><input className="w-full pl-8 pr-4 py-2.5 rounded-lg border border-outline-variant font-medium" type="number" defaultValue={50} /></div></div>
+            <p className="text-sm text-on-surface-variant">Orders are paid from the customer&apos;s prepaid wallet. Set the allowed top-up range below.</p>
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5"><label className="font-label-caps text-on-surface-variant uppercase tracking-wider text-[10px]">Min Top-up</label><input className="w-full px-4 py-2.5 rounded-lg border border-outline-variant font-medium text-sm" type="number" defaultValue={200} /></div>
-              <div className="flex flex-col gap-1.5"><label className="font-label-caps text-on-surface-variant uppercase tracking-wider text-[10px]">Max Top-up</label><input className="w-full px-4 py-2.5 rounded-lg border border-outline-variant font-medium text-sm" type="number" defaultValue={50000} /></div>
-            </div>
-            <div className="bg-surface-container p-4 rounded-lg">
-              <label className="font-label-caps text-on-surface-variant uppercase tracking-wider mb-2 block">Active Bonus Tiers</label>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-bold bg-white p-2 rounded border border-outline-variant/20"><span>₹1,000+</span><span className="text-secondary">+5% Extra</span></div>
-                <div className="flex justify-between text-xs font-bold bg-white p-2 rounded border border-outline-variant/20"><span>₹5,000+</span><span className="text-secondary">+10% Extra</span></div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Rewards */}
-        <section className="col-span-12 lg:col-span-4 bg-surface-container-lowest rounded-xl premium-shadow p-6 border border-outline-variant/10">
-          <CardHead icon="stars" title="Loyalty Rewards" />
-          <div className="space-y-4">
-            {[["workspace_premium text-slate-400", "Silver Tier", "₹10k Spend", false], ["workspace_premium text-amber-500", "Gold Tier", "₹50k Spend", true], ["workspace_premium text-cyan-600", "Platinum", "₹200k Spend", false]].map(([icon, name, spend, active]) => (
-              <div key={name as string} className={`flex items-center justify-between p-3 rounded-lg border ${active ? "border-secondary-container/40 bg-secondary-container/5" : "border-outline-variant/30"}`}>
-                <div className="flex items-center gap-2"><span className={`material-symbols-outlined ${(icon as string).split(" ")[1]}`}>workspace_premium</span><span className="font-bold">{name as string}</span></div>
-                <span className="text-sm font-medium text-on-surface-variant">{spend as string}</span>
-              </div>
-            ))}
-            <div className="pt-2">
-              <label className="font-label-caps text-on-surface-variant uppercase tracking-wider mb-2 block">Points Multiplier</label>
-              <input className="w-full accent-secondary" max={5} min={1} step={0.5} type="range" defaultValue={1.5} />
-              <div className="flex justify-between text-xs text-on-surface-variant font-bold mt-1"><span>1x (Base)</span><span>1.5x Earn Rate</span><span>5x (Promo)</span></div>
+              <div className="flex flex-col gap-1.5"><label className="font-label-caps text-on-surface-variant uppercase tracking-wider text-[10px]">Min Top-up</label><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-on-surface-variant text-sm">₹</span><input className="w-full pl-7 pr-3 py-2.5 rounded-lg border border-outline-variant font-medium text-sm" type="number" defaultValue={200} /></div></div>
+              <div className="flex flex-col gap-1.5"><label className="font-label-caps text-on-surface-variant uppercase tracking-wider text-[10px]">Max Top-up</label><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-on-surface-variant text-sm">₹</span><input className="w-full pl-7 pr-3 py-2.5 rounded-lg border border-outline-variant font-medium text-sm" type="number" defaultValue={50000} /></div></div>
             </div>
           </div>
         </section>

@@ -7,7 +7,6 @@ const summary: [string, string, string, string][] = [
   ["Top-ups (30d)", "+₹3,12,000", "Via UPI / Card / NetBank", "text-emerald-600"],
   ["Order Debits", "−₹2,84,300", "Paid from wallet", "text-error"],
   ["Refunds", "+₹12,400", "Approved Reversals", "text-emerald-600"],
-  ["Bonus Issued", "₹5,000", "Promotional Credits", "text-primary"],
 ];
 
 const bars = ["40", "55", "25", "70", "45", "60", "85", "30", "20", "50", "95", "75", "60", "40", "55", "25", "70", "45", "60", "85", "30", "20", "50", "95", "75", "60", "100", "15", "40", "65"];
@@ -21,7 +20,6 @@ const txns: Txn[] = [
   { when: "Just Now", date: "24 Aug, 10:42 AM", customer: "Aditi Sharma", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBy47y2GKV07csJsQSlQytn7edLE0sairEcL5xkZIoz-TDg63gLdO2TR2gdQElQAh1t6nddyEPf8p4oCsxjhnxY71s-roUl9bdE36K0yBenAw-T1xsy4W0iwK9Az5N8GQeffxb9RDzb9hbaLUZrL-uOkLnaycgbfnmn8PUsfUgxLOTzF3dXST-7ND6mQUWTw1wXQO4hxlE8EwrhhrrKgHF4TpiMSZzznwVvhULKv598ZKHh7FOU1eQiUgqkHapGN3I-iz1igsx-FCk", type: "Credit", typeClass: "bg-emerald-50 text-emerald-700", amount: "+₹5,000.00", amountClass: "text-emerald-600", balance: "₹12,450.00", ref: "TXN-94852", desc: "Wallet Top-up via UPI" },
   { when: "2 hours ago", date: "24 Aug, 08:15 AM", customer: "Rahul Mehta", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAEHq04hrG2VM459s3nknEpPr3QAr_UtGJXOVozdHlDf1Zt2KauR0HFMV8xf5kDd0RDjejoBCs0NiPTIoAFoIfv2Fli9sczisGK5vjpakEVvXIxehnYdUm9igagaKSbEFqnI0BDG_ggM3F9lfF13FJ-ADJgx86Q5YOkPsqYvQKhfOuomXqq78XzNnan76e_IJQnau2S_xXcSyMXi61aehYcQ_CyNGmDhb6l563skOYt4LYCTtO-CUdX8bDa-gCY7-63fH1cSTJUzwk", type: "Debit", typeClass: "bg-red-50 text-red-700", amount: "-₹12,840.00", amountClass: "text-error", balance: "₹2,100.00", ref: "PX-2024-08471", desc: "Order #PX-2024-08471 Debit" },
   { when: "Yesterday", date: "23 Aug, 04:30 PM", customer: "Skyline Corp", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuB6mQMIhs3gbhbxudYdE509Nv9RMn8KbebN9gHJ-w9d2X3vHUfPCiKUFSSNex_rr5I7pE1amYTLY28jS691J0s9Bvd7Lkp3piMoQr_6nFZZRpeYcLZqjmy7EwsnEN-jMnafWntiXFTAJZ1hygK8F5A70cvWB2UZivboliJGHDA1atXOqtcdChVBBeIe6tozBl3-V40KiYv0BR616K_J7nVzddUxh7qbcwHf0_XYf6tpbLdBuTKHrTbqAlmOX77eQyYKQy4pMf7YrJo", type: "Refund", typeClass: "bg-blue-50 text-blue-700", amount: "+₹2,400.00", amountClass: "text-blue-600", balance: "₹45,200.00", ref: "RF-2024-1102", desc: "Partial Refund (Cancel Item)" },
-  { when: "Yesterday", date: "23 Aug, 11:20 AM", customer: "Vikram Roy", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCfKhTulsmKGEdlW6AYJG9xgMrPPXx4IGtJmLfdHpcNLy9kYuP0dRg0SRsVGH3_C6Yw8YigVx4dO7eVQnw8g7bofqASxFD2x7t1Wm7QsLUcqFeE31Bh40qa9lEvK7mkmw59_FjykrMRV5Za0IOKftkcZ-9FBtNHnmj8ZZEclSdXMbvjSofAuHipveEfgI_nQhSYQU7hoeQ_G8ZeDaciTSEmLDC19YdsCVB96a8-eIfmLScSgbsaLQK5AduRyx7uyRKKcpV1Ie2h12Y", type: "Bonus", typeClass: "bg-purple-50 text-purple-700", amount: "₹500.00", amountClass: "text-purple-600", balance: "₹1,500.00", ref: "PR-REWARD-88", desc: "Referral Bonus Reward" },
 ];
 
 export default function AdminTransactions() {
@@ -33,7 +31,7 @@ export default function AdminTransactions() {
       </div>
 
       {/* Summary */}
-      <section className="grid grid-cols-2 lg:grid-cols-5 gap-6">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {summary.map(([label, value, sub, color]) => (
           <div key={label} className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/30 flex flex-col justify-between">
             <p className="font-label-caps text-label-caps text-on-surface-variant mb-2">{label}</p>

@@ -23,13 +23,6 @@ const groups: { label: string; items: { icon: string; label: string; href: strin
       { icon: "currency_exchange", label: "Refunds", href: "/admin/refunds" },
     ],
   },
-  {
-    label: "Marketing",
-    items: [
-      { icon: "campaign", label: "Coupons & Promos", href: "/admin/coupons" },
-      { icon: "reviews", label: "Reviews", href: "/admin/reviews" },
-    ],
-  },
   { label: "Finance", items: [{ icon: "account_balance", label: "Wallet & Transactions", href: "/admin/transactions" }] },
   {
     label: "System",

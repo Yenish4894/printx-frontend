@@ -20,8 +20,8 @@ export default function MarketingNav() {
     <nav className="bg-primary-container text-white sticky top-0 z-50 shadow-lg">
       <div className="max-w-container-max mx-auto px-gutter py-4 flex justify-between items-center">
         {/* Logo */}
-        <a href="#home" onClick={close} className="flex items-center gap-3">
-          <BrandLogo textClass="text-headline-md" iconSize={30} />
+        <a href="#home" onClick={close} className="flex items-center gap-3 min-w-0 shrink">
+          <BrandLogo textClass="text-base sm:text-lg md:text-headline-md" iconSize={28} />
           <span className="hidden lg:block h-6 w-px bg-white/20"></span>
           <span className="hidden lg:block font-label-caps text-label-caps text-on-primary-container uppercase tracking-widest mt-1">
             Online Printing
@@ -29,7 +29,7 @@ export default function MarketingNav() {
         </a>
 
         {/* Desktop links */}
-        <div className="hidden md:flex items-center gap-8 font-button text-button">
+        <div className="hidden lg:flex items-center gap-8 font-button text-button">
           {navLinks.map((l, i) => (
             <a
               key={l.href}
@@ -42,19 +42,19 @@ export default function MarketingNav() {
         </div>
 
         {/* Right actions */}
-        <div className="flex items-center gap-3 md:gap-6">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-6 shrink-0">
           <Link className="hidden sm:inline font-button text-button hover:text-secondary-container transition-colors" href="/login">
             Sign In
           </Link>
           <Link
             href="/login"
-            className="primary-gradient text-white px-6 md:px-8 py-2.5 md:py-3 rounded-lg font-button text-button shadow-lg shadow-secondary-container/20 active:scale-95 transition-transform"
+            className="primary-gradient text-white px-3.5 sm:px-5 md:px-8 py-2 md:py-3 rounded-lg font-button text-sm md:text-button shadow-lg shadow-secondary-container/20 active:scale-95 transition-transform whitespace-nowrap"
           >
             Register
           </Link>
           {/* Hamburger — mobile only */}
           <button
-            className="md:hidden p-2 -mr-1 rounded-lg hover:bg-white/10 transition-colors"
+            className="lg:hidden p-2 -mr-1 rounded-lg hover:bg-white/10 transition-colors"
             onClick={() => setOpen((v) => !v)}
             aria-label="Toggle menu"
           >
@@ -65,7 +65,7 @@ export default function MarketingNav() {
 
       {/* Mobile menu */}
       {open && (
-        <div className="md:hidden border-t border-white/10 bg-primary-container shadow-xl">
+        <div className="lg:hidden border-t border-white/10 bg-primary-container shadow-xl">
           <div className="px-gutter py-2 flex flex-col">
             {navLinks.map((l) => (
               <a

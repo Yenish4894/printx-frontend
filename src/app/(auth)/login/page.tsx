@@ -41,7 +41,7 @@ export default function LoginPage() {
         </div>
         <div className="relative z-10 max-w-2xl mt-12">
           <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-secondary-container font-button text-label-caps mb-8">
-            INDIA&apos;S FASTEST ONLINE PRINTING PLATFORM
+            ONLINE PRINTING · PAN-INDIA DELIVERY
           </span>
           <h2 className="font-display-lg text-display-lg mb-6">
             <span className="highlight-bar">Print Smarter.</span>
@@ -49,9 +49,9 @@ export default function LoginPage() {
             <span className="highlight-bar">Deliver Faster.</span>
           </h2>
           <p className="font-body-lg text-on-primary-container max-w-lg mb-12">
-            Join 12,000+ businesses and creative professionals who trust Bhagini Graphics for their high-end printing needs.
+            Businesses across India trust Bhagini Graphics for high-quality CMYK printing, stickers, and packaging.
           </p>
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {features.map(([icon, title, desc]) => (
               <div key={title} className="bg-white/5 border border-white/10 p-6 rounded-xl backdrop-blur-sm hover:bg-white/10 transition-colors cursor-default group">
                 <span className="material-symbols-outlined text-secondary-container mb-3 block group-hover:scale-110 transition-transform">{icon}</span>
@@ -60,14 +60,6 @@ export default function LoginPage() {
               </div>
             ))}
           </div>
-        </div>
-        <div className="relative z-10 flex items-center gap-12 pt-12 border-t border-white/10">
-          {[["50K+", "ORDERS"], ["12K+", "HAPPY CUSTOMERS"]].map(([v, l]) => (
-            <div key={l}>
-              <p className="font-display-lg text-headline-md text-white">{v}</p>
-              <p className="font-label-caps text-on-primary-container">{l}</p>
-            </div>
-          ))}
         </div>
       </section>
 

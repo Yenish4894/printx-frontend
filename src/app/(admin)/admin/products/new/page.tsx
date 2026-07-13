@@ -35,7 +35,7 @@ export default function ProductEditor() {
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-8 pb-24">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 pb-24">
         {/* Main form */}
         <div className="col-span-12 lg:col-span-8 space-y-8">
           {/* Basic Info */}

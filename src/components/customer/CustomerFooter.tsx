@@ -35,7 +35,7 @@ export default function CustomerFooter() {
           <h5 className="text-white font-bold text-sm mb-4">Newsletter</h5>
           <p className="text-xs mb-4">Stay updated with the latest from Bhagini Graphics.</p>
           <div className="flex gap-2">
-            <input className="bg-white/5 border-white/10 rounded px-3 py-2 text-xs flex-1 focus:ring-1 focus:ring-secondary outline-none" placeholder="Email" type="email" />
+            <input className="bg-white/5 border border-white/10 rounded px-3 py-2 text-xs flex-1 min-w-0 focus:ring-1 focus:ring-secondary outline-none" placeholder="Email" type="email" />
             <button className="bg-secondary text-white px-4 py-2 rounded text-xs font-bold">Join</button>
           </div>
         </div>

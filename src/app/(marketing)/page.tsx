@@ -4,7 +4,7 @@ import MarketingNav from "@/components/marketing/MarketingNav";
 import BrandLogo from "@/components/BrandLogo";
 
 export const metadata: Metadata = {
-  title: "Bhagini Graphics | India's Fastest Online Printing Platform",
+  title: "Bhagini Graphics | Online Printing in India",
 };
 
 const products = [
@@ -69,7 +69,7 @@ export default function LandingPage() {
       {/* Top Utility Strip */}
       <div className="bg-primary-container text-on-primary-container py-2 border-b border-white/5">
         <div className="max-w-container-max mx-auto px-gutter flex flex-col md:flex-row justify-between items-center font-label-caps text-label-caps">
-          <div className="flex gap-4 items-center">
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 items-center">
             <span className="flex items-center gap-1">
               <span className="material-symbols-outlined text-[14px]">call</span> +91 7203000701
             </span>
@@ -90,7 +90,7 @@ export default function LandingPage() {
             <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-8">
               <span className="w-2 h-2 rounded-full primary-gradient animate-pulse"></span>
               <span className="font-label-caps text-label-caps tracking-wider uppercase">
-                India&apos;s Fastest Online Printing Platform
+                CMYK Printing · Stickers · Packaging
               </span>
             </div>
             <h1 className="font-display-lg text-display-lg mb-6 leading-[1.1]">
@@ -175,22 +175,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Stats Strip */}
-      <div className="bg-primary py-12 border-y border-white/10">
-        <div className="max-w-container-max mx-auto px-gutter grid grid-cols-2 lg:grid-cols-4 gap-8">
-          {[
-            ["50K+", "Orders Delivered"],
-            ["12K+", "Happy Customers"],
-            ["99.2%", "On-Time Shipping"],
-            ["48hr", "Express Turnaround"],
-          ].map(([value, label]) => (
-            <div className="text-center" key={label}>
-              <p className="font-display-lg text-headline-lg text-secondary-container mb-1">{value}</p>
-              <p className="font-label-caps text-label-caps text-on-primary-container tracking-widest uppercase">{label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Trust Badges */}
       <div className="bg-surface py-12">
@@ -319,7 +303,7 @@ export default function LandingPage() {
         <div className="max-w-container-max mx-auto px-gutter relative z-10 text-center">
           <h2 className="font-display-lg text-display-lg text-white mb-6">Ready to Print Smarter?</h2>
           <p className="text-on-primary-container font-body-lg mb-12 max-w-xl mx-auto">
-            Join 12,000+ businesses and creative professionals who trust Bhagini Graphics for their high-end printing needs.
+            Join businesses across India who trust Bhagini Graphics for their high-quality printing needs.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-6">
             <Link href="/login" className="primary-gradient text-white px-10 py-4 rounded-xl font-button text-button shadow-2xl shadow-secondary-container/40 active:scale-95 transition-transform">

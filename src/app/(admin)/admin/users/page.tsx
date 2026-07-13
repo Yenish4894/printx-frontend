@@ -45,15 +45,15 @@ export default function AdminUsers() {
 
       {/* Filters */}
       <div className="bg-surface-container-lowest p-4 rounded-xl premium-shadow flex flex-wrap items-center gap-4 border border-outline-variant/30">
-        <div className="flex-1 min-w-[280px]">
+        <div className="w-full sm:flex-1 sm:min-w-[240px]">
           <div className="relative">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
             <input className="w-full bg-transparent border border-outline-variant rounded-lg py-2 pl-10 pr-4 focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all font-body-md text-body-md" placeholder="Filter by name, email or role..." type="text" />
           </div>
         </div>
-        <div className="flex gap-2">
-          <select className="bg-transparent border border-outline-variant rounded-lg font-label-caps text-label-caps py-2 px-3 focus:ring-secondary/20"><option>All Roles</option><option>Super Admin</option><option>Admin</option></select>
-          <select className="bg-transparent border border-outline-variant rounded-lg font-label-caps text-label-caps py-2 px-3 focus:ring-secondary/20"><option>All Status</option><option>Active</option><option>Inactive</option></select>
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <select className="flex-1 sm:flex-none bg-transparent border border-outline-variant rounded-lg font-label-caps text-label-caps py-2 px-3 focus:ring-secondary/20"><option>All Roles</option><option>Super Admin</option><option>Admin</option></select>
+          <select className="flex-1 sm:flex-none bg-transparent border border-outline-variant rounded-lg font-label-caps text-label-caps py-2 px-3 focus:ring-secondary/20"><option>All Status</option><option>Active</option><option>Inactive</option></select>
           <button className="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg font-label-caps text-label-caps hover:bg-surface-container transition-colors"><span className="material-symbols-outlined text-[18px]">filter_list</span> Advanced</button>
         </div>
       </div>

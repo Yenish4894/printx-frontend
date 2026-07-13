@@ -121,16 +121,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Marketing spotlight */}
-        <div className="col-span-4 p-8 rounded-xl bg-white shadow-sm border border-outline-variant relative overflow-hidden flex flex-col lg:flex-row items-center gap-12">
-          <div className="flex-1 relative z-10">
-            <span className="px-3 py-1 bg-primary text-on-primary text-[10px] font-bold uppercase rounded-full tracking-widest">Campaign Insight</span>
-            <h3 className="font-headline-lg text-headline-lg mt-4 mb-2">Summer Print Festival</h3>
-            <p className="text-on-surface-variant max-w-lg mb-6">Your current &quot;Early Bird&quot; coupon for 15% off bulk orders has generated 120 uses in the last 48 hours. Converting 14% of previous catalog browsers.</p>
-            <Link href="/admin/coupons" className="inline-block px-6 py-3 border-2 border-secondary-container text-secondary-container font-button rounded-lg hover:bg-secondary-container hover:text-on-secondary transition-all">Adjust Campaign Settings</Link>
-          </div>
-          <div className="absolute -left-10 top-0 h-full w-32 bg-secondary-container/5 -skew-x-12"></div>
-        </div>
       </div>
     </>
   );
