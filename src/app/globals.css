@@ -141,10 +141,10 @@
   background: radial-gradient(circle at top right, #1a1a2e 0%, #00000b 100%);
 }
 .coral-gradient {
-  background: linear-gradient(135deg, #fc536d 0%, #b71d3f 100%);
+  background: linear-gradient(135deg, #e11d48 0%, #b71d3f 100%);
 }
 .coral-text-gradient {
-  background: linear-gradient(135deg, #fc536d 0%, #b71d3f 100%);
+  background: linear-gradient(135deg, #e11d48 0%, #b71d3f 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -167,7 +167,7 @@
   box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.05);
 }
 .primary-accent-gradient {
-  background: linear-gradient(135deg, #fc536d 0%, #b71d3f 100%);
+  background: linear-gradient(135deg, #e11d48 0%, #b71d3f 100%);
 }
 .header-deep-gradient {
   background: linear-gradient(160deg, #1a1a2e 0%, #0f1d2c 100%);
@@ -224,7 +224,7 @@
   border: 1px solid #e1e2e6;
 }
 .premium-gradient {
-  background: linear-gradient(135deg, #fc536d 0%, #b71d3f 100%);
+  background: linear-gradient(135deg, #e11d48 0%, #b71d3f 100%);
 }
 .navy-glow {
   box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
@@ -345,5 +345,17 @@
   a {
     color: inherit;
     text-decoration: none;
+  }
+}
+
+/* Respect users who prefer reduced motion — disable non-essential animation. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }

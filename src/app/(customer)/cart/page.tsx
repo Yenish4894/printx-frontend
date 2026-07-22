@@ -1,50 +1,203 @@
-import type { Metadata } from "next";
-import Link from "next/link";
+"use client";
 
-export const metadata: Metadata = { title: "Cart & Checkout | Bhagini Graphics" };
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { cart as cartApi, addresses as addrApi, orders as ordersApi, ApiError } from "@/lib/api";
+import { useSession, inr } from "@/components/SessionProvider";
+import { useConfirm, useToast } from "@/components/ui/UIProvider";
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
-type CartItem = {
+interface CartItem {
+  id: string;
+  productName: string;
+  productSlug: string;
+  image: string | null;
+  quantity: number;
+  specSnapshot: { group: string; option: string }[];
+  deliverySpeed: string | null;
+  deliveryFee: number;
+  unitPrice: number;
+  lineSubtotal: number;
+  gstAmount: number;
+  lineTotal: number;
+  fileStatus: string;
+  fileName: string | null;
+}
+interface Cart {
+  items: CartItem[];
+  subtotal: number;
+  deliveryCharge: number;
+  gst: number;
+  total: number;
+  count: number;
+}
+interface Address {
+  id: string;
+  label: string;
   name: string;
-  tags: string[];
-  express?: boolean;
-  price: string;
-  img: string;
-  file: { ready: boolean; label: string };
-};
+  line1: string;
+  line2?: string | null;
+  city: string;
+  state: string;
+  pincode: string;
+  phone: string;
+  isDefault: boolean;
+}
 
-const items: CartItem[] = [
-  {
-    name: "500 Business Cards",
-    tags: ["Matte 350gsm", "Standard Size"],
-    express: true,
-    price: "₹850",
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCk7K43-ei5jYgwW1e7pXHnntslvOerw11CJ7xmQJx-_JeV5PgDsUk7PIyI6JxzQNJax0VntBfTLrcsZ4JZ9Vec7Dj_DX-s_ynfF5VNBVSNPJ17EjjheqOHX9gJ9f4jdJhSpBH8g0-4ZY51QDI5Tks-XTLX1PSZ3Us2kBDpwCbhtTlIOO3UeGPj_sgjJ8FRQazgvH_09hxW2S5WKucfYQkmgjX9SUWCLRMTl-B-e0EDdG4pKrIqUUyqEmTWNXUQ6Fsoawllg7Cdw3M",
-    file: { ready: true, label: "design.pdf · Ready for print" },
-  },
-  {
-    name: "100 Trifold Brochures",
-    tags: ["Glossy 170gsm", "A4 Tri-fold"],
-    price: "₹549",
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDauKwOTVZWbp4cQQLD5jW5g6vATfdCChkD06yFByYhoiubQKZuEgLxpjtY_xhBI9n46bg1E21qgSetDVa2Tdi7JY5zk5-3Luv-xFQ_1b0cxHzAWaThLYDImg1FO1jWOYQNf3cGPhBVMzdouIoIMLXjpSu6OomgwqUEYNmAsR5wj4dWoktVKNX5iFpQ2WOStTZ9YZ_gAX_YzVViT5VgurNdVou96gIsPdHOWbddXPBXUtPRnxYY72DX7P_bC-DBkqNJNijno_oO-eI",
-    file: { ready: false, label: "Design file not uploaded" },
-  },
-  {
-    name: "50 Luxury Packaging",
-    tags: ["Rigid Box", "Custom Size"],
-    price: "₹288",
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOeVDxHAGkMFi1WTBeBKKfsfm2NYUF_uKKzc_VPpyfn3rD50SlNh9HEKs8iGA0kr3bVkXWEueNP4zSOyKH1nXEx4PQ7TLT5S_mjoVLVg3F0Abeak8I_fOa-whHjvB-5ot4dV8Kv9IHqWEZghPaj_hqmPoPg-G3imlpNgzjxjl-jYsqvuSzulWZ_H3TSjYDa1W_Qztp1br17ryvGlrI2l-AW7jq-9tPIBiqm2d9qIwV_FVEtStsP_KOrF0aqiCMadX-ybYCk8Q2wVg",
-    file: { ready: true, label: "box_template.ai · Ready for print" },
-  },
-];
-
+const emptyAddr = { label: "Office", name: "", line1: "", line2: "", city: "", state: "", pincode: "", phone: "" };
 
 export default function CartCheckout() {
+  const router = useRouter();
+  const { user, refresh } = useSession();
+  const confirm = useConfirm();
+  const toast = useToast();
+
+  const [cart, setCart] = useState<Cart | null>(null);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddr, setSelectedAddr] = useState<string | null>(null);
+  const [notes, setNotes] = useState("");
+  const [placing, setPlacing] = useState(false);
+  const [savingAddr, setSavingAddr] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showAddrForm, setShowAddrForm] = useState(false);
+  const [addr, setAddr] = useState(emptyAddr);
+  // Per-item in-flight lock so rapid clicks can't race (money-sensitive).
+  const [busyItems, setBusyItems] = useState<Set<string>>(new Set());
+  const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const setBusy = (id: string, on: boolean) =>
+    setBusyItems((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+
+  const loadCart = useCallback(() => cartApi.get().then((c) => setCart(c as Cart)), []);
+  const loadAddresses = useCallback(
+    () =>
+      addrApi.list().then((r) => {
+        const list = (r.addresses ?? []) as Address[];
+        setAddresses(list);
+        setSelectedAddr((prev) => prev ?? list.find((a) => a.isDefault)?.id ?? list[0]?.id ?? null);
+      }),
+    [],
+  );
+
+  useEffect(() => {
+    loadCart();
+    loadAddresses();
+  }, [loadCart, loadAddresses]);
+
+  async function changeQty(item: CartItem, delta: number) {
+    const q = Math.max(1, item.quantity + delta);
+    if (q === item.quantity || busyItems.has(item.id)) return;
+    setBusy(item.id, true);
+    try {
+      setCart((await cartApi.updateQty(item.id, q)) as Cart);
+      refresh();
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : "Could not update quantity", "error");
+    } finally {
+      setBusy(item.id, false);
+    }
+  }
+
+  async function removeItem(item: CartItem) {
+    if (busyItems.has(item.id)) return;
+    const ok = await confirm({
+      title: "Remove this item?",
+      message: `${item.quantity} × ${item.productName} will be removed from your cart.`,
+      confirmLabel: "Remove",
+      danger: true,
+    });
+    if (!ok) return;
+    setBusy(item.id, true);
+    try {
+      setCart((await cartApi.remove(item.id)) as Cart);
+      refresh();
+      toast("Item removed", "success");
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : "Could not remove item", "error");
+    } finally {
+      setBusy(item.id, false);
+    }
+  }
+
+  async function uploadFor(item: CartItem, file: File) {
+    setBusy(item.id, true);
+    try {
+      const res = await cartApi.uploadFile(item.id, file);
+      setCart(res.cart as Cart);
+      toast("Artwork uploaded", "success");
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : "Upload failed", "error");
+    } finally {
+      setBusy(item.id, false);
+    }
+  }
+
+  async function saveAddress(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSavingAddr(true);
+    try {
+      await addrApi.create({ ...addr, isDefault: addresses.length === 0 });
+      setShowAddrForm(false);
+      setAddr(emptyAddr);
+      await loadAddresses();
+      toast("Address saved", "success");
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not save address");
+    } finally {
+      setSavingAddr(false);
+    }
+  }
+
+  async function placeOrder() {
+    if (!selectedAddr) {
+      setError("Please select a delivery address");
+      return;
+    }
+    setPlacing(true);
+    setError(null);
+    try {
+      const { order } = await ordersApi.place(selectedAddr, notes || undefined);
+      refresh();
+      router.push(`/order-confirmed?order=${order.id}`);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not place order");
+      setPlacing(false);
+    }
+  }
+
+  const total = cart?.total ?? 0;
+  const enough = (user?.walletBalance ?? 0) >= total;
+
+  if (!cart) {
+    return (
+      <main className="max-w-container-max mx-auto px-margin-desktop py-24 text-center text-on-surface-variant">
+        <span className="material-symbols-outlined animate-spin text-4xl">progress_activity</span>
+      </main>
+    );
+  }
+
+  if (cart.items.length === 0) {
+    return (
+      <main className="max-w-container-max mx-auto px-margin-desktop py-24 text-center">
+        <span className="material-symbols-outlined text-6xl text-on-surface-variant/40 mb-4">shopping_cart</span>
+        <h1 className="font-headline-lg text-headline-lg mb-2">Your cart is empty</h1>
+        <p className="text-on-surface-variant mb-8">Browse the catalog and configure your print job.</p>
+        <Link href="/products" className="primary-accent-gradient text-white px-8 py-3 rounded-lg font-button">Browse Products</Link>
+      </main>
+    );
+  }
+
   return (
     <>
       <main className="max-w-container-max mx-auto px-margin-desktop py-12">
-        {/* Header */}
         <section className="mb-10">
           <nav className="flex items-center gap-2 text-label-caps font-label-caps text-on-surface-variant mb-4">
             <Link className="hover:text-primary" href="/dashboard">Home</Link>
@@ -54,76 +207,97 @@ export default function CartCheckout() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <h1 className="font-headline-lg text-headline-lg text-on-surface">Cart &amp; Checkout</h1>
-              <p className="font-body-md text-body-md text-on-surface-variant mt-1">Review your premium print items and proceed to secure delivery.</p>
+              <p className="font-body-md text-body-md text-on-surface-variant mt-1">Review your items and pay securely from your wallet.</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center bg-primary-container text-on-primary px-4 py-2 rounded-lg border border-outline-variant shadow-sm">
                 <span className="material-symbols-outlined text-[20px] mr-2">account_balance_wallet</span>
-                <span className="font-button text-button">₹2,450</span>
+                <span className="font-button text-button">{inr(user?.walletBalance)}</span>
               </div>
-              <div className="bg-secondary-container text-on-secondary-container px-4 py-2 rounded-lg font-button text-button">Items in Cart: 3</div>
+              <div className="bg-secondary-container text-on-secondary-container px-4 py-2 rounded-lg font-button text-button">Items in Cart: {cart.count}</div>
             </div>
           </div>
         </section>
 
+        {error && (
+          <div className="mb-6 px-4 py-3 rounded-xl bg-error-container/60 text-on-error-container flex items-center gap-2">
+            <span className="material-symbols-outlined text-[20px]">error</span>{error}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
-          {/* Left: Cart */}
+          {/* Left */}
           <div className="lg:col-span-8 space-y-8">
             <div className="space-y-4">
-              {items.map((it) => (
-                <div key={it.name} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex gap-4 sm:gap-6">
-                    <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-lg overflow-hidden bg-surface-container shrink-0 border border-outline-variant">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img className="w-full h-full object-cover" alt={it.name} src={it.img} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start gap-3">
-                        <div className="min-w-0">
-                          <h3 className="font-headline-md text-headline-md text-on-surface">{it.name}</h3>
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {it.tags.map((t) => (
-                              <span key={t} className="bg-surface-container text-on-surface-variant px-2 py-0.5 rounded text-label-caps font-label-caps uppercase">{t}</span>
-                            ))}
-                            {it.express && (
-                              <span className="bg-on-tertiary-container/10 text-on-tertiary-container px-2 py-0.5 rounded text-label-caps font-label-caps flex items-center">
-                                <span className="material-symbols-outlined text-[14px] mr-1">bolt</span> Express
-                              </span>
-                            )}
+              {cart.items.map((it) => {
+                const ready = it.fileStatus === "UPLOADED" || it.fileStatus === "APPROVED";
+                return (
+                  <div key={it.id} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex gap-4 sm:gap-6">
+                      <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-lg overflow-hidden bg-surface-container shrink-0 border border-outline-variant flex items-center justify-center">
+                        {it.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img className="w-full h-full object-cover" alt={it.productName} src={it.image} />
+                        ) : (
+                          <span className="material-symbols-outlined text-4xl text-on-surface-variant/30">print</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="min-w-0">
+                            <h3 className="font-headline-md text-headline-md text-on-surface">{it.quantity.toLocaleString("en-IN")} × {it.productName}</h3>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {it.specSnapshot?.map((s, i) => (
+                                <span key={i} className="bg-surface-container text-on-surface-variant px-2 py-0.5 rounded text-label-caps font-label-caps uppercase">{s.option}</span>
+                              ))}
+                              {it.deliverySpeed && (
+                                <span className="bg-on-tertiary-container/10 text-on-tertiary-container px-2 py-0.5 rounded text-label-caps font-label-caps flex items-center">
+                                  <span className="material-symbols-outlined text-[14px] mr-1">bolt</span> {it.deliverySpeed}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="font-price-lg text-price-lg text-primary">{inr(it.lineSubtotal + it.gstAmount)}</p>
                           </div>
                         </div>
-                        <div className="text-right shrink-0">
-                          <p className="font-price-lg text-price-lg text-primary">{it.price}</p>
+                        <div className="flex items-center justify-between mt-6">
+                          <div className={`flex items-center border border-outline-variant rounded-lg overflow-hidden h-10 ${busyItems.has(it.id) ? "opacity-60" : ""}`}>
+                            <button onClick={() => changeQty(it, -1)} disabled={busyItems.has(it.id) || it.quantity <= 1} aria-label="Decrease quantity" className="px-3 h-full min-w-11 flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:cursor-not-allowed"><span className="material-symbols-outlined text-[18px]" aria-hidden="true">remove</span></button>
+                            <span className="px-4 font-button text-button border-x border-outline-variant" aria-live="polite">{it.quantity}</span>
+                            <button onClick={() => changeQty(it, 1)} disabled={busyItems.has(it.id)} aria-label="Increase quantity" className="px-3 h-full min-w-11 flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40"><span className="material-symbols-outlined text-[18px]" aria-hidden="true">add</span></button>
+                          </div>
+                          <button onClick={() => removeItem(it)} disabled={busyItems.has(it.id)} aria-label={`Remove ${it.productName}`} className="text-error hover:bg-error-container/20 p-2 rounded-full transition-colors disabled:opacity-40"><span className="material-symbols-outlined" aria-hidden="true">delete</span></button>
                         </div>
-                      </div>
-                      <div className="flex items-center justify-between mt-6">
-                        <div className="flex items-center border border-outline-variant rounded-lg overflow-hidden h-10">
-                          <button className="px-3 hover:bg-surface-container-low transition-colors"><span className="material-symbols-outlined text-[18px]">remove</span></button>
-                          <span className="px-4 font-button text-button border-x border-outline-variant">1</span>
-                          <button className="px-3 hover:bg-surface-container-low transition-colors"><span className="material-symbols-outlined text-[18px]">add</span></button>
-                        </div>
-                        <button className="text-error hover:bg-error-container/20 p-2 rounded-full transition-colors"><span className="material-symbols-outlined">delete</span></button>
                       </div>
                     </div>
+                    <div className="mt-6 pt-4 border-t border-outline-variant flex items-center justify-between">
+                      {ready ? (
+                        <div className="flex items-center text-secondary font-medium text-body-md">
+                          <span className="material-symbols-outlined mr-2 text-[20px]">check_circle</span>
+                          <span>{it.fileName} · Ready for print</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center text-on-tertiary-container font-medium text-body-md">
+                          <span className="material-symbols-outlined mr-2 text-[20px] text-on-secondary-container">warning</span>
+                          <span>Design file not uploaded</span>
+                        </div>
+                      )}
+                      <input
+                        ref={(el) => { fileInputs.current[it.id] = el; }}
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.ai,.psd,.png,.jpg,.jpeg"
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFor(it, f); }}
+                      />
+                      <button onClick={() => fileInputs.current[it.id]?.click()} disabled={busyItems.has(it.id)} className={`font-button text-button hover:underline disabled:opacity-50 disabled:no-underline flex items-center gap-1.5 ${ready ? "text-primary" : "text-secondary-container"}`}>
+                        {busyItems.has(it.id) && <span className="material-symbols-outlined text-[16px] animate-spin" aria-hidden="true">progress_activity</span>}
+                        {busyItems.has(it.id) ? "Uploading…" : ready ? "Change" : "Upload Now"}
+                      </button>
+                    </div>
                   </div>
-                  <div className="mt-6 pt-4 border-t border-outline-variant flex items-center justify-between">
-                    {it.file.ready ? (
-                      <div className="flex items-center text-secondary font-medium text-body-md">
-                        <span className="material-symbols-outlined mr-2 text-[20px]">check_circle</span>
-                        <span>{it.file.label}</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center text-on-tertiary-container font-medium text-body-md">
-                        <span className="material-symbols-outlined mr-2 text-[20px] text-on-secondary-container">warning</span>
-                        <span>{it.file.label}</span>
-                      </div>
-                    )}
-                    <button className={`font-button text-button hover:underline ${it.file.ready ? "text-primary" : "text-secondary-container"}`}>
-                      {it.file.ready ? "Change" : "Upload Now"}
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <Link className="inline-flex items-center text-primary font-button text-button hover:underline group" href="/products">
@@ -134,35 +308,69 @@ export default function CartCheckout() {
             <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 shadow-sm">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="font-headline-md text-headline-md text-on-surface">Delivery Address</h2>
-                <button className="text-secondary font-button text-button flex items-center hover:bg-secondary-fixed/30 px-3 py-1.5 rounded-lg transition-colors">
+                <button onClick={() => setShowAddrForm((v) => !v)} className="text-secondary font-button text-button flex items-center hover:bg-secondary-fixed/30 px-3 py-1.5 rounded-lg transition-colors">
                   <span className="material-symbols-outlined mr-1 text-[20px]">add</span> Add New Address
                 </button>
               </div>
+
+              {showAddrForm && (
+                <form onSubmit={saveAddress} className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3 bg-surface-container-low p-4 rounded-xl">
+                  {([
+                    ["label", "Label (Office/Home)", {}],
+                    ["name", "Contact name", {}],
+                    ["phone", "Phone — 10 digits, starts 6-9", { inputMode: "numeric" as const, maxLength: 10, pattern: "[6-9][0-9]{9}" }],
+                    ["line1", "Address line 1", {}],
+                    ["line2", "Address line 2 (optional)", {}],
+                    ["city", "City", {}],
+                    ["state", "State", {}],
+                    ["pincode", "PIN code — 6 digits", { inputMode: "numeric" as const, maxLength: 6, pattern: "[0-9]{6}" }],
+                  ] as [keyof typeof emptyAddr, string, Record<string, unknown>][]).map(([k, ph, extra]) => (
+                    <input
+                      key={k}
+                      required={k !== "line2"}
+                      placeholder={ph}
+                      title={ph}
+                      value={addr[k]}
+                      onChange={(e) => setAddr((a) => ({ ...a, [k]: e.target.value }))}
+                      className="px-3 py-2 rounded-lg border border-outline-variant bg-white text-body-md"
+                      {...extra}
+                    />
+                  ))}
+                  <div className="md:col-span-2 flex gap-2">
+                    <button type="submit" className="primary-accent-gradient text-white px-5 py-2 rounded-lg font-button">Save Address</button>
+                    <button type="button" onClick={() => setShowAddrForm(false)} className="px-5 py-2 rounded-lg border border-outline-variant">Cancel</button>
+                  </div>
+                </form>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="relative border-2 border-secondary bg-secondary/5 p-5 rounded-xl transition-all">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-button text-button text-on-secondary-container">Office <span className="text-label-caps font-label-caps opacity-70 ml-2">(Default)</span></span>
-                    <span className="material-symbols-outlined text-secondary" style={fill1}>check_circle</span>
-                  </div>
-                  <p className="text-body-md text-on-surface-variant leading-relaxed">402, Creative Hub, Industrial Estate Phase II,<br />Sector 63, Noida, Uttar Pradesh 201301</p>
-                  <p className="mt-3 text-body-md font-semibold text-on-surface">+91 98765 43210</p>
-                </div>
-                <div className="border border-outline-variant bg-surface p-5 rounded-xl hover:border-on-surface-variant transition-all cursor-pointer group">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-button text-button text-on-surface">Home</span>
-                    <span className="material-symbols-outlined text-outline-variant group-hover:text-on-surface-variant transition-colors">circle</span>
-                  </div>
-                  <p className="text-body-md text-on-surface-variant leading-relaxed">Flat 12A, Sapphire Residency, Green Valley,<br />Gurgaon, Haryana 122018</p>
-                  <p className="mt-3 text-body-md font-semibold text-on-surface">+91 98123 45678</p>
-                </div>
+                {addresses.map((a) => {
+                  const active = selectedAddr === a.id;
+                  return (
+                    <button
+                      key={a.id}
+                      onClick={() => setSelectedAddr(a.id)}
+                      className={`relative text-left p-5 rounded-xl transition-all ${active ? "border-2 border-secondary bg-secondary/5" : "border border-outline-variant bg-surface hover:border-on-surface-variant"}`}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="font-button text-button text-on-secondary-container">{a.label}{a.isDefault && <span className="text-label-caps font-label-caps opacity-70 ml-2">(Default)</span>}</span>
+                        <span className={`material-symbols-outlined ${active ? "text-secondary" : "text-outline-variant"}`} style={active ? fill1 : undefined}>{active ? "check_circle" : "circle"}</span>
+                      </div>
+                      <p className="text-body-md text-on-surface-variant leading-relaxed">{a.line1}{a.line2 ? `, ${a.line2}` : ""}, {a.city}, {a.state} {a.pincode}</p>
+                      <p className="mt-3 text-body-md font-semibold text-on-surface">{a.phone}</p>
+                    </button>
+                  );
+                })}
+                {addresses.length === 0 && !showAddrForm && (
+                  <p className="text-on-surface-variant text-body-md">No saved addresses. Add one to continue.</p>
+                )}
               </div>
             </section>
 
             {/* Order Notes */}
             <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 shadow-sm">
               <h2 className="font-headline-md text-headline-md text-on-surface mb-4">Order Notes</h2>
-              <label className="block mb-2 text-label-caps font-label-caps text-on-surface-variant">Add any specific delivery or print instructions</label>
-              <textarea className="w-full rounded-lg border border-outline-variant focus:border-secondary focus:ring-secondary/20" placeholder="e.g., Call before delivery, use heavy duty outer packaging..." rows={3}></textarea>
+              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full rounded-lg border border-outline-variant focus:border-secondary focus:ring-secondary/20" placeholder="e.g., Call before delivery, use heavy duty outer packaging..." rows={3}></textarea>
             </section>
           </div>
 
@@ -175,21 +383,19 @@ export default function CartCheckout() {
                 </div>
                 <div className="p-6 space-y-4">
                   <div className="space-y-2 pb-4 border-b border-outline-variant">
-                    {[["500 Business Cards", "₹850"], ["100 Trifold Brochures", "₹549"], ["50 Luxury Packaging", "₹288"]].map(([k, v]) => (
-                      <div key={k} className="flex justify-between text-body-md"><span className="text-on-surface-variant">{k}</span><span className="text-on-surface">{v}</span></div>
+                    {cart.items.map((it) => (
+                      <div key={it.id} className="flex justify-between text-body-md"><span className="text-on-surface-variant truncate pr-2">{it.quantity} × {it.productName}</span><span className="text-on-surface whitespace-nowrap">{inr(it.lineSubtotal + it.gstAmount)}</span></div>
                     ))}
                   </div>
                   <div className="space-y-2">
-                    {[["Subtotal", "₹1,687"], ["Delivery Charges", "₹148"], ["GST (18%)", "₹304"]].map(([k, v]) => (
-                      <div key={k} className="flex justify-between text-body-md"><span className="text-on-surface-variant">{k}</span><span className="text-on-surface">{v}</span></div>
-                    ))}
+                    <div className="flex justify-between text-body-md"><span className="text-on-surface-variant">Subtotal</span><span className="text-on-surface">{inr(cart.subtotal)}</span></div>
+                    <div className="flex justify-between text-body-md"><span className="text-on-surface-variant">Delivery Charges</span><span className="text-on-surface">{cart.deliveryCharge === 0 ? "FREE" : inr(cart.deliveryCharge)}</span></div>
+                    <div className="flex justify-between text-body-md"><span className="text-on-surface-variant">GST (18%)</span><span className="text-on-surface">{inr(cart.gst)}</span></div>
                   </div>
                   <div className="pt-4 mt-4 border-t-2 border-dashed border-outline-variant">
                     <div className="flex justify-between items-center">
                       <span className="font-headline-md text-headline-md">Total Payable</span>
-                      <div className="text-right">
-                        <span className="font-price-lg text-price-lg text-secondary">₹2,139</span>
-                      </div>
+                      <span className="font-price-lg text-price-lg text-secondary">{inr(total)}</span>
                     </div>
                   </div>
                 </div>
@@ -199,23 +405,25 @@ export default function CartCheckout() {
               <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
                 <h3 className="font-headline-md text-headline-md text-on-surface mb-2">Payment Method</h3>
                 <p className="text-label-caps font-label-caps text-on-surface-variant mb-6">Orders are paid using your prepaid wallet balance.</p>
-                <div className="border-2 border-secondary bg-secondary/5 rounded-xl p-4">
+                <div className={`border-2 rounded-xl p-4 ${enough ? "border-secondary bg-secondary/5" : "border-error/50 bg-error-container/20"}`}>
                   <div className="flex justify-between items-center mb-3">
                     <div className="flex items-center gap-3">
                       <span className="material-symbols-outlined text-secondary" style={fill1}>wallet</span>
                       <span className="font-button text-button">Bhagini Wallet</span>
                     </div>
-                    <span className="material-symbols-outlined text-secondary">check_circle</span>
+                    <span className={`material-symbols-outlined ${enough ? "text-secondary" : "text-error"}`}>{enough ? "check_circle" : "error"}</span>
                   </div>
                   <div className="flex items-center justify-between pl-9">
                     <p className="text-label-caps font-label-caps text-on-surface-variant">Available Balance</p>
-                    <p className="font-price-lg text-body-md text-secondary">₹2,450</p>
+                    <p className="font-price-lg text-body-md text-secondary">{inr(user?.walletBalance)}</p>
                   </div>
                 </div>
-                <Link href="/wallet" className="mt-4 p-4 rounded-lg bg-surface-container-low border border-dashed border-outline-variant flex items-center justify-between hover:border-secondary transition-colors">
-                  <span className="text-body-md text-on-surface-variant">Low balance? Top up your wallet</span>
-                  <span className="text-secondary font-bold text-body-md">Recharge</span>
-                </Link>
+                {!enough && (
+                  <Link href="/wallet" className="mt-4 p-4 rounded-lg bg-surface-container-low border border-dashed border-outline-variant flex items-center justify-between hover:border-secondary transition-colors">
+                    <span className="text-body-md text-on-surface-variant">Low balance? Top up your wallet</span>
+                    <span className="text-secondary font-bold text-body-md">Recharge</span>
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -226,17 +434,21 @@ export default function CartCheckout() {
       <div className="fixed bottom-0 left-0 right-0 z-[60] bg-surface-container-lowest border-t border-outline-variant shadow-[0_-4px_20px_rgba(0,0,0,0.08)] py-4">
         <div className="max-w-container-max mx-auto px-margin-desktop flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-center md:text-left">
-            <p className="font-headline-md text-headline-md text-on-surface">Total to Pay ₹2,139</p>
+            <p className="font-headline-md text-headline-md text-on-surface">Total to Pay {inr(total)}</p>
           </div>
-          <div className="flex flex-col items-center md:items-end gap-2">
-            <div className="flex items-center gap-6 mb-1">
-              <div className="flex items-center gap-2"><span className="material-symbols-outlined text-secondary text-[20px]">verified</span><span className="text-label-caps font-label-caps text-on-surface-variant">Quality Assured</span></div>
-              <div className="flex items-center gap-2"><span className="material-symbols-outlined text-secondary text-[20px]">encrypted</span><span className="text-label-caps font-label-caps text-on-surface-variant">Secure Checkout</span></div>
-            </div>
-            <Link href="/order-confirmed" className="primary-accent-gradient text-white px-10 py-4 rounded-lg font-button text-button shadow-lg shadow-secondary/30 active:scale-95 transition-all w-full md:w-auto text-center">
-              Place Order &amp; Pay ₹2,139
-            </Link>
-          </div>
+          <button
+            onClick={placeOrder}
+            disabled={placing || !enough || !selectedAddr}
+            className="primary-accent-gradient text-white px-10 py-4 rounded-lg font-button text-button shadow-lg shadow-secondary/30 active:scale-95 transition-all w-full md:w-auto text-center disabled:opacity-50 disabled:pointer-events-none"
+          >
+            {placing
+              ? "Placing order…"
+              : !selectedAddr
+                ? "Select a delivery address"
+                : !enough
+                  ? "Insufficient Wallet Balance"
+                  : `Place Order & Pay ${inr(total)}`}
+          </button>
         </div>
       </div>
       <div className="h-40"></div>

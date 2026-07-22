@@ -1,9 +1,26 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "printx-frontend",
+  "main": ".open-next/worker.js",
   "compatibility_date": "2025-06-01",
+  // nodejs_compat: run the Node APIs the app uses (crypto, path, Buffer, streams).
+  // global_fetch_strictly_public: OpenNext's internal self-fetches go over the public edge.
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
-    "directory": "./out",
-    "not_found_handling": "404-page"
-  }
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "printx-frontend"
+    }
+  ]
+
+  // ── Add when you wire the deferred integrations ──
+  // R2 bucket for file uploads (our storage.ts S3 seam talks to it):
+  // "r2_buckets": [{ "binding": "UPLOADS", "bucket_name": "printx-uploads" }]
+  //
+  // Secrets are NOT set here — add them with `wrangler secret put NAME`
+  // (DATABASE_URL, JWT_SECRET, and later RAZORPAY_*, S3_*).
 }

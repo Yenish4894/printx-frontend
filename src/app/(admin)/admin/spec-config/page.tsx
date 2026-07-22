@@ -1,254 +1,625 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { admin, ApiError } from "@/lib/api";
+import { inr } from "@/components/SessionProvider";
+import { useConfirm, useToast } from "@/components/ui/UIProvider";
 
-type Tier = { id: number; qty: number; price: number; label: string; active: boolean };
-type AddOnType = "Included" | "Flat" | "Per-unit";
-type Opt = { id: number; name: string; desc: string; type: AddOnType; value: number; def: boolean };
-type Delivery = { id: number; name: string; fee: number };
+// ───────────────────────── Types ─────────────────────────
+type SpecOption = {
+  id: string;
+  name: string;
+  description: string | null;
+  addOnType: string;
+  addOnValue: number;
+  perQuantity: boolean | number;
+  isDefault: boolean;
+};
+type SpecGroup = {
+  id: string;
+  name: string;
+  selectionType: string;
+  isPricingDimension: boolean;
+  isRequired: boolean;
+  options: SpecOption[];
+};
+type Product = {
+  id: string;
+  name: string;
+  category: string;
+  pricingModel: string;
+  pricesIncludeGst: boolean;
+  specGroups: SpecGroup[];
+};
+type MatrixDimension = { id: string; name: string; options: { id: string; name: string }[] };
+type MatrixRow = { id: string; optionIds: string[]; labels: string[]; ratePerSheet: number; isActive: boolean };
+type Matrix = {
+  productId: string;
+  pricingModel: string;
+  pricesIncludeGst: boolean;
+  dimensions: MatrixDimension[];
+  rows: MatrixRow[];
+};
+type ProductListItem = { id: string; name: string; category: string; pricingModel: string; specGroups: number; matrixRows: number };
 
-const inr = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// Build the cartesian product of dimension option lists.
+// Each element is an array of one option id per dimension, in dimension order.
+function cartesian(dims: MatrixDimension[]): string[][] {
+  if (dims.length === 0) return [];
+  return dims.reduce<string[][]>(
+    (acc, dim) => acc.flatMap((combo) => dim.options.map((o) => [...combo, o.id])),
+    [[]],
+  );
+}
 
-let _id = 100;
-const nid = () => ++_id;
+// Key that is order-independent so a combo matches an existing row regardless
+// of the order option ids are stored in.
+const comboKey = (ids: string[]) => [...ids].sort().join("|");
 
-// Static delivery options (no in-page editing yet) — module-scoped so they
-// keep a stable reference across renders.
-const delivery: Delivery[] = [
-  { id: 1, name: "Standard Delivery (Free)", fee: 0 },
-  { id: 2, name: "Express (1–2 days)", fee: 149 },
-];
+export default function SpecConfigPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-on-surface-variant">Loading…</div>}>
+      <SpecConfiguration />
+    </Suspense>
+  );
+}
 
-export default function SpecConfiguration() {
-  const [tiers, setTiers] = useState<Tier[]>([
-    { id: 1, qty: 100, price: 499, label: "Startup Pack", active: true },
-    { id: 2, qty: 500, price: 1899, label: "Business Standard", active: true },
-  ]);
-  const [options, setOptions] = useState<Opt[]>([
-    { id: 11, name: "300 GSM Matte", desc: "Smooth, premium non-reflective finish", type: "Included", value: 0, def: true },
-    { id: 12, name: "350 GSM Silk", desc: "Slight sheen, extra rigid cardstock", type: "Per-unit", value: 0.8, def: false },
-  ]);
-  // Simulator selections
-  const [simQtyId, setSimQtyId] = useState(2);
-  const [simOptId, setSimOptId] = useState(12);
-  const [simDelId, setSimDelId] = useState(1);
+function SpecConfiguration() {
+  const searchParams = useSearchParams();
+  const productId = searchParams.get("product");
 
-  const sim = useMemo(() => {
-    const tier = tiers.find((t) => t.id === simQtyId) ?? tiers[0];
-    const opt = options.find((o) => o.id === simOptId) ?? options[0];
-    const del = delivery.find((d) => d.id === simDelId) ?? delivery[0];
-    const units = tier?.qty ?? 0;
-    const base = tier?.price ?? 0;
-    const addon = !opt ? 0 : opt.type === "Per-unit" ? opt.value * units : opt.type === "Flat" ? opt.value : 0;
-    const total = base + addon + (del?.fee ?? 0);
-    return { tier, opt, del, units, base, addon, deliveryFee: del?.fee ?? 0, total, wallet: total * 0.08 };
-  }, [tiers, options, simQtyId, simOptId, simDelId]);
+  if (!productId) return <ProductPicker />;
+  return <ProductEditor productId={productId} />;
+}
 
-  const updTier = (id: number, patch: Partial<Tier>) => setTiers((p) => p.map((t) => (t.id === id ? { ...t, ...patch } : t)));
-  const updOpt = (id: number, patch: Partial<Opt>) => setOptions((p) => p.map((o) => (o.id === id ? { ...o, ...patch } : o)));
+// ───────────────────────── Product picker ─────────────────────────
+function ProductPicker() {
+  const [products, setProducts] = useState<ProductListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { products } = await admin.products.list();
+      setProducts(products as ProductListItem[]);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Failed to load products");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   return (
-    <>
-      {/* Product selector header */}
-      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-8">
-        <div className="flex items-center gap-4">
-          <span className="text-on-surface-variant font-medium">Editing:</span>
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-outline-variant rounded-lg font-semibold text-primary hover:border-secondary-container transition-colors">
-            Business Cards <span className="material-symbols-outlined text-[18px]">expand_more</span>
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight">Spec & Price Configuration</h1>
+        <p className="font-body-md text-on-surface-variant">Select a product to edit its specifications and pricing.</p>
+      </div>
+
+      {loading ? (
+        <div className="p-16 text-center text-on-surface-variant">Loading products…</div>
+      ) : error ? (
+        <div className="p-4 rounded-lg bg-error/10 text-error text-sm font-medium flex flex-wrap items-center gap-3" role="alert">
+          <span>{error}</span>
+          <button onClick={load} className="inline-flex items-center gap-1 px-4 py-2 rounded-lg border border-error/40 font-button text-sm hover:bg-error/10 transition-colors">
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">refresh</span> Retry
           </button>
         </div>
-        <div className="md:ml-auto flex items-center gap-2 text-on-surface-variant">
-          <span className="material-symbols-outlined text-secondary-container">sync</span>
-          <span className="text-[12px] font-bold uppercase tracking-tight">Changes Auto-Saved</span>
+      ) : products.length === 0 ? (
+        <div className="p-16 text-center text-on-surface-variant">No products found.</div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {products.map((p) => (
+            <Link
+              key={p.id}
+              href={`/admin/spec-config?product=${p.id}`}
+              className="block bg-surface-container-lowest rounded-xl premium-shadow border border-outline-variant/30 p-5 hover:border-secondary-container transition-colors"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-bold text-on-surface">{p.name}</h3>
+                <span className="material-symbols-outlined text-secondary">chevron_right</span>
+              </div>
+              <p className="text-xs text-on-surface-variant">{p.category}</p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <span className="px-2 py-1 bg-tertiary-fixed text-on-tertiary-fixed text-[11px] font-bold rounded-full uppercase">{p.pricingModel}</span>
+                <span className="px-2 py-1 bg-surface-container-high text-on-surface-variant text-[11px] font-bold rounded-full">{p.specGroups} specs</span>
+                <span className="px-2 py-1 bg-surface-container-high text-on-surface-variant text-[11px] font-bold rounded-full">{p.matrixRows} rates</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ───────────────────────── Product editor ─────────────────────────
+function ProductEditor({ productId }: { productId: string }) {
+  const [product, setProduct] = useState<Product | null>(null);
+  const [matrix, setMatrix] = useState<Matrix | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadProduct = useCallback(async () => {
+    setError(null);
+    try {
+      const { product } = await admin.products.get(productId);
+      setProduct(product as Product);
+      if ((product as Product).pricingModel === "MATRIX") {
+        const { matrix } = await admin.products.getMatrix(productId);
+        setMatrix(matrix as Matrix);
+      } else {
+        setMatrix(null);
+      }
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Failed to load product");
+    }
+  }, [productId]);
+
+  useEffect(() => {
+    setLoading(true);
+    loadProduct().finally(() => setLoading(false));
+  }, [loadProduct]);
+
+  if (loading) return <div className="p-16 text-center text-on-surface-variant">Loading product…</div>;
+  if (error) return (
+    <div className="p-4 rounded-lg bg-error/10 text-error text-sm font-medium flex flex-wrap items-center gap-3" role="alert">
+      <span>{error}</span>
+      <button
+        onClick={() => { setLoading(true); loadProduct().finally(() => setLoading(false)); }}
+        className="inline-flex items-center gap-1 px-4 py-2 rounded-lg border border-error/40 font-button text-sm hover:bg-error/10 transition-colors"
+      >
+        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">refresh</span> Retry
+      </button>
+    </div>
+  );
+  if (!product) return null;
+
+  return (
+    <div className="space-y-8 pb-12">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center gap-4">
+        <div className="flex items-center gap-4">
+          <Link href="/admin/spec-config" className="flex items-center gap-1 text-on-surface-variant hover:text-primary text-sm font-semibold">
+            <span className="material-symbols-outlined text-[18px]">arrow_back</span> Products
+          </Link>
+          <span className="text-on-surface-variant font-medium">Editing:</span>
+          <span className="px-4 py-2 bg-white border border-outline-variant rounded-lg font-semibold text-primary">{product.name}</span>
+        </div>
+        <div className="md:ml-auto flex items-center gap-2">
+          <span className="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed text-[11px] font-bold rounded-full uppercase">{product.pricingModel}</span>
+          <span className="text-xs text-on-surface-variant">{product.category}</span>
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-10">
-        {/* Canvas */}
-        <div className="flex-1 min-w-0 space-y-8 pb-12">
-          {/* Base pricing */}
-          <section className="bg-surface-container-lowest rounded-xl premium-shadow overflow-hidden">
-            <div className="px-6 py-4 border-b border-outline-variant bg-surface-container-low flex justify-between items-center">
-              <div className="flex items-center gap-2"><span className="material-symbols-outlined text-secondary">payments</span><h2 className="font-headline-md text-[20px]">Base Pricing</h2></div>
-              <span className="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed text-[11px] font-bold rounded-full uppercase">Tiered Model</span>
-            </div>
-            <div className="p-6">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="text-label-caps border-b border-outline-variant">
-                      <th className="pb-3 px-2">Quantity</th><th className="pb-3 px-2">Base Price (₹)</th><th className="pb-3 px-2">Frontend Label</th><th className="pb-3 px-2">Active</th><th className="pb-3 px-2 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-outline-variant/30">
-                    {tiers.map((t) => (
-                      <tr key={t.id} className="hover:bg-surface-container-lowest transition-colors">
-                        <td className="py-4 px-2"><input className="w-20 border-none bg-surface-container-low rounded-lg focus:ring-2 focus:ring-secondary-container" type="number" value={t.qty} onChange={(e) => updTier(t.id, { qty: Number(e.target.value) })} /></td>
-                        <td className="py-4 px-2"><input className="w-24 border-none bg-surface-container-low rounded-lg focus:ring-2 focus:ring-secondary-container" type="number" value={t.price} onChange={(e) => updTier(t.id, { price: Number(e.target.value) })} /></td>
-                        <td className="py-4 px-2"><input className="border-none bg-surface-container-low rounded-lg focus:ring-2 focus:ring-secondary-container" type="text" value={t.label} onChange={(e) => updTier(t.id, { label: e.target.value })} /></td>
-                        <td className="py-4 px-2">
-                          <button onClick={() => updTier(t.id, { active: !t.active })} className={`w-10 h-5 rounded-full relative transition-colors ${t.active ? "bg-secondary-container" : "bg-outline-variant"}`}>
-                            <span className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all ${t.active ? "right-1" : "left-1"}`}></span>
-                          </button>
-                        </td>
-                        <td className="py-4 px-2 text-right"><button onClick={() => setTiers((p) => p.filter((x) => x.id !== t.id))} className="text-on-surface-variant hover:text-error transition-colors"><span className="material-symbols-outlined">delete</span></button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <button onClick={() => setTiers((p) => [...p, { id: nid(), qty: 1000, price: 0, label: "New Tier", active: true }])} className="mt-6 flex items-center gap-2 text-secondary font-bold text-sm hover:translate-x-1 transition-transform"><span className="material-symbols-outlined">add_circle</span> Add Tier</button>
-              <p className="mt-4 text-[12px] text-on-surface-variant italic border-t border-outline-variant pt-4 flex items-center gap-2"><span className="material-symbols-outlined text-[16px]">info</span> Note: Per-Unit products (e.g. Banners) instead show a unit rate and unit type (sq. ft / meter).</p>
-            </div>
-          </section>
+      {/* Spec groups */}
+      <SpecGroupsSection product={product} onChange={loadProduct} />
 
-          {/* Spec groups */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2"><span className="material-symbols-outlined text-secondary">layers</span><h2 className="font-headline-md text-[20px]">Specification Groups</h2></div>
-              <button className="text-label-caps text-secondary-container underline">Reorder Groups</button>
-            </div>
+      {/* Price matrix */}
+      {product.pricingModel === "MATRIX" && (
+        <MatrixEditor productId={productId} matrix={matrix} onReload={loadProduct} />
+      )}
+    </div>
+  );
+}
 
-            <div className="bg-surface-container-lowest rounded-xl premium-shadow border border-outline-variant/30">
-              <div className="p-4 flex flex-wrap items-center gap-4 bg-surface-container-low rounded-t-xl">
-                <span className="material-symbols-outlined text-on-surface-variant cursor-grab">drag_indicator</span>
-                <div className="flex-1 min-w-0 flex items-center gap-3">
-                  <input className="font-bold text-on-surface border-none bg-transparent focus:ring-0 w-32 sm:w-48 min-w-0" type="text" defaultValue="Paper Quality" />
-                  <span className="material-symbols-outlined text-[18px] text-on-surface-variant hover:text-primary cursor-pointer">edit</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-label-caps text-on-surface-variant">
-                  <div className="flex items-center gap-2 bg-white px-2 py-1 rounded border border-outline-variant/50"><span>Selection:</span><select className="border-none p-0 text-[11px] font-bold uppercase bg-transparent focus:ring-0"><option>Single</option><option>Multi</option></select></div>
-                  <label className="flex items-center gap-2 cursor-pointer"><input defaultChecked className="rounded text-secondary focus:ring-secondary" type="checkbox" /> Required</label>
-                  <button className="p-1 hover:bg-surface-container-highest rounded transition-colors"><span className="material-symbols-outlined text-[20px]">palette</span></button>
-                  <button className="p-1 text-error/70 hover:text-error transition-colors"><span className="material-symbols-outlined text-[20px]">delete</span></button>
-                  <span className="material-symbols-outlined">expand_less</span>
-                </div>
-              </div>
-              <div className="p-6 overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="text-label-caps text-on-surface-variant/70 border-b border-outline-variant">
-                      <th className="pb-2 font-bold">Option Name</th><th className="pb-2 font-bold">Add-on Type</th><th className="pb-2 font-bold">Value (₹)</th><th className="pb-2 font-bold">Default</th><th className="pb-2 font-bold text-right">Delete</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-outline-variant/20">
-                    {options.map((o) => (
-                      <tr key={o.id}>
-                        <td className="py-3"><div className="font-bold text-on-surface">{o.name}</div><div className="text-[11px] text-on-surface-variant">{o.desc}</div></td>
-                        <td className="py-3">
-                          <select value={o.type} onChange={(e) => updOpt(o.id, { type: e.target.value as AddOnType })} className="border-none bg-surface-container-low rounded-lg text-sm focus:ring-2 focus:ring-secondary-container">
-                            <option>Included</option><option>Flat</option><option>Per-unit</option>
-                          </select>
-                        </td>
-                        <td className="py-3"><input className={`w-20 border-none bg-surface-container-low rounded-lg text-sm ${o.type === "Included" ? "opacity-50" : "focus:ring-2 focus:ring-secondary-container"}`} disabled={o.type === "Included"} type="number" value={o.value} onChange={(e) => updOpt(o.id, { value: Number(e.target.value) })} /></td>
-                        <td className="py-3"><input checked={o.def} onChange={() => setOptions((p) => p.map((x) => ({ ...x, def: x.id === o.id })))} className="text-secondary-container focus:ring-secondary-container" name="paper-def" type="radio" /></td>
-                        <td className="py-3 text-right"><button onClick={() => setOptions((p) => p.filter((x) => x.id !== o.id))} className="material-symbols-outlined text-on-surface-variant/40 hover:text-error cursor-pointer">close</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <button onClick={() => setOptions((p) => [...p, { id: nid(), name: "New Option", desc: "Describe this option", type: "Flat", value: 50, def: false }])} className="mt-4 text-[13px] font-bold text-secondary-container flex items-center gap-1 hover:gap-2 transition-all"><span className="material-symbols-outlined text-[18px]">add</span> Add Option</button>
-              </div>
-            </div>
+// ───────────────────────── Spec groups ─────────────────────────
+function SpecGroupsSection({ product, onChange }: { product: Product; onChange: () => Promise<void> }) {
+  const [showGroupForm, setShowGroupForm] = useState(false);
+  const [gName, setGName] = useState("");
+  const [gPricingDim, setGPricingDim] = useState(false);
+  const [gRequired, setGRequired] = useState(true);
+  const [gSelection, setGSelection] = useState("SINGLE_SELECT");
+  const [gBusy, setGBusy] = useState(false);
+  const [gError, setGError] = useState<string | null>(null);
 
-            <button className="w-full py-4 border-2 border-dashed border-outline-variant rounded-xl flex items-center justify-center gap-2 text-on-surface-variant font-bold hover:bg-surface-container-low hover:border-secondary-container transition-all"><span className="material-symbols-outlined">add_box</span> Add Spec Group</button>
+  const addGroup = async () => {
+    if (!gName.trim()) { setGError("Enter a group name"); return; }
+    setGBusy(true);
+    setGError(null);
+    try {
+      await admin.products.addSpecGroup(product.id, {
+        name: gName.trim(),
+        isPricingDimension: gPricingDim,
+        isRequired: gRequired,
+        selectionType: gSelection,
+        displayOrder: product.specGroups.length,
+      });
+      setGName("");
+      setGPricingDim(false);
+      setGRequired(true);
+      setGSelection("SINGLE_SELECT");
+      setShowGroupForm(false);
+      await onChange();
+    } catch (e) {
+      setGError(e instanceof ApiError ? e.message : "Failed to add spec group");
+    } finally {
+      setGBusy(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <span className="material-symbols-outlined text-secondary">layers</span>
+        <h2 className="font-headline-md text-[20px]">Specification Groups</h2>
+      </div>
+
+      {product.specGroups.length === 0 && (
+        <p className="text-sm text-on-surface-variant">No spec groups yet. Add one below.</p>
+      )}
+
+      {product.specGroups.map((g) => (
+        <SpecGroupCard key={g.id} group={g} onChange={onChange} />
+      ))}
+
+      {showGroupForm ? (
+        <div className="bg-surface-container-lowest rounded-xl premium-shadow border border-outline-variant/30 p-6 space-y-4">
+          <h3 className="font-bold text-on-surface">New Spec Group</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase text-on-surface-variant">Name</label>
+              <input value={gName} onChange={(e) => setGName(e.target.value)} className="border border-surface-container bg-white rounded-lg p-2" type="text" placeholder="e.g. Paper Quality" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase text-on-surface-variant">Selection Type</label>
+              <select value={gSelection} onChange={(e) => setGSelection(e.target.value)} className="border border-surface-container bg-white rounded-lg p-2">
+                <option value="SINGLE_SELECT">Single Select</option>
+                <option value="MULTI_SELECT">Multi Select</option>
+              </select>
+            </div>
           </div>
+          <div className="flex flex-wrap gap-6">
+            <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={gPricingDim} onChange={(e) => setGPricingDim(e.target.checked)} className="rounded text-secondary" /> Pricing Dimension</label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={gRequired} onChange={(e) => setGRequired(e.target.checked)} className="rounded text-secondary" /> Required</label>
+          </div>
+          {gError && <p className="text-error text-xs">{gError}</p>}
+          <div className="flex gap-2">
+            <button onClick={addGroup} disabled={gBusy} className="px-4 py-2 primary-accent-gradient text-white rounded-lg font-button text-sm disabled:opacity-50">{gBusy ? "Adding…" : "Add Group"}</button>
+            <button onClick={() => setShowGroupForm(false)} className="px-4 py-2 border border-outline-variant text-on-surface-variant rounded-lg font-button text-sm">Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setShowGroupForm(true)} className="w-full py-4 border-2 border-dashed border-outline-variant rounded-xl flex items-center justify-center gap-2 text-on-surface-variant font-bold hover:bg-surface-container-low hover:border-secondary-container transition-all">
+          <span className="material-symbols-outlined">add_box</span> Add Spec Group
+        </button>
+      )}
+    </div>
+  );
+}
 
-          {/* Delivery speeds */}
-          <section className="bg-surface-container-lowest rounded-xl premium-shadow overflow-hidden">
-            <div className="px-6 py-4 border-b border-outline-variant bg-surface-container-low flex items-center gap-2"><span className="material-symbols-outlined text-secondary">local_shipping</span><h2 className="font-headline-md text-[20px]">Delivery Speeds</h2></div>
-            <div className="p-6 overflow-x-auto">
-              <table className="w-full">
-                <thead><tr className="text-label-caps text-on-surface-variant/70 border-b border-outline-variant text-left"><th className="pb-2">Name</th><th className="pb-2">Fee (₹)</th><th className="pb-2">ETA (Days)</th><th className="pb-2 text-right">Delete</th></tr></thead>
-                <tbody className="divide-y divide-outline-variant/20">
-                  <tr>
-                    <td className="py-4"><input className="border-none bg-surface-container-low rounded-lg focus:ring-2 focus:ring-secondary-container" type="text" defaultValue="Standard" /></td>
-                    <td className="py-4"><input className="w-20 border-none bg-surface-container-low rounded-lg focus:ring-2 focus:ring-secondary-container" type="number" defaultValue={0} /></td>
-                    <td className="py-4"><div className="flex items-center gap-2"><input className="w-16 border-none bg-surface-container-low rounded-lg text-sm" type="number" defaultValue={5} /><span>to</span><input className="w-16 border-none bg-surface-container-low rounded-lg text-sm" type="number" defaultValue={7} /></div></td>
-                    <td className="py-4 text-right"><span className="material-symbols-outlined text-on-surface-variant/40 hover:text-error cursor-pointer">delete</span></td>
+function SpecGroupCard({ group, onChange }: { group: SpecGroup; onChange: () => Promise<void> }) {
+  const confirm = useConfirm();
+  const toast = useToast();
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState("");
+  const [addOnType, setAddOnType] = useState("FLAT");
+  const [addOnValue, setAddOnValue] = useState("");
+  const [perQuantity, setPerQuantity] = useState(false);
+  const [isDefault, setIsDefault] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [groupBusy, setGroupBusy] = useState(false);
+  const [optionBusyId, setOptionBusyId] = useState<string | null>(null);
+
+  const removeGroup = async () => {
+    const ok = await confirm({
+      title: `Delete spec group "${group.name}"?`,
+      message: "This removes the group and all of its options. This cannot be undone.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
+    setGroupBusy(true);
+    try {
+      await admin.specGroups.remove(group.id);
+      toast("Spec group deleted", "success");
+      await onChange();
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : "Failed to delete spec group", "error");
+      setGroupBusy(false);
+    }
+  };
+
+  const removeOption = async (opt: SpecOption) => {
+    const ok = await confirm({
+      title: `Delete option "${opt.name}"?`,
+      message: "This cannot be undone.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
+    setOptionBusyId(opt.id);
+    try {
+      await admin.specOptions.remove(opt.id);
+      toast("Option deleted", "success");
+      await onChange();
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : "Failed to delete option", "error");
+    } finally {
+      setOptionBusyId(null);
+    }
+  };
+
+  const addOption = async () => {
+    if (!name.trim()) { setErr("Enter an option name"); return; }
+    setBusy(true);
+    setErr(null);
+    try {
+      await admin.specGroups.addOption(group.id, {
+        name: name.trim(),
+        addOnType,
+        addOnValue: Number(addOnValue) || 0,
+        perQuantity,
+        isDefault,
+      });
+      setName("");
+      setAddOnValue("");
+      setAddOnType("FLAT");
+      setPerQuantity(false);
+      setIsDefault(false);
+      setShowForm(false);
+      await onChange();
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : "Failed to add option");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="bg-surface-container-lowest rounded-xl premium-shadow border border-outline-variant/30">
+      <div className="p-4 flex flex-wrap items-center gap-3 bg-surface-container-low rounded-t-xl">
+        <span className="font-bold text-on-surface">{group.name}</span>
+        {group.isPricingDimension && <span className="px-2 py-0.5 bg-secondary-fixed text-on-secondary-fixed text-[10px] font-bold rounded-full uppercase">Pricing Dimension</span>}
+        {group.isRequired && <span className="px-2 py-0.5 bg-surface-container-high text-on-surface-variant text-[10px] font-bold rounded-full uppercase">Required</span>}
+        <span className="text-[11px] text-on-surface-variant uppercase font-bold ml-auto">{group.selectionType}</span>
+        <button
+          onClick={removeGroup}
+          disabled={groupBusy}
+          aria-label={`Delete spec group ${group.name}`}
+          title="Delete spec group"
+          className="p-2 hover:bg-error-container/20 rounded-lg text-error transition-colors disabled:opacity-40"
+        >
+          <span className="material-symbols-outlined text-[20px]" aria-hidden="true">{groupBusy ? "hourglass_empty" : "delete"}</span>
+        </button>
+      </div>
+      <div className="p-6 overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="text-label-caps text-on-surface-variant/70 border-b border-outline-variant">
+              <th scope="col" className="pb-2 font-bold">Option Name</th>
+              <th scope="col" className="pb-2 font-bold">Add-on Type</th>
+              <th scope="col" className="pb-2 font-bold">Value (₹)</th>
+              <th scope="col" className="pb-2 font-bold">Per Qty</th>
+              <th scope="col" className="pb-2 font-bold">Default</th>
+              <th scope="col" className="pb-2 font-bold text-right"><span className="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-outline-variant/20">
+            {group.options.length === 0 ? (
+              <tr><td colSpan={6} className="py-4 text-sm text-on-surface-variant">No options yet.</td></tr>
+            ) : (
+              group.options.map((o) => (
+                <tr key={o.id}>
+                  <td className="py-3"><div className="font-bold text-on-surface">{o.name}</div>{o.description && <div className="text-[11px] text-on-surface-variant">{o.description}</div>}</td>
+                  <td className="py-3 text-sm">{o.addOnType}</td>
+                  <td className="py-3 text-sm">{o.addOnType === "FREE" || o.addOnType === "INCLUDED" ? "—" : inr(o.addOnValue)}</td>
+                  <td className="py-3 text-sm">{o.perQuantity ? "Yes" : "No"}</td>
+                  <td className="py-3 text-sm">{o.isDefault ? <span className="text-secondary font-bold">Default</span> : ""}</td>
+                  <td className="py-3 text-right">
+                    <button
+                      onClick={() => removeOption(o)}
+                      disabled={optionBusyId === o.id}
+                      aria-label={`Delete option ${o.name}`}
+                      title="Delete option"
+                      className="p-1.5 hover:bg-error-container/20 rounded-lg text-error transition-colors disabled:opacity-40"
+                    >
+                      <span className="material-symbols-outlined text-[18px]" aria-hidden="true">{optionBusyId === o.id ? "hourglass_empty" : "delete"}</span>
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+
+        {showForm ? (
+          <div className="mt-4 p-4 bg-surface-container-low rounded-lg space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold uppercase text-on-surface-variant">Name</label>
+                <input value={name} onChange={(e) => setName(e.target.value)} className="border border-surface-container bg-white rounded-lg p-2 text-sm" type="text" placeholder="Option name" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold uppercase text-on-surface-variant">Add-on Type</label>
+                <select value={addOnType} onChange={(e) => setAddOnType(e.target.value)} className="border border-surface-container bg-white rounded-lg p-2 text-sm">
+                  <option value="FLAT">Flat</option>
+                  <option value="PERCENT">Percent</option>
+                  <option value="FREE">Free</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold uppercase text-on-surface-variant">Value (₹)</label>
+                <input value={addOnValue} onChange={(e) => setAddOnValue(e.target.value)} className="border border-surface-container bg-white rounded-lg p-2 text-sm" type="number" placeholder="0" />
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-6">
+              <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={perQuantity} onChange={(e) => setPerQuantity(e.target.checked)} className="rounded text-secondary" /> Per Quantity</label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} className="rounded text-secondary" /> Default</label>
+            </div>
+            {err && <p className="text-error text-xs">{err}</p>}
+            <div className="flex gap-2">
+              <button onClick={addOption} disabled={busy} className="px-4 py-2 primary-accent-gradient text-white rounded-lg font-button text-sm disabled:opacity-50">{busy ? "Adding…" : "Add Option"}</button>
+              <button onClick={() => setShowForm(false)} className="px-4 py-2 border border-outline-variant text-on-surface-variant rounded-lg font-button text-sm">Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setShowForm(true)} className="mt-4 text-[13px] font-bold text-secondary-container flex items-center gap-1 hover:gap-2 transition-all">
+            <span className="material-symbols-outlined text-[18px]">add</span> Add Option
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ───────────────────────── Matrix editor ─────────────────────────
+function MatrixEditor({ productId, matrix, onReload }: { productId: string; matrix: Matrix | null; onReload: () => Promise<void> }) {
+  const confirm = useConfirm();
+  const toast = useToast();
+  // rates keyed by order-independent combo key → string input value
+  const [rates, setRates] = useState<Record<string, string>>({});
+  // baseline = the last saved rates, used for dirty-checking + highlighting saved rows.
+  const [baseline, setBaseline] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+
+  // Prefill from existing matrix rows whenever the matrix reloads.
+  useEffect(() => {
+    if (!matrix) return;
+    const next: Record<string, string> = {};
+    for (const row of matrix.rows) {
+      next[comboKey(row.optionIds)] = String(row.ratePerSheet);
+    }
+    setRates(next);
+    setBaseline(next);
+  }, [matrix]);
+
+  const combos = useMemo(() => (matrix ? cartesian(matrix.dimensions) : []), [matrix]);
+  const dims = matrix?.dimensions ?? [];
+  const optName = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const d of dims) for (const o of d.options) m.set(o.id, o.name);
+    return m;
+  }, [dims]);
+
+  const noDimensions = dims.length === 0 || dims.some((d) => d.options.length === 0);
+
+  // A cell is "set" when its value parses to a positive number.
+  const norm = (v: string | undefined) => {
+    const n = Number(v);
+    return v != null && v !== "" && Number.isFinite(n) && n > 0 ? String(n) : "";
+  };
+  const dirty = useMemo(() => {
+    const keys = new Set([...Object.keys(rates), ...Object.keys(baseline)]);
+    for (const k of keys) {
+      if (norm(rates[k]) !== norm(baseline[k])) return true;
+    }
+    return false;
+  }, [rates, baseline]);
+
+  const save = async () => {
+    // Build one row per filled-in combination: optionIds (one per dimension) + ratePerSheet.
+    const rows = combos
+      .map((ids) => ({ optionIds: ids, ratePerSheet: Number(rates[comboKey(ids)]) }))
+      .filter((r) => Number.isFinite(r.ratePerSheet) && r.ratePerSheet > 0);
+
+    const ok = await confirm({
+      title: "Update price matrix?",
+      message: "This replaces all rates for this product. Empty cells will be removed.",
+      confirmLabel: "Update matrix",
+    });
+    if (!ok) return;
+
+    setSaving(true);
+    try {
+      const res = await admin.products.setMatrix(productId, rows);
+      toast(`Saved ${res?.count ?? rows.length} rate rows`, "success");
+      await onReload();
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : "Failed to save matrix", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section className="bg-surface-container-lowest rounded-xl premium-shadow overflow-hidden border border-outline-variant/30">
+      <div className="px-6 py-4 border-b border-outline-variant bg-surface-container-low flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-secondary">grid_on</span>
+          <h2 className="font-headline-md text-[20px]">Price Matrix (₹ / sheet)</h2>
+        </div>
+        <span className="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed text-[11px] font-bold rounded-full uppercase">
+          {matrix?.pricesIncludeGst ? "GST Inclusive" : "GST Exclusive"}
+        </span>
+      </div>
+
+      <div className="p-6">
+        {noDimensions ? (
+          <p className="text-sm text-on-surface-variant">
+            Mark at least one spec group as a <b>Pricing Dimension</b> and give it options to build the matrix.
+          </p>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="text-label-caps text-on-surface-variant border-b border-outline-variant">
+                    {dims.map((d) => (
+                      <th key={d.id} scope="col" className="pb-3 px-2">{d.name}</th>
+                    ))}
+                    <th scope="col" className="pb-3 px-2">₹ / Sheet</th>
                   </tr>
+                </thead>
+                <tbody className="divide-y divide-outline-variant/30">
+                  {combos.map((ids) => {
+                    const key = comboKey(ids);
+                    const hasSaved = norm(baseline[key]) !== "";
+                    const label = `Rate per sheet for ${ids.map((oid) => optName.get(oid) ?? oid).join(" / ")}`;
+                    return (
+                      <tr key={key} className={`transition-colors ${hasSaved ? "bg-secondary-container/5" : "hover:bg-surface-container-lowest"}`}>
+                        {ids.map((oid, di) => (
+                          <td key={dims[di].id} className="py-3 px-2 text-sm font-medium text-on-surface">
+                            {optName.get(oid) ?? oid}
+                            {di === 0 && hasSaved && <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-secondary-container align-middle" title="Rate set" aria-hidden="true"></span>}
+                          </td>
+                        ))}
+                        <td className="py-3 px-2">
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            aria-label={label}
+                            value={rates[key] ?? ""}
+                            onChange={(e) => setRates((prev) => ({ ...prev, [key]: e.target.value }))}
+                            className="w-28 border border-surface-container bg-surface-container-low rounded-lg p-2 focus:ring-2 focus:ring-secondary-container"
+                            placeholder="0.00"
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
-              <button className="mt-4 flex items-center gap-1 text-secondary font-bold text-sm"><span className="material-symbols-outlined text-[18px]">add_circle</span> Add Delivery Mode</button>
-            </div>
-          </section>
-
-          {/* Conditional rules */}
-          <section className="bg-surface-container-lowest rounded-xl premium-shadow overflow-hidden">
-            <div className="px-6 py-4 border-b border-outline-variant bg-surface-container-low flex items-center gap-2"><span className="material-symbols-outlined text-secondary">rule</span><h2 className="font-headline-md text-[20px]">Conditional Logic Rules</h2></div>
-            <div className="p-6 space-y-4">
-              <div className="flex flex-wrap items-center gap-3 bg-surface-container-low p-4 rounded-lg border border-outline-variant/30">
-                <span className="text-sm font-bold text-on-surface-variant uppercase">Rule 1:</span>
-                <span className="text-sm">Show</span>
-                <select className="border-none bg-white rounded shadow-sm text-sm font-bold"><option>Lamination Group</option></select>
-                <span className="text-sm">when</span>
-                <select className="border-none bg-white rounded shadow-sm text-sm font-bold"><option>Paper Quality</option></select>
-                <select className="border-none bg-white rounded shadow-sm text-sm font-bold"><option>is</option></select>
-                <select className="border-none bg-white rounded shadow-sm text-sm font-bold"><option>350 GSM Silk</option></select>
-                <button className="ml-auto text-error/60"><span className="material-symbols-outlined">close</span></button>
-              </div>
-              <div className="flex flex-wrap gap-4">
-                <button className="px-4 py-2 border border-secondary text-secondary rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-secondary/5 transition-colors"><span className="material-symbols-outlined text-[18px]">add</span> Add Condition</button>
-                <button className="px-4 py-2 bg-secondary text-white rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-secondary/20 active:scale-95 transition-all"><span className="material-symbols-outlined text-[18px]">playlist_add</span> New Rule</button>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        {/* Sticky simulator (LIVE) */}
-        <aside className="w-full lg:w-80 flex-shrink-0">
-          <div className="lg:sticky lg:top-28 space-y-6">
-            <div className="bg-primary-container text-white rounded-2xl shadow-xl p-6 overflow-hidden relative border border-white/10">
-              <div className="absolute -top-12 -right-12 w-32 h-32 bg-secondary-container/20 rounded-full blur-3xl"></div>
-              <div className="flex items-center gap-2 mb-6"><span className="material-symbols-outlined text-secondary-container">model_training</span><h3 className="font-bold text-sm uppercase tracking-widest text-on-tertiary-container">Live Simulator</h3></div>
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="text-[10px] text-white/50 font-bold uppercase block mb-1">Quantity</label>
-                  <select value={simQtyId} onChange={(e) => setSimQtyId(Number(e.target.value))} className="w-full bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:ring-secondary-container p-2">
-                    {tiers.filter((t) => t.active).map((t) => <option key={t.id} value={t.id} className="text-on-surface">{t.qty} Units</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] text-white/50 font-bold uppercase block mb-1">Paper Quality</label>
-                  <select value={simOptId} onChange={(e) => setSimOptId(Number(e.target.value))} className="w-full bg-white/5 border border-white/10 rounded-lg text-sm text-white p-2">
-                    {options.map((o) => <option key={o.id} value={o.id} className="text-on-surface">{o.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] text-white/50 font-bold uppercase block mb-1">Delivery Speed</label>
-                  <select value={simDelId} onChange={(e) => setSimDelId(Number(e.target.value))} className="w-full bg-white/5 border border-white/10 rounded-lg text-sm text-white p-2">
-                    {delivery.map((d) => <option key={d.id} value={d.id} className="text-on-surface">{d.name}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="border-t border-white/10 pt-4 space-y-2">
-                <div className="flex justify-between text-xs text-white/70"><span>Base Price ({sim.units})</span><span>{inr(sim.base)}</span></div>
-                {sim.addon > 0 && (
-                  <div className="flex justify-between text-xs text-white/70">
-                    <span>Paper Add-on{sim.opt?.type === "Per-unit" ? ` (${sim.units} × ${sim.opt.value})` : ""}</span>
-                    <span>+ {inr(sim.addon)}</span>
-                  </div>
-                )}
-                {sim.deliveryFee > 0 && <div className="flex justify-between text-xs text-white/70"><span>Delivery</span><span>+ {inr(sim.deliveryFee)}</span></div>}
-                <div className="flex justify-between text-lg font-extrabold pt-2 border-t border-white/5"><span>Total Price</span><span className="text-secondary-container">{inr(sim.total)}</span></div>
-              </div>
-              <div className="mt-6 p-4 bg-tertiary-container/80 rounded-xl border border-white/5">
-                <div className="flex items-center gap-2 text-xs text-white/60 mb-2"><span className="material-symbols-outlined text-[14px]">account_balance_wallet</span> Wallet Preview (8% Cashback)</div>
-                <div className="text-xl font-extrabold text-white">{inr(sim.wallet)}</div>
-                <div className="text-[10px] text-secondary-container font-bold uppercase mt-1">Available for next order</div>
-              </div>
             </div>
 
-            <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-xl border border-outline-variant/30 text-center">
-              <button className="w-full py-4 primary-accent-gradient text-white font-extrabold text-lg rounded-xl shadow-lg shadow-secondary/30 active:scale-[0.98] transition-all mb-4">Save All Changes</button>
-              <div className="flex items-center justify-center gap-2 text-on-surface-variant px-2">
-                <span className="material-symbols-outlined text-[16px] text-error">campaign</span>
-                <p className="text-[11px] font-medium leading-tight text-left"><span className="font-bold text-on-surface">Immediate Deployment:</span> Changes reflect instantly for customers.</p>
-              </div>
+            <div className="mt-6 flex flex-wrap items-center gap-4">
+              <button onClick={save} disabled={saving || !dirty} className="px-6 py-3 primary-accent-gradient text-white font-extrabold rounded-xl shadow-lg shadow-secondary/30 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                {saving ? "Saving…" : "Save Matrix"}
+              </button>
+              {dirty && (
+                <span className="text-sm font-bold text-secondary flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">edit</span>
+                  You have unsaved rate changes
+                </span>
+              )}
+              <p className="text-[12px] text-on-surface-variant italic flex items-center gap-2">
+                <span className="material-symbols-outlined text-[16px]" aria-hidden="true">info</span>
+                {combos.length} combinations · blank or zero rates are skipped.
+              </p>
             </div>
-          </div>
-        </aside>
+          </>
+        )}
       </div>
-    </>
+    </section>
   );
 }

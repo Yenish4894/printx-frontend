@@ -1,0 +1,575 @@
+// Bhagini Graphics — Prisma schema
+// Models mirror FINALIZED_FLOW.md. Money stored as Decimal(10,2).
+// Auth = mobile + password. Orders = wallet-only. No offers/loyalty/ratings.
+// The configurator (Product → SpecGroup → SpecOption + QuantityTier + DeliverySpeed
+// + VisibilityRule) is fully dynamic: admin defines everything, no hardcoded specs.
+
+generator client {
+  provider     = "prisma-client"
+  runtime      = "cloudflare"
+  moduleFormat = "esm"
+  output       = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────── Enums ─────────────────────────
+
+enum Role {
+  CUSTOMER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum PricingModel {
+  TIERED // base price by quantity tier
+  PER_UNIT // unitRate × units (pcs / area)
+  MATRIX // rate looked up from PriceMatrix by option combination × sheets (CMYK/stickers)
+}
+
+enum UnitType {
+  PIECE
+  SQ_FT
+  SQ_CM
+  SQ_INCH
+  SQ_METER
+}
+
+enum SelectionType {
+  SINGLE_SELECT
+  MULTI_SELECT
+}
+
+enum AddOnType {
+  FLAT // +₹X once
+  PER_UNIT // +₹X × units
+}
+
+enum RuleTarget {
+  GROUP
+  OPTION
+}
+
+enum RuleOperator {
+  IS
+  IS_NOT
+  IN
+}
+
+enum RuleLogic {
+  AND
+  OR
+}
+
+enum OrderStatus {
+  PLACED
+  PAYMENT_CONFIRMED
+  DESIGN_REVIEW
+  PRINTING
+  QUALITY_CHECK
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum FileStatus {
+  UPLOAD_PENDING
+  UPLOADED
+  APPROVED
+  REJECTED
+}
+
+enum PaymentMethod {
+  WALLET
+  UPI
+  CARD
+  NET_BANKING
+}
+
+enum PaymentPurpose {
+  WALLET_TOPUP
+  ORDER
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum WalletTxnType {
+  CREDIT
+  DEBIT
+  REFUND
+}
+
+enum RefundStatus {
+  PENDING
+  PROCESSING
+  CREDITED
+  REJECTED
+}
+
+enum NotificationType {
+  ORDER
+  WALLET
+  SYSTEM
+}
+
+// ───────────────────────── Identity ─────────────────────────
+
+model User {
+  id            String   @id @default(cuid())
+  businessName  String
+  ownerName     String
+  mobile        String   @unique // login identifier
+  email         String
+  gstNumber     String?
+  passwordHash  String
+  role          Role      @default(CUSTOMER)
+  walletBalance Decimal   @default(0) @db.Decimal(10, 2)
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  addresses           Address[]
+  orders              Order[]
+  walletTransactions  WalletTransaction[]
+  cart                Cart?
+  notifications       Notification[]
+  savedPaymentMethods SavedPaymentMethod[]
+  walletSettings      WalletSettings?
+  refunds             Refund[]
+  payments            Payment[]
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String // "Home" / "Office"
+  name      String
+  line1     String
+  line2     String?
+  city      String
+  state     String
+  pincode   String
+  phone     String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model SavedPaymentMethod {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         String // UPI / CARD / NET_BANKING
+  label        String // "priya.mehta@okicici" / "HDFC Debit ••8823"
+  detailMasked String?
+  provider     String?
+  expiry       String?
+  isPrimary    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
+model WalletSettings {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  autoTopUp            Boolean  @default(false)
+  autoTopUpThreshold   Decimal  @default(200) @db.Decimal(10, 2)
+  autoTopUpAmount      Decimal  @default(1000) @db.Decimal(10, 2)
+  transactionAlerts    Boolean  @default(true)
+  lowBalanceAlert      Boolean  @default(false)
+  lowBalanceThreshold  Decimal  @default(500) @db.Decimal(10, 2)
+  monthlySpendingLimit Decimal? @db.Decimal(10, 2)
+  updatedAt            DateTime @updatedAt
+}
+
+// ───────────────────────── Catalog ─────────────────────────
+
+model Category {
+  id           String    @id @default(cuid())
+  name         String
+  slug         String    @unique
+  icon         String?
+  displayOrder Int       @default(0)
+  isActive     Boolean   @default(true)
+  products     Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  name        String
+  slug        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+
+  // Pricing config
+  pricingModel       PricingModel @default(TIERED)
+  unitType           UnitType? // for PER_UNIT
+  requiresDimensions Boolean      @default(false) // width × height inputs
+  unitRate           Decimal?     @db.Decimal(10, 2) // for PER_UNIT
+  minQuantity        Int          @default(1)
+
+  // MATRIX products (CMYK / stickers): rates are GST-inclusive, base = matrix rate × sheets
+  pricesIncludeGst     Boolean  @default(false) // MATRIX rates already include GST
+  singlePrintThreshold Int? // below this qty, flat singlePrintRate applies per sheet
+  singlePrintRate      Decimal? @db.Decimal(10, 2) // e.g. ₹20/sheet for tiny orders
+
+  // Display / metadata
+  badges            String[] @default([]) // BESTSELLER / NEW / TRENDING / PREMIUM / ECO / POPULAR
+  printTypeLabel    String? // "Full Color (CMYK)"
+  standardSizeLabel String? // "85 × 55 mm"
+  bleedArea         String? // "3mm on all sides"
+  fileFormats       String[] @default([]) // PDF / AI / PSD / PNG
+  basePriceFrom     Decimal? @db.Decimal(10, 2) // "From ₹X" display
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  images          ProductImage[]
+  priceMatrix     PriceMatrix[]
+  specGroups      SpecGroup[]
+  quantityTiers   QuantityTier[]
+  deliverySpeeds  DeliverySpeed[]
+  visibilityRules VisibilityRule[]
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+
+  @@index([categoryId])
+}
+
+model ProductImage {
+  id           String  @id @default(cuid())
+  productId    String
+  product      Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url          String
+  alt          String?
+  isPrimary    Boolean @default(false)
+  displayOrder Int     @default(0)
+
+  @@index([productId])
+}
+
+// ── Dynamic spec configurator ──
+
+model SpecGroup {
+  id                 String        @id @default(cuid())
+  productId          String
+  product            Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name               String // "Paper Type" / "Material" / "Print Type" / "Finishing" …
+  selectionType      SelectionType @default(SINGLE_SELECT)
+  isPricingDimension Boolean       @default(false) // MATRIX: this group's options drive the rate
+  isRequired         Boolean       @default(true)
+  icon               String?
+  displayOrder       Int           @default(0)
+  isActive           Boolean       @default(true)
+
+  options    SpecOption[]
+  // rules whose CONDITION sources this group
+  conditions RuleCondition[]  @relation("ConditionSourceGroup")
+  // rule targeting this group (visibility)
+  targetedBy VisibilityRule[] @relation("RuleTargetGroup")
+
+  @@index([productId])
+}
+
+model SpecOption {
+  id           String    @id @default(cuid())
+  specGroupId  String
+  specGroup    SpecGroup @relation(fields: [specGroupId], references: [id], onDelete: Cascade)
+  name         String // "350gsm Matte"
+  description  String? // "No glare"
+  addOnType    AddOnType @default(FLAT)
+  addOnValue   Decimal   @default(0) @db.Decimal(10, 2)
+  perQuantity  Int       @default(1) // add-on charged per N units (e.g. 100 → ₹180 per 100 sheets)
+  isDefault    Boolean   @default(false) // shown as "Included"
+  isActive     Boolean   @default(true)
+  displayOrder Int       @default(0)
+
+  // rule targeting this option (visibility)
+  targetedBy VisibilityRule[] @relation("RuleTargetOption")
+
+  @@index([specGroupId])
+}
+
+model QuantityTier {
+  id           String  @id @default(cuid())
+  productId    String
+  product      Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity     Int
+  basePrice    Decimal @db.Decimal(10, 2)
+  label        String? // e.g. "Bulk discount applied"
+  isActive     Boolean @default(true)
+  displayOrder Int     @default(0)
+
+  @@index([productId])
+}
+
+model DeliverySpeed {
+  id           String  @id @default(cuid())
+  productId    String
+  product      Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name         String // "Express" / "Standard" / "Economy"
+  fee          Decimal @default(0) @db.Decimal(10, 2)
+  etaMinDays   Int
+  etaMaxDays   Int
+  isActive     Boolean @default(true)
+  displayOrder Int     @default(0)
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([productId])
+}
+
+model VisibilityRule {
+  id             String      @id @default(cuid())
+  productId      String
+  product        Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  targetType     RuleTarget
+  targetGroupId  String?
+  targetGroup    SpecGroup?  @relation("RuleTargetGroup", fields: [targetGroupId], references: [id], onDelete: Cascade)
+  targetOptionId String?
+  targetOption   SpecOption? @relation("RuleTargetOption", fields: [targetOptionId], references: [id], onDelete: Cascade)
+  logic          RuleLogic   @default(AND)
+
+  conditions RuleCondition[]
+
+  @@index([productId])
+}
+
+model RuleCondition {
+  id            String         @id @default(cuid())
+  ruleId        String
+  rule          VisibilityRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  sourceGroupId String
+  sourceGroup   SpecGroup      @relation("ConditionSourceGroup", fields: [sourceGroupId], references: [id], onDelete: Cascade)
+  operator      RuleOperator   @default(IS)
+  optionIds     String[] // SpecOption ids this condition matches against
+
+  @@index([ruleId])
+}
+
+// MATRIX pricing: one row per valid combination of pricing-dimension options.
+// e.g. CMYK { Size:12x18, GSM:100, Sides:1 } → ₹8/sheet (GST-inclusive).
+// Missing combinations are simply not orderable (e.g. Texture only on 12x18).
+model PriceMatrix {
+  id           String   @id @default(cuid())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  comboKey     String // normalized sorted option ids: "optA|optB|optC"
+  optionIds    String[] // the pricing-dimension option ids in this combo
+  ratePerSheet Decimal  @db.Decimal(10, 2)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@unique([productId, comboKey])
+  @@index([productId])
+}
+
+// ───────────────────────── Commerce ─────────────────────────
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id              String         @id @default(cuid())
+  cartId          String
+  cart            Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product        @relation(fields: [productId], references: [id])
+  quantity        Int
+  width           Decimal?       @db.Decimal(10, 2) // PER_UNIT area products
+  height          Decimal?       @db.Decimal(10, 2)
+  deliverySpeedId String?
+  deliverySpeed   DeliverySpeed? @relation(fields: [deliverySpeedId], references: [id])
+  config          Json // { groupId: optionId | [optionIds] }
+  specSnapshot    Json // [{ group, option, addOn }] resolved for display
+  unitPrice       Decimal        @db.Decimal(10, 2)
+  lineSubtotal    Decimal        @db.Decimal(10, 2) // taxable value of the line (pre-GST print charge)
+  gstAmount       Decimal        @default(0) @db.Decimal(10, 2)
+  fileUrl         String?
+  fileName        String?
+  fileStatus      FileStatus     @default(UPLOAD_PENDING)
+  notes           String?
+  createdAt       DateTime       @default(now())
+
+  @@index([cartId])
+  @@index([productId])
+}
+
+// ───────────────────────── Orders ─────────────────────────
+
+model Order {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  orderNumber   String      @unique // PX-2024-08471
+  invoiceNumber String?     @unique // INV-2024-08471
+  status        OrderStatus @default(PLACED)
+
+  subtotal       Decimal @db.Decimal(10, 2)
+  deliveryCharge Decimal @default(0) @db.Decimal(10, 2)
+  gstAmount      Decimal @default(0) @db.Decimal(10, 2)
+  totalAmount    Decimal @db.Decimal(10, 2)
+
+  // Orders are paid from the prepaid wallet only
+  shippingSnapshot Json // address snapshot at order time
+  notes            String?
+
+  placedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items         OrderItem[]
+  statusHistory OrderStatusHistory[]
+  refunds       Refund[]
+  payment       Payment?
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id               String         @id @default(cuid())
+  orderId          String
+  order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId        String
+  product          Product        @relation(fields: [productId], references: [id])
+  productName      String // snapshot
+  quantity         Int
+  width            Decimal?       @db.Decimal(10, 2)
+  height           Decimal?       @db.Decimal(10, 2)
+  deliverySpeedId  String?
+  deliverySpeed    DeliverySpeed? @relation(fields: [deliverySpeedId], references: [id])
+  deliveryEtaLabel String? // "8 Jun 2024 · 2–3 business days"
+  config           Json
+  specSnapshot     Json
+  unitPrice        Decimal        @db.Decimal(10, 2)
+  lineSubtotal     Decimal        @db.Decimal(10, 2) // taxable value of the line (pre-GST print charge)
+  gstAmount        Decimal        @default(0) @db.Decimal(10, 2)
+  fileUrl          String?
+  fileName         String?
+  fileStatus       FileStatus     @default(UPLOAD_PENDING)
+  fileRejectReason String?
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    OrderStatus
+  note      String?
+  createdAt DateTime    @default(now())
+
+  @@index([orderId])
+}
+
+// ───────────────────────── Money ─────────────────────────
+
+model Payment {
+  id                String         @id @default(cuid())
+  userId            String
+  user              User           @relation(fields: [userId], references: [id])
+  purpose           PaymentPurpose
+  method            PaymentMethod
+  amount            Decimal        @db.Decimal(10, 2)
+  status            PaymentStatus  @default(PENDING)
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  orderId           String?        @unique
+  order             Order?         @relation(fields: [orderId], references: [id])
+  createdAt         DateTime       @default(now())
+
+  @@index([userId])
+}
+
+model WalletTransaction {
+  id             String        @id @default(cuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           WalletTxnType
+  amount         Decimal       @db.Decimal(10, 2)
+  balanceAfter   Decimal       @db.Decimal(10, 2)
+  reference      String? // order number / razorpay txn id
+  description    String?
+  relatedOrderId String?
+  createdAt      DateTime      @default(now())
+
+  @@index([userId])
+}
+
+model Refund {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  orderId     String
+  order       Order        @relation(fields: [orderId], references: [id])
+  amount      Decimal      @db.Decimal(10, 2)
+  status      RefundStatus @default(PENDING)
+  reason      String?
+  createdAt   DateTime     @default(now())
+  processedAt DateTime?
+
+  @@index([userId])
+  @@index([orderId])
+}
+
+// ───────────────────────── Platform ─────────────────────────
+
+// Single-row global configuration. Drives GST, wallet top-up limits, policies,
+// and the public business identity shown across the app.
+model PlatformSettings {
+  id                      String   @id @default("singleton")
+  gstPercent              Int      @default(18)
+  freeShippingThreshold   Decimal  @default(0) @db.Decimal(10, 2)
+  autoRoundPrices         Boolean  @default(false)
+  minTopUp                Decimal  @default(200) @db.Decimal(10, 2)
+  maxTopUp                Decimal  @default(100000) @db.Decimal(10, 2)
+  cancellationWindowHours Int      @default(2)
+  fileGracePeriod         Boolean  @default(true)
+  defaultDpi              String   @default("300 DPI")
+  defaultColorProfile     String   @default("CMYK (U.S. Web Coated)")
+  standardBleedMm         Decimal  @default(3) @db.Decimal(4, 1)
+  businessGstNumber       String?
+  supportPhone            String?
+  supportEmail            String?
+  socialFacebook          String?
+  socialInstagram         String?
+  socialTwitter           String?
+  socialLinkedin          String?
+  updatedAt               DateTime @updatedAt
+}
+
+// ───────────────────────── Engagement ─────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType @default(SYSTEM)
+  title     String
+  body      String?
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+}

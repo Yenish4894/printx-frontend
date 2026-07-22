@@ -1,96 +1,276 @@
-import type { Metadata } from "next";
+"use client";
 
-export const metadata: Metadata = { title: "Bhagini Graphics Admin | Refunds" };
-
-const tabs: [string, string, boolean][] = [
-  ["Pending", "12", true],
-  ["Processing", "5", false],
-  ["Credited", "164", false],
-  ["Rejected", "8", false],
-];
+import { useCallback, useEffect, useRef, useState } from "react";
+import { admin, ApiError } from "@/lib/api";
+import { inr } from "@/components/SessionProvider";
+import { useConfirm, useToast } from "@/components/ui/UIProvider";
+import { statusLabel, statusBadge, REFUND_STATUS } from "@/lib/orderStatus";
+import { formatDateTime } from "@/lib/format";
 
 type Refund = {
-  id: string; customer: string; img: string; order: string; amount: string; reason: string;
-  status: string; statusColor: string; pending: boolean;
+  id: string;
+  orderNumber: string;
+  customer: string;
+  customerMobile: string;
+  amount: number;
+  status: "PENDING" | "PROCESSING" | "CREDITED" | "REJECTED" | string;
+  reason: string | null;
+  createdAt: string;
+  processedAt: string | null;
 };
 
-const refunds: Refund[] = [
-  { id: "#REF-2024-001", customer: "Meera Kapoor", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAS8hVOgXbNUQel-sSeWMv8jZ_tlKQzrd8p5HkMX70GlUtEbnZ8lOc2BSYr2G6l3jQUP3U1GWU9QQtbslouWp4xr5Ms0TdepYu3gYnjx8k9SPFCGYQkyHIztZGomd6lq2vz5SzzIcFVn6C_bPHx2IKWPDYS_4Qsdrhd63Vpye13xsi5oQrjXp032GT6rrM_iJTVpegcVfuiVwWEc6VgPYWAjhlrp7DUBNRqpRS5slmkNV6u0v4DGZ9B_rnsmZ84g2H51XUspwItD5c", order: "#PX-2024-08471", amount: "₹1,450.00", reason: "Damaged during shipping", status: "PENDING", statusColor: "bg-secondary-fixed text-on-secondary-fixed", pending: true },
-  { id: "#REF-2024-002", customer: "Arjun Singh", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBMjeExVitdUPGt7aDDEiaH0usrLvT4KP4P8oGhhyGmtPxAD8boYqtDKR8GK0swudAq83eEhK2QMPdyJS62mRD9a_qJDbYdC4KS60xbdprs8th43JbwWADgZVt1ps-4b24qJIb9MAA_KZLkYyJ8rgqcztN6O6Ws1vpR7nMsPGVgWaVNheUKl7DVq0KSf47qX-OZgK6iE5eNzlVnbjcOHkx98yXMIgeTRr7YrGfgsSqCLLisXzPDEyeJ4jT_WoxA5I_rg8dJc9fjuyc", order: "#PX-2024-08512", amount: "₹3,210.00", reason: "Wrong paper finish", status: "PENDING", statusColor: "bg-secondary-fixed text-on-secondary-fixed", pending: true },
-  { id: "#REF-2024-003", customer: "Sarah Jenkins", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuB2GSTOoMoOdyV0GvrONJW5z2gR-uMKUR67C4OHMbQzluHH1BJWprNohIAeTkT2y3KMitavuU50klBqm7T_LG4F8XhXJgFETzCdW53imuLxDlaSMvRyYgRk8FU_YMNBhi-3rfmIK1Ro3GZfA40F21h_AzQ0jNR5Zy0GPzYojQrZb5sdM7AyN3yE7FlbBpLH0j1GomrqlELs4LCaCndRDB2n5OhY1LzIcBMaAgn2Rsf_io7StHQu87yxmmrsMpWis7kaN_XKMhBKIhc", order: "#PX-2024-08399", amount: "₹980.00", reason: "Color mismatch", status: "PROCESSING", statusColor: "bg-tertiary-fixed text-on-tertiary-fixed", pending: false },
-  { id: "#REF-2024-004", customer: "Rahul Mehta", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBPuFDmaRFAjdlltDZ67gUAB5qhoxIpATyq26ySWZUOwI-IAU_wBj1BX6rjd8z2uMkS5d9RWp0aYS7kQopcz6hQYBSuxhp3CfgzD6y1PfuMCClaAJviuHM6w4wIjzHfT6OliZEQXjWEesLnLOCpquplf0YM8dk3KfHf88DmjV3k9CzsQAicgyCnVXwqIRJgz2F6wNFFys3Rjdx1O_lJdSWR_LuUTsqk_w7d94v_J3v1BBIMdpIcz4zJ2DEo9vEKvtzx5TnPHL_0SYw", order: "#PX-2024-08123", amount: "₹2,100.00", reason: "Late delivery", status: "CREDITED", statusColor: "bg-surface-container-highest text-on-surface-variant", pending: false },
-];
+const STATUS_TABS = ["All", "PENDING", "PROCESSING", "CREDITED", "REJECTED"] as const;
 
 export default function AdminRefunds() {
+  const confirm = useConfirm();
+  const toast = useToast();
+
+  const [refunds, setRefunds] = useState<Refund[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<(typeof STATUS_TABS)[number]>("All");
+  const [busyKey, setBusyKey] = useState<string | null>(null); // `${id}:${action}`
+
+  // Inline reject flow
+  const [rejectTarget, setRejectTarget] = useState<Refund | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectError, setRejectError] = useState<string | null>(null);
+  const rejectRef = useRef<HTMLTextAreaElement>(null);
+
+  const load = useCallback(async (opts?: { silent?: boolean }) => {
+    if (!opts?.silent) setLoading(true);
+    setError(null);
+    try {
+      const { refunds } = await admin.refunds.list();
+      setRefunds(refunds as Refund[]);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Failed to load refunds");
+    } finally {
+      if (!opts?.silent) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const approve = async (r: Refund) => {
+    const ok = await confirm({
+      title: "Approve this refund?",
+      message: `${inr(r.amount)} will be credited to the customer's wallet.`,
+      confirmLabel: "Approve refund",
+    });
+    if (!ok) return;
+    setBusyKey(`${r.id}:APPROVE`);
+    setError(null);
+    try {
+      await admin.refunds.process(r.id, "APPROVE", undefined);
+      await load({ silent: true });
+      toast("Refund approved", "success");
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : "Failed to process refund";
+      setError(msg);
+      toast(msg, "error");
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  const openReject = (r: Refund) => {
+    setRejectTarget(r);
+    setRejectReason("");
+    setRejectError(null);
+  };
+
+  const rejectSaving = busyKey === `${rejectTarget?.id}:REJECT`;
+
+  const submitReject = async () => {
+    if (!rejectTarget) return;
+    const reason = rejectReason.trim();
+    if (!reason) {
+      setRejectError("A reason is required to reject a refund.");
+      return;
+    }
+    setBusyKey(`${rejectTarget.id}:REJECT`);
+    setRejectError(null);
+    setError(null);
+    try {
+      await admin.refunds.process(rejectTarget.id, "REJECT", reason);
+      setRejectTarget(null);
+      await load({ silent: true });
+      toast("Refund rejected", "success");
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : "Failed to process refund";
+      setRejectError(msg);
+      toast(msg, "error");
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  useEffect(() => {
+    if (!rejectTarget) return;
+    rejectRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !rejectSaving) setRejectTarget(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [rejectTarget, rejectSaving]);
+
+  const counts = STATUS_TABS.reduce<Record<string, number>>((acc, t) => {
+    acc[t] = t === "All" ? refunds.length : refunds.filter((r) => r.status === t).length;
+    return acc;
+  }, {});
+
+  const visible = filter === "All" ? refunds : refunds.filter((r) => r.status === filter);
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight">Refunds</h1>
-        <p className="font-body-md text-on-surface-variant">189 total refund requests</p>
+        <p className="font-body-md text-on-surface-variant">{refunds.length} total refund requests</p>
       </div>
 
       <div className="flex items-center gap-2 border-b border-outline-variant overflow-x-auto no-scrollbar">
-        {tabs.map(([label, count, active]) => (
-          <button key={label} className={`px-6 py-3 whitespace-nowrap font-button text-sm flex items-center gap-2 border-b-2 transition-colors ${active ? "border-secondary text-secondary font-bold" : "border-transparent text-on-surface-variant hover:text-secondary"}`}>
-            {label} <span className={`px-2 rounded-full text-xs ${active ? "bg-secondary/10" : "bg-surface-variant/50"}`}>{count}</span>
-          </button>
-        ))}
+        {STATUS_TABS.map((label) => {
+          const active = filter === label;
+          return (
+            <button
+              key={label}
+              onClick={() => setFilter(label)}
+              className={`px-6 py-3 whitespace-nowrap font-button text-sm flex items-center gap-2 border-b-2 transition-colors capitalize ${active ? "border-secondary text-secondary font-bold" : "border-transparent text-on-surface-variant hover:text-secondary"}`}
+            >
+              {label.toLowerCase()}{" "}
+              <span className={`px-2 rounded-full text-xs ${active ? "bg-secondary/10" : "bg-surface-variant/50"}`}>{counts[label]}</span>
+            </button>
+          );
+        })}
       </div>
+
+      {error && (
+        <div className="p-4 rounded-lg bg-error/10 text-error text-sm font-medium flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => load()} className="underline font-bold">Retry</button>
+        </div>
+      )}
 
       <div className="bg-surface-container-lowest rounded-xl premium-shadow overflow-hidden border border-outline-variant/30">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-surface-container-low border-b border-outline-variant">
-                {["Refund ID", "Customer", "Order #", "Amount", "Reason", "Status", "Actions"].map((h) => (
-                  <th key={h} className={`px-6 py-4 font-label-caps text-label-caps text-on-surface-variant uppercase ${h === "Status" ? "text-center" : ""} ${h === "Actions" ? "text-right" : ""}`}>{h}</th>
+                {["Order #", "Customer", "Amount", "Reason", "Requested", "Processed", "Status", "Actions"].map((h) => (
+                  <th key={h} scope="col" className={`px-6 py-4 font-label-caps text-label-caps text-on-surface-variant uppercase ${h === "Status" ? "text-center" : ""} ${h === "Actions" ? "text-right" : ""}`}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant">
-              {refunds.map((r) => (
-                <tr key={r.id} className={`hover:bg-surface-bright transition-colors group ${!r.pending ? "opacity-80" : ""}`}>
-                  <td className="px-6 py-5 font-body-md text-body-md font-bold text-primary">{r.id}</td>
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full overflow-hidden">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img className="w-full h-full object-cover" alt={r.customer} src={r.img} />
-                      </div>
-                      <span className="font-body-md text-body-md text-on-surface">{r.customer}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5"><a className="text-secondary font-semibold hover:underline" href="#">{r.order}</a></td>
-                  <td className="px-6 py-5 font-body-md text-body-md font-bold text-primary">{r.amount}</td>
-                  <td className="px-6 py-5"><p className="text-body-md text-on-surface-variant max-w-[200px] truncate" title={r.reason}>{r.reason}</p></td>
-                  <td className="px-6 py-5 text-center"><span className={`inline-flex px-2.5 py-1 rounded-full text-[12px] font-bold ${r.statusColor}`}>{r.status}</span></td>
-                  <td className="px-6 py-5 text-right">
-                    {r.pending ? (
-                      <div className="flex gap-2 justify-end">
-                        <button className="px-4 py-1.5 primary-gradient text-white rounded font-button text-[14px]">Approve</button>
-                        <button className="px-4 py-1.5 border border-outline-variant text-on-surface-variant hover:bg-surface-container-high rounded font-button text-[14px]">Reject</button>
-                      </div>
-                    ) : (
-                      <button className="text-on-surface-variant hover:text-secondary p-2"><span className="material-symbols-outlined">more_vert</span></button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {loading ? (
+                <tr><td colSpan={8} className="px-6 py-16 text-center text-on-surface-variant">Loading refunds…</td></tr>
+              ) : visible.length === 0 ? (
+                <tr><td colSpan={8} className="px-6 py-16 text-center text-on-surface-variant">No refunds found.</td></tr>
+              ) : (
+                visible.map((r) => {
+                  const actionable = r.status === "PENDING" || r.status === "PROCESSING";
+                  return (
+                    <tr key={r.id} className={`hover:bg-surface-bright transition-colors group ${!actionable ? "opacity-80" : ""}`}>
+                      <td className="px-6 py-5 font-body-md text-body-md font-bold text-primary">{r.orderNumber}</td>
+                      <td className="px-6 py-5">
+                        <div className="font-body-md text-body-md text-on-surface">{r.customer}</div>
+                        <div className="text-xs text-on-surface-variant">{r.customerMobile}</div>
+                      </td>
+                      <td className="px-6 py-5 font-body-md text-body-md font-bold text-primary">{inr(r.amount)}</td>
+                      <td className="px-6 py-5"><p className="text-body-md text-on-surface-variant max-w-[200px] truncate" title={r.reason ?? ""}>{r.reason ?? "—"}</p></td>
+                      <td className="px-6 py-5 text-sm text-on-surface-variant">{formatDateTime(r.createdAt)}</td>
+                      <td className="px-6 py-5 text-sm text-on-surface-variant">{formatDateTime(r.processedAt)}</td>
+                      <td className="px-6 py-5 text-center"><span className={`inline-flex px-2.5 py-1 rounded-full text-[12px] font-bold ${statusBadge(r.status, REFUND_STATUS)}`}>{statusLabel(r.status, REFUND_STATUS)}</span></td>
+                      <td className="px-6 py-5 text-right">
+                        {actionable ? (
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              disabled={busyKey === `${r.id}:APPROVE` || busyKey === `${r.id}:REJECT`}
+                              onClick={() => approve(r)}
+                              className="px-4 py-1.5 primary-gradient text-white rounded font-button text-[14px] disabled:opacity-50"
+                            >
+                              {busyKey === `${r.id}:APPROVE` ? "…" : "Approve"}
+                            </button>
+                            <button
+                              disabled={busyKey === `${r.id}:APPROVE` || busyKey === `${r.id}:REJECT`}
+                              onClick={() => openReject(r)}
+                              className="px-4 py-1.5 border border-outline-variant text-on-surface-variant hover:bg-surface-container-high rounded font-button text-[14px] disabled:opacity-50"
+                            >
+                              {busyKey === `${r.id}:REJECT` ? "…" : "Reject"}
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-on-surface-variant/60 uppercase font-bold">Done</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
         <div className="px-6 py-4 bg-surface-container-lowest border-t border-outline-variant flex items-center justify-between">
-          <p className="text-label-caps text-on-surface-variant">Showing 1 to 10 of 189 results</p>
-          <div className="flex items-center gap-2">
-            <button className="w-8 h-8 flex items-center justify-center rounded border border-outline-variant hover:bg-surface-variant/10"><span className="material-symbols-outlined text-sm">chevron_left</span></button>
-            <button className="w-8 h-8 flex items-center justify-center rounded bg-secondary text-white font-bold text-sm">1</button>
-            <button className="w-8 h-8 flex items-center justify-center rounded border border-outline-variant hover:bg-surface-variant/10 text-sm">2</button>
-            <button className="w-8 h-8 flex items-center justify-center rounded border border-outline-variant hover:bg-surface-variant/10 text-sm">3</button>
-            <span className="px-2 text-on-surface-variant">...</span>
-            <button className="w-8 h-8 flex items-center justify-center rounded border border-outline-variant hover:bg-surface-variant/10"><span className="material-symbols-outlined text-sm">chevron_right</span></button>
-          </div>
+          <p className="text-label-caps text-on-surface-variant">Showing {visible.length} of {refunds.length} results</p>
         </div>
       </div>
+
+      {/* Reject refund dialog */}
+      {rejectTarget && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50"
+          onClick={() => { if (!rejectSaving) setRejectTarget(null); }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reject-refund-title"
+            className="bg-surface w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <h3 id="reject-refund-title" className="font-headline-md text-headline-md text-on-surface mb-2">Reject refund</h3>
+              <p className="text-body-md text-on-surface-variant mb-4">
+                Rejecting the {inr(rejectTarget.amount)} refund for order {rejectTarget.orderNumber}. The reason is shared with the customer.
+              </p>
+              <label htmlFor="reject-refund-reason" className="font-label-caps text-label-caps text-on-surface-variant block mb-2 uppercase">Reason for rejection</label>
+              <textarea
+                id="reject-refund-reason"
+                ref={rejectRef}
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                disabled={rejectSaving}
+                className="w-full bg-surface border border-outline-variant rounded-lg p-3 text-sm focus:ring-secondary h-24 placeholder:italic disabled:opacity-50"
+                placeholder="e.g. Order already shipped; refund not applicable."
+              />
+              {rejectError && <p className="text-error text-xs mt-2" role="alert">{rejectError}</p>}
+            </div>
+            <div className="px-6 py-4 bg-surface-container flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setRejectTarget(null)}
+                disabled={rejectSaving}
+                className="px-5 py-2.5 rounded-lg border border-outline-variant font-button text-on-surface hover:bg-surface-container-high transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={submitReject}
+                disabled={rejectSaving}
+                className="px-5 py-2.5 rounded-lg font-button text-white bg-error hover:brightness-95 transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+              >
+                {rejectSaving && <span className="material-symbols-outlined animate-spin text-sm" aria-hidden="true">progress_activity</span>}
+                Reject refund
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
