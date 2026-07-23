@@ -5,7 +5,13 @@
   "compatibility_date": "2025-06-01",
   // nodejs_compat: run the Node APIs the app uses (crypto, path, Buffer, streams).
   // global_fetch_strictly_public: OpenNext's internal self-fetches go over the public edge.
-  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  // no_handle_cross_request_promise_resolution: the shared Prisma client's fetch-based
+  //   queries resolve promises across request contexts; without this Workers cancels them.
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public",
+    "no_handle_cross_request_promise_resolution"
+  ],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
