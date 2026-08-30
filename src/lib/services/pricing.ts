@@ -3,7 +3,9 @@
 // Supports three product pricing modes:
 //   TIERED    base by quantity tier (+ bulk-rate interpolation)
 //   PER_UNIT  unitRate × units (pcs / area)
-//   MATRIX    rate looked up per option-combination × sheets (CMYK / stickers)
+//   MATRIX    price looked up per option-combination — either a ₹/sheet rate
+//             × sheets (CMYK / stickers) or a flat total for the whole run when
+//             quantity is itself a pricing dimension (letterheads)
 // Add-ons: FLAT (once) or PER_UNIT (× units / perQuantity, e.g. ₹180 per 100).
 // GST 18%: added on top for exclusive products; back-calculated for GST-inclusive
 // (MATRIX) products. Delivery is always a taxable service (+18%).
@@ -36,6 +38,18 @@ export interface PricingProduct {
   quantityTiers: QuantityTierLite[];
 }
 
+/**
+ * The resolved MATRIX row for the selected combination. Exactly one of the two
+ * prices is set — see the PriceMatrix model comment.
+ *   ratePerSheet → base = rate × quantity   (CMYK / stickers)
+ *   flatPrice    → base = flatPrice         (letterheads; quantity is itself a
+ *                                            pricing dimension of the combo)
+ */
+export interface MatrixPrice {
+  ratePerSheet?: number | null;
+  flatPrice?: number | null;
+}
+
 export interface AddOnLite {
   addOnType: AddOnType;
   addOnValue: number;
@@ -48,7 +62,8 @@ export interface PricingInput {
   width?: number | null;
   height?: number | null;
   addOns: AddOnLite[]; // NON pricing-dimension options only
-  matrixRate?: number | null; // resolved ₹/sheet for the dimension combo (MATRIX)
+  matrixRate?: number | null; // shorthand for matrixPrice: { ratePerSheet }
+  matrixPrice?: MatrixPrice | null; // resolved MATRIX row for the dimension combo
   deliveryFee: number;
   gstRate?: number; // fraction (e.g. 0.18); defaults to GST_RATE
 }
@@ -84,14 +99,19 @@ export function computeBase(
   product: PricingProduct,
   quantity: number,
   units: number,
-  matrixRate?: number | null,
+  matrix?: MatrixPrice | null,
 ): number {
   if (product.pricingModel === "MATRIX") {
+    // Flat-priced combination: the row already prices the whole run, so it is
+    // NOT multiplied by quantity (quantity is one of the combo's dimensions).
+    // The single-print floor is a per-sheet concept and does not apply here.
+    if (matrix?.flatPrice != null) return round2(matrix.flatPrice);
+
     const small =
       product.singlePrintThreshold != null &&
       product.singlePrintRate != null &&
       quantity < product.singlePrintThreshold;
-    const rate = small ? product.singlePrintRate! : (matrixRate ?? 0);
+    const rate = small ? product.singlePrintRate! : (matrix?.ratePerSheet ?? 0);
     return round2(rate * quantity);
   }
 
@@ -124,11 +144,14 @@ export function computeAddOns(addOns: AddOnLite[], units: number): number {
 }
 
 export function computePrice(input: PricingInput): PriceBreakdown {
-  const { product, quantity, width, height, addOns, matrixRate, deliveryFee } = input;
+  const { product, quantity, width, height, addOns, deliveryFee } = input;
   const gstRate = input.gstRate ?? GST_RATE;
+  const matrix: MatrixPrice | null =
+    input.matrixPrice ??
+    (input.matrixRate != null ? { ratePerSheet: input.matrixRate } : null);
 
   const units = computeUnits(product, quantity, width, height);
-  const base = computeBase(product, quantity, units, matrixRate);
+  const base = computeBase(product, quantity, units, matrix);
   const addOnTotal = computeAddOns(addOns, units);
   const delivery = round2(deliveryFee);
 

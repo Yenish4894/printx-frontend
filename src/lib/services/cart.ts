@@ -90,14 +90,14 @@ export async function addCartItem(userId: string, input: AddCartItemInput) {
     data: {
       cartId: cart.id,
       productId: input.productId,
-      quantity: input.quantity,
+      quantity: quote.quantity,
       width: input.width ?? null,
       height: input.height ?? null,
       deliverySpeedId: input.deliverySpeedId ?? null,
       config: input.selections,
       specSnapshot: quote.specSnapshot,
       // per-unit gross goods price (taxable + GST), for display
-      unitPrice: round2((goodsTaxable + goodsGst) / input.quantity),
+      unitPrice: round2((goodsTaxable + goodsGst) / quote.quantity),
       lineSubtotal: goodsTaxable, // goods taxable; delivery tracked via deliverySpeedId
       gstAmount: goodsGst,
       notes: input.notes ?? null,
@@ -130,8 +130,9 @@ export async function updateCartItemQuantity(
   await prisma.cartItem.update({
     where: { id: itemId },
     data: {
-      quantity,
-      unitPrice: round2((goodsTaxable + goodsGst) / quantity),
+      // A slab product ignores the requested number and prices its own slab.
+      quantity: quote.quantity,
+      unitPrice: round2((goodsTaxable + goodsGst) / quote.quantity),
       lineSubtotal: goodsTaxable,
       gstAmount: goodsGst,
     },

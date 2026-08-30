@@ -1,6 +1,11 @@
 import prisma from "@/lib/prisma";
 import { HttpError } from "@/lib/http";
-import { computePrice, buildComboKey, type AddOnLite } from "./pricing";
+import {
+  computePrice,
+  buildComboKey,
+  type AddOnLite,
+  type MatrixPrice,
+} from "./pricing";
 import { getGstRate } from "./settings";
 import type { QuoteInput } from "@/lib/dto/pricing";
 
@@ -27,9 +32,6 @@ export async function resolveAndPrice(input: QuoteInput) {
   if (!product || !product.isActive) {
     throw new HttpError(404, "Product not found");
   }
-  if (input.quantity < product.minQuantity) {
-    throw new HttpError(422, `Minimum quantity is ${product.minQuantity}`);
-  }
   if (product.requiresDimensions && (!input.width || !input.height)) {
     throw new HttpError(422, "Width and height are required for this product");
   }
@@ -40,6 +42,8 @@ export async function resolveAndPrice(input: QuoteInput) {
     {
       groupId: string;
       isDimension: boolean;
+      isQuantity: boolean;
+      quantityValue: number | null;
       addOnType: AddOnLite["addOnType"];
       addOnValue: number;
       perQuantity: number;
@@ -52,6 +56,8 @@ export async function resolveAndPrice(input: QuoteInput) {
       optionIndex.set(o.id, {
         groupId: g.id,
         isDimension: g.isPricingDimension,
+        isQuantity: g.isQuantityDimension,
+        quantityValue: o.quantityValue,
         addOnType: o.addOnType,
         addOnValue: Number(o.addOnValue),
         perQuantity: o.perQuantity,
@@ -64,6 +70,8 @@ export async function resolveAndPrice(input: QuoteInput) {
   const addOns: AddOnLite[] = [];
   const dimensionOptionIds: string[] = [];
   const snapshot: { group: string; option: string; addOn: number }[] = [];
+  // Set when the product prices quantity as a spec (a fixed slab list).
+  let slabQuantity: number | null = null;
 
   for (const g of product.specGroups) {
     const sel = input.selections[g.id];
@@ -82,9 +90,15 @@ export async function resolveAndPrice(input: QuoteInput) {
         throw new HttpError(422, `Invalid option selected for "${g.name}"`);
       }
       snapshot.push({ group: opt.groupName, option: opt.name, addOn: opt.addOnValue });
+      if (opt.isQuantity) {
+        if (opt.quantityValue == null) {
+          throw new HttpError(422, `"${opt.name}" is not a valid quantity`);
+        }
+        slabQuantity = opt.quantityValue;
+      }
       if (opt.isDimension) {
         dimensionOptionIds.push(id);
-      } else {
+      } else if (!opt.isQuantity) {
         addOns.push({
           addOnType: opt.addOnType,
           addOnValue: opt.addOnValue,
@@ -94,8 +108,32 @@ export async function resolveAndPrice(input: QuoteInput) {
     }
   }
 
-  // MATRIX: resolve ₹/sheet for the selected dimension combination.
-  let matrixRate: number | null = null;
+  // The slab selection, when the product has one, IS the quantity — a typed
+  // `quantity` can't override it (that would let a client buy 16000 at the
+  // 1000-slab price).
+  const quantity = slabQuantity ?? input.quantity;
+  if (quantity < product.minQuantity) {
+    throw new HttpError(422, `Minimum quantity is ${product.minQuantity}`);
+  }
+  if (product.maxQuantity != null && quantity > product.maxQuantity) {
+    throw new HttpError(422, `Maximum quantity is ${product.maxQuantity}`);
+  }
+  // Free-typed quantities must land on an orderable increment; slab quantities
+  // come from the catalogue and are exempt.
+  if (
+    slabQuantity == null &&
+    product.quantityStep > 1 &&
+    (quantity - product.minQuantity) % product.quantityStep !== 0
+  ) {
+    throw new HttpError(
+      422,
+      `Quantity must be in steps of ${product.quantityStep} from ${product.minQuantity}`,
+    );
+  }
+
+  // MATRIX: resolve the price row for the selected dimension combination. The
+  // row carries either a ₹/sheet rate or a flat total — see PriceMatrix.
+  let matrixPrice: MatrixPrice | null = null;
   if (product.pricingModel === "MATRIX") {
     const comboKey = buildComboKey(dimensionOptionIds);
     const entry = product.priceMatrix.find((m) => m.comboKey === comboKey);
@@ -105,7 +143,13 @@ export async function resolveAndPrice(input: QuoteInput) {
         "This combination is not available. Please choose a different option.",
       );
     }
-    matrixRate = Number(entry.ratePerSheet);
+    if (entry.ratePerSheet == null && entry.flatPrice == null) {
+      throw new HttpError(422, "This combination is not priced yet.");
+    }
+    matrixPrice = {
+      ratePerSheet: entry.ratePerSheet == null ? null : Number(entry.ratePerSheet),
+      flatPrice: entry.flatPrice == null ? null : Number(entry.flatPrice),
+    };
   }
 
   // Delivery
@@ -134,18 +178,18 @@ export async function resolveAndPrice(input: QuoteInput) {
         basePrice: Number(t.basePrice),
       })),
     },
-    quantity: input.quantity,
+    quantity,
     width: input.width ?? null,
     height: input.height ?? null,
     addOns,
-    matrixRate,
+    matrixPrice,
     deliveryFee,
     gstRate,
   });
 
   return {
     productId: product.id,
-    quantity: input.quantity,
+    quantity,
     deliveryLabel,
     specSnapshot: snapshot,
     breakdown,

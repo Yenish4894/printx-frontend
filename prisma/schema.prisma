@@ -195,6 +195,9 @@ model WalletSettings {
 
 // ───────────────────────── Catalog ─────────────────────────
 
+// Two-level browse: a top category ("Letter Heads") holds sub-categories
+// ("100 GSM Bond Paper"), and products hang off the leaf. `parentId` is null
+// for top-level categories. Products may sit on either level.
 model Category {
   id           String    @id @default(cuid())
   name         String
@@ -202,7 +205,12 @@ model Category {
   icon         String?
   displayOrder Int       @default(0)
   isActive     Boolean   @default(true)
+  parentId     String?
+  parent       Category? @relation("CategoryTree", fields: [parentId], references: [id])
+  children     Category[] @relation("CategoryTree")
   products     Product[]
+
+  @@index([parentId])
 }
 
 model Product {
@@ -220,6 +228,12 @@ model Product {
   requiresDimensions Boolean      @default(false) // width × height inputs
   unitRate           Decimal?     @db.Decimal(10, 2) // for PER_UNIT
   minQuantity        Int          @default(1)
+  maxQuantity        Int? // upper bound (e.g. 16000 letterheads); null = unbounded
+  quantityStep       Int          @default(1) // orderable increment above minQuantity
+
+  // Charged only when the customer asks us to design the artwork. Stored from the
+  // rate card; NOT applied by the pricing engine yet (no design-service UI).
+  additionalDesignCharge Decimal? @db.Decimal(10, 2)
 
   // MATRIX products (CMYK / stickers): rates are GST-inclusive, base = matrix rate × sheets
   pricesIncludeGst     Boolean  @default(false) // MATRIX rates already include GST
@@ -227,6 +241,9 @@ model Product {
   singlePrintRate      Decimal? @db.Decimal(10, 2) // e.g. ₹20/sheet for tiny orders
 
   // Display / metadata
+  productCode       String? // "LH-3" — the code customers quote when ordering by phone
+  productClass      String? // "Classic" / "Regular"
+  productionTime    String? // "Within 48 hours from file upload"
   badges            String[] @default([]) // BESTSELLER / NEW / TRENDING / PREMIUM / ECO / POPULAR
   printTypeLabel    String? // "Full Color (CMYK)"
   standardSizeLabel String? // "85 × 55 mm"
@@ -270,6 +287,10 @@ model SpecGroup {
   name               String // "Paper Type" / "Material" / "Print Type" / "Finishing" …
   selectionType      SelectionType @default(SINGLE_SELECT)
   isPricingDimension Boolean       @default(false) // MATRIX: this group's options drive the rate
+  // When true this group IS the order quantity: the selected option's
+  // `quantityValue` becomes the line quantity (a fixed slab list — 1000 / 2000 /
+  // … — rather than a free-typed number). At most one such group per product.
+  isQuantityDimension Boolean      @default(false)
   isRequired         Boolean       @default(true)
   icon               String?
   displayOrder       Int           @default(0)
@@ -296,6 +317,7 @@ model SpecOption {
   isDefault    Boolean   @default(false) // shown as "Included"
   isActive     Boolean   @default(true)
   displayOrder Int       @default(0)
+  quantityValue Int? // set only on options of an isQuantityDimension group (e.g. 2000)
 
   // rule targeting this option (visibility)
   targetedBy VisibilityRule[] @relation("RuleTargetOption")
@@ -362,15 +384,25 @@ model RuleCondition {
 }
 
 // MATRIX pricing: one row per valid combination of pricing-dimension options.
-// e.g. CMYK { Size:12x18, GSM:100, Sides:1 } → ₹8/sheet (GST-inclusive).
 // Missing combinations are simply not orderable (e.g. Texture only on 12x18).
+//
+// A row prices its combination in exactly ONE of two ways — set one, leave the
+// other null:
+//   ratePerSheet  base = rate × quantity.  Quantity is free-typed and is NOT a
+//                 pricing dimension. Used by CMYK / stickers.
+//                 e.g. { Size:12x18, GSM:100, Sides:1 } → ₹8/sheet, GST-inclusive.
+//   flatPrice     base = the price itself. Quantity IS a pricing dimension, so
+//                 the combination already names it. Used by letterheads, whose
+//                 card prices whole runs (3000 sheets → ₹3389) at rates that do
+//                 not divide into an exact per-sheet figure.
 model PriceMatrix {
   id           String   @id @default(cuid())
   productId    String
   product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   comboKey     String // normalized sorted option ids: "optA|optB|optC"
   optionIds    String[] // the pricing-dimension option ids in this combo
-  ratePerSheet Decimal  @db.Decimal(10, 2)
+  ratePerSheet Decimal? @db.Decimal(10, 2) // per-sheet rate (× quantity)
+  flatPrice    Decimal? @db.Decimal(10, 2) // total for the whole combination
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
 
