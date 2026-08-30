@@ -281,6 +281,13 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
       ? "py-3 px-4 rounded-xl border-2 border-secondary-container bg-surface-container-lowest text-center font-bold text-primary-container"
       : "py-3 px-4 rounded-xl border border-outline-variant bg-white text-center font-bold text-on-surface-variant hover:border-secondary-container/50 transition-colors";
 
+  const optionLabel = (g: SpecGroup, o: Option) => {
+    const parts = [o.name];
+    if (o.code) parts.push(`Code ${o.code}`);
+    if (!g.isPricingDimension && o.addOnValue > 0) parts.push(addOnTag(o));
+    return parts.join("  ·  ");
+  };
+
   const addOnTag = (o: Option) =>
     o.addOnValue > 0
       ? "+" + inr(o.addOnValue) + (o.addOnType === "PER_UNIT" ? (o.perQuantity > 1 ? `/${o.perQuantity}` : "/unit") : "")
@@ -376,26 +383,60 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
                   {g.selectionType === "MULTI_SELECT" && <span className="text-[10px] normal-case tracking-normal text-on-surface-variant">(choose any)</span>}
                   {!g.isRequired && g.selectionType !== "MULTI_SELECT" && <span className="text-[10px] normal-case tracking-normal text-on-surface-variant">(optional)</span>}
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {g.options.filter((o) => !visibility.hiddenOptionIds.has(o.id)).map((o) => {
-                    const active = isSelected(g.id, o.id);
-                    return (
-                      <button
-                        key={o.id}
-                        type="button"
-                        aria-pressed={active}
-                        onClick={() => toggleOption(g, o.id)}
-                        className={cardCls(active)}
-                      >
-                        <span className="font-bold text-primary-container">{o.name}</span>
-                        {o.code && <span className="text-[10px] text-on-surface-variant mt-0.5">Code {o.code}</span>}
-                        <span className={`font-label-caps text-[10px] uppercase mt-2 ${active ? "text-secondary font-black" : "text-on-surface-variant font-bold"}`}>
-                          {g.isPricingDimension ? (active ? "Selected" : "Select") : addOnTag(o)}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+                {g.selectionType === "SINGLE_SELECT" ? (
+                  // Single-choice groups are dropdowns (matching how the trade
+                  // portal presents them) — compact, and it scales to the long
+                  // option lists on paper/size groups.
+                  <select
+                    aria-label={g.name}
+                    value={(selections[g.id] as string) ?? ""}
+                    onChange={(e) =>
+                      setSelections((prev) => {
+                        const v = e.target.value;
+                        if (!v) {
+                          const next = { ...prev };
+                          delete next[g.id];
+                          return next;
+                        }
+                        return { ...prev, [g.id]: v };
+                      })
+                    }
+                    className="w-full max-w-md p-4 rounded-xl border-2 border-outline-variant bg-white font-bold text-primary-container focus:border-secondary-container focus:outline-none focus:ring-0 transition-colors"
+                  >
+                    {/* A required group can show the placeholder but not be reset to it. */}
+                    <option value="" disabled={g.isRequired}>
+                      Select {g.name.replace(/\.$/, "")}…
+                    </option>
+                    {g.options
+                      .filter((o) => !visibility.hiddenOptionIds.has(o.id))
+                      .map((o) => (
+                        <option key={o.id} value={o.id}>
+                          {optionLabel(g, o)}
+                        </option>
+                      ))}
+                  </select>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {g.options.filter((o) => !visibility.hiddenOptionIds.has(o.id)).map((o) => {
+                      const active = isSelected(g.id, o.id);
+                      return (
+                        <button
+                          key={o.id}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => toggleOption(g, o.id)}
+                          className={cardCls(active)}
+                        >
+                          <span className="font-bold text-primary-container">{o.name}</span>
+                          {o.code && <span className="text-[10px] text-on-surface-variant mt-0.5">Code {o.code}</span>}
+                          <span className={`font-label-caps text-[10px] uppercase mt-2 ${active ? "text-secondary font-black" : "text-on-surface-variant font-bold"}`}>
+                            {addOnTag(o)}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </section>
             ))}
 
