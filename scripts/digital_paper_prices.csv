@@ -1,0 +1,73 @@
+cat,product,size,printing,lamination,qty,rate
+ART PAPER,Digital Printout - 120 GSM,12x18,1 Side,,1-,5.85
+ART PAPER,Digital Printout - 120 GSM,12x18,2 Side,,1-,9.1
+ART PAPER,Digital Printout - 170 GSM,12x18,1 Side,Not Required,1-,6.95
+ART PAPER,Digital Printout - 170 GSM,12x18,2 Side,Not Required,1-,10.2
+ART PAPER,Digital Printout - 170 GSM,12x18,1 Side,Gloss Lamination,1-,8.95
+ART PAPER,Digital Printout - 170 GSM,12x18,2 Side,Gloss Lamination,1-,14.2
+ART PAPER,Digital Printout - 170 GSM,12x18,1 Side,Matt Lamination,1-,8.95
+ART PAPER,Digital Printout - 170 GSM,12x18,2 Side,Matt Lamination,1-,14.2
+ART PAPER,Digital Printout - 170 GSM,13x19,1 Side,Not Required,1-,7.49
+ART PAPER,Digital Printout - 170 GSM,13x19,2 Side,Not Required,1-,10.74
+ART PAPER,Digital Printout - 170 GSM,13x19,1 Side,Gloss Lamination,1-,9.99
+ART PAPER,Digital Printout - 170 GSM,13x19,2 Side,Gloss Lamination,1-,15.74
+ART PAPER,Digital Printout - 170 GSM,13x19,1 Side,Matt Lamination,1-,9.99
+ART PAPER,Digital Printout - 170 GSM,13x19,2 Side,Matt Lamination,1-,15.74
+ART PAPER,Digital Printout - 250 GSM,12x18,1 Side,Not Required,1-,8.69
+ART PAPER,Digital Printout - 250 GSM,12x18,2 Side,Not Required,1-,11.94
+ART PAPER,Digital Printout - 250 GSM,12x18,1 Side,Gloss Lamination,1-,10.69
+ART PAPER,Digital Printout - 250 GSM,12x18,2 Side,Gloss Lamination,1-,15.94
+ART PAPER,Digital Printout - 250 GSM,12x18,1 Side,Matt Lamination,1-,10.69
+ART PAPER,Digital Printout - 250 GSM,12x18,2 Side,Matt Lamination,1-,15.94
+ART PAPER,Digital Printout - 250 GSM,13x19,1 Side,Not Required,1-,9.49
+ART PAPER,Digital Printout - 250 GSM,13x19,2 Side,Not Required,1-,12.74
+ART PAPER,Digital Printout - 250 GSM,13x19,1 Side,Gloss Lamination,1-,11.99
+ART PAPER,Digital Printout - 250 GSM,13x19,2 Side,Gloss Lamination,1-,17.74
+ART PAPER,Digital Printout - 250 GSM,13x19,1 Side,Matt Lamination,1-,11.99
+ART PAPER,Digital Printout - 250 GSM,13x19,2 Side,Matt Lamination,1-,17.74
+ART PAPER,Digital Printout - 300 GSM,12x18,1 Side,Not Required,1-,8.99
+ART PAPER,Digital Printout - 300 GSM,12x18,2 Side,Not Required,1-,12.24
+ART PAPER,Digital Printout - 300 GSM,12x18,1 Side,Gloss Lamination,1-,10.99
+ART PAPER,Digital Printout - 300 GSM,12x18,2 Side,Gloss Lamination,1-,16.24
+ART PAPER,Digital Printout - 300 GSM,12x18,1 Side,Matt Lamination,1-,10.99
+ART PAPER,Digital Printout - 300 GSM,12x18,2 Side,Matt Lamination,1-,16.24
+ART PAPER,Digital Printout - 300 GSM,13x19,1 Side,Not Required,1-,9.89
+ART PAPER,Digital Printout - 300 GSM,13x19,2 Side,Not Required,1-,13.14
+ART PAPER,Digital Printout - 300 GSM,13x19,1 Side,Gloss Lamination,1-,12.39
+ART PAPER,Digital Printout - 300 GSM,13x19,2 Side,Gloss Lamination,1-,18.14
+ART PAPER,Digital Printout - 300 GSM,13x19,1 Side,Matt Lamination,1-,12.39
+ART PAPER,Digital Printout - 300 GSM,13x19,2 Side,Matt Lamination,1-,18.14
+ART PAPER,Digital Printout - 350 GSM,12x18,1 Side,Not Required,1-,9.99
+ART PAPER,Digital Printout - 350 GSM,12x18,2 Side,Not Required,1-,13.24
+ART PAPER,Digital Printout - 350 GSM,12x18,1 Side,Gloss Lamination,1-,11.99
+ART PAPER,Digital Printout - 350 GSM,12x18,2 Side,Gloss Lamination,1-,17.24
+ART PAPER,Digital Printout - 350 GSM,12x18,1 Side,Matt Lamination,1-,11.99
+ART PAPER,Digital Printout - 350 GSM,12x18,2 Side,Matt Lamination,1-,17.24
+ART PAPER,Digital Printout - 350 GSM,13x19,1 Side,Not Required,1-,10.99
+ART PAPER,Digital Printout - 350 GSM,13x19,2 Side,Not Required,1-,14.24
+ART PAPER,Digital Printout - 350 GSM,13x19,1 Side,Gloss Lamination,1-,13.49
+ART PAPER,Digital Printout - 350 GSM,13x19,2 Side,Gloss Lamination,1-,19.24
+ART PAPER,Digital Printout - 350 GSM,13x19,1 Side,Matt Lamination,1-,13.49
+ART PAPER,Digital Printout - 350 GSM,13x19,2 Side,Matt Lamination,1-,19.24
+ART PAPER,Digital Printout - 210 GSM,12x18,1 Side,Not Required,1-,0.0
+ART PAPER,Digital Printout - 210 GSM,12x18,2 Side,Not Required,1-,0.0
+ART PAPER,Digital Printout - 210 GSM,12x18,1 Side,Gloss Lamination,1-,0.0
+ART PAPER,Digital Printout - 210 GSM,12x18,2 Side,Gloss Lamination,1-,0.0
+ART PAPER,Digital Printout - 210 GSM,12x18,1 Side,Matt Lamination,1-,0.0
+ART PAPER,Digital Printout - 210 GSM,12x18,2 Side,Matt Lamination,1-,0.0
+ART PAPER,Digital Printout - 210 GSM,13x19,1 Side,Not Required,1-,0.0
+ART PAPER,Digital Printout - 210 GSM,13x19,2 Side,Not Required,1-,0.0
+ART PAPER,Digital Printout - 210 GSM,13x19,1 Side,Gloss Lamination,1-,0.0
+ART PAPER,Digital Printout - 210 GSM,13x19,2 Side,Gloss Lamination,1-,0.0
+ART PAPER,Digital Printout - 210 GSM,13x19,1 Side,Matt Lamination,1-,0.0
+ART PAPER,Digital Printout - 210 GSM,13x19,2 Side,Matt Lamination,1-,0.0
+TEXTURE PAPER,12x18 - Texture Sheet - SBS White - Code 101,,1 Side,,1-,8.99
+TEXTURE PAPER,12x18 - Texture Sheet - SBS White - Code 102,,1 Side,,1-,8.99
+TEXTURE PAPER,12x18 - Texture Sheet - SBS White - Code 103,,1 Side,,1-,8.99
+TEXTURE PAPER,12x18 - Texture Sheet - SBS White - Code 104,,1 Side,,1-,8.99
+TEXTURE PAPER,12x18 - Texture Sheet - SBS White - Code 105,,1 Side,,1-,8.99
+TEXTURE PAPER,12x18 - Texture Sheet - SBS White - Code 106,,1 Side,,1-,8.99
+TEXTURE PAPER,12x18 - Texture Sheet - SBS Natural - Code 107,,1 Side,,1-,8.99
+TEXTURE PAPER,12x18 - Texture Sheet - SBS Natural - Code 108,,1 Side,,1-,8.99
+TEXTURE PAPER,12x18 - Texture Sheet - Metallic Golden - Code 41,,1 Side,,1-,11.99
+TEXTURE PAPER,12x18 - Texture Sheet - Metallic Silver - Code 42,,1 Side,,1-,11.99
