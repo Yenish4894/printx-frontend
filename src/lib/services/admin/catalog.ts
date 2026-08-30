@@ -20,8 +20,9 @@ const num = (d: unknown) => (d == null ? null : Number(d));
 export async function listCategories() {
   const cats = await prisma.category.findMany({
     orderBy: { displayOrder: "asc" },
-    include: { _count: { select: { products: true } } },
+    include: { _count: { select: { products: true, children: true } } },
   });
+  const nameById = new Map(cats.map((c) => [c.id, c.name]));
   return cats.map((c) => ({
     id: c.id,
     name: c.name,
@@ -30,6 +31,9 @@ export async function listCategories() {
     displayOrder: c.displayOrder,
     isActive: c.isActive,
     productCount: c._count.products,
+    parentId: c.parentId,
+    parentName: c.parentId ? (nameById.get(c.parentId) ?? null) : null,
+    childCount: c._count.children,
   }));
 }
 
@@ -44,12 +48,36 @@ export async function createCategory(input: CategoryInput) {
       icon: input.icon ?? null,
       displayOrder: input.displayOrder ?? 0,
       isActive: input.isActive ?? true,
+      parentId: input.parentId ?? null,
     },
   });
   return { id: c.id };
 }
 
+/**
+ * Reject a parent that would create a cycle (A → B → A) or self-parenting.
+ * Walks up from the proposed parent; if we meet `id`, the link closes a loop.
+ * Depth-bounded so pre-existing bad data can't spin forever.
+ */
+async function assertNoCategoryCycle(id: string, parentId: string | null | undefined) {
+  if (!parentId) return;
+  if (parentId === id) throw new HttpError(422, "A category cannot be its own parent");
+  let cursor: string | null = parentId;
+  for (let hops = 0; cursor && hops < 32; hops++) {
+    if (cursor === id) {
+      throw new HttpError(422, "That would make the category a descendant of itself");
+    }
+    const parent: { parentId: string | null } | null = await prisma.category.findUnique({
+      where: { id: cursor },
+      select: { parentId: true },
+    });
+    if (!parent) throw new HttpError(422, "Parent category not found");
+    cursor = parent.parentId;
+  }
+}
+
 export async function updateCategory(id: string, input: CategoryInput) {
+  await assertNoCategoryCycle(id, input.parentId);
   await prisma.category.update({
     where: { id },
     data: {
@@ -58,6 +86,8 @@ export async function updateCategory(id: string, input: CategoryInput) {
       icon: input.icon ?? undefined,
       displayOrder: input.displayOrder,
       isActive: input.isActive,
+      // undefined = leave alone; null = promote back to a top-level category
+      parentId: input.parentId === undefined ? undefined : input.parentId,
     },
   });
   return { id };
@@ -122,6 +152,12 @@ export async function createProduct(input: CreateProductInput) {
       requiresDimensions: input.requiresDimensions ?? false,
       unitRate: input.unitRate ?? null,
       minQuantity: input.minQuantity ?? 1,
+      maxQuantity: input.maxQuantity ?? null,
+      quantityStep: input.quantityStep ?? 1,
+      additionalDesignCharge: input.additionalDesignCharge ?? null,
+      productCode: input.productCode ?? null,
+      productClass: input.productClass ?? null,
+      productionTime: input.productionTime ?? null,
       pricesIncludeGst: input.pricesIncludeGst ?? false,
       singlePrintThreshold: input.singlePrintThreshold ?? null,
       singlePrintRate: input.singlePrintRate ?? null,
@@ -153,6 +189,12 @@ export async function updateProduct(id: string, input: UpdateProductInput) {
       requiresDimensions: input.requiresDimensions,
       unitRate: input.unitRate ?? undefined,
       minQuantity: input.minQuantity,
+      maxQuantity: input.maxQuantity ?? undefined,
+      quantityStep: input.quantityStep,
+      additionalDesignCharge: input.additionalDesignCharge ?? undefined,
+      productCode: input.productCode ?? undefined,
+      productClass: input.productClass ?? undefined,
+      productionTime: input.productionTime ?? undefined,
       pricesIncludeGst: input.pricesIncludeGst,
       singlePrintThreshold: input.singlePrintThreshold ?? undefined,
       singlePrintRate: input.singlePrintRate ?? undefined,
@@ -207,6 +249,12 @@ export async function getAdminProduct(id: string) {
     requiresDimensions: p.requiresDimensions,
     unitRate: num(p.unitRate),
     minQuantity: p.minQuantity,
+    maxQuantity: p.maxQuantity,
+    quantityStep: p.quantityStep,
+    additionalDesignCharge: num(p.additionalDesignCharge),
+    productCode: p.productCode,
+    productClass: p.productClass,
+    productionTime: p.productionTime,
     pricesIncludeGst: p.pricesIncludeGst,
     singlePrintThreshold: p.singlePrintThreshold,
     singlePrintRate: num(p.singlePrintRate),
@@ -222,6 +270,7 @@ export async function getAdminProduct(id: string) {
       name: g.name,
       selectionType: g.selectionType,
       isPricingDimension: g.isPricingDimension,
+      isQuantityDimension: g.isQuantityDimension,
       isRequired: g.isRequired,
       icon: g.icon,
       displayOrder: g.displayOrder,
@@ -236,6 +285,8 @@ export async function getAdminProduct(id: string) {
         isDefault: o.isDefault,
         displayOrder: o.displayOrder,
         isActive: o.isActive,
+        quantityValue: o.quantityValue,
+        code: o.code,
       })),
     })),
     quantityTiers: p.quantityTiers.map((t) => ({
@@ -282,6 +333,7 @@ export async function updateSpecGroup(id: string, input: SpecGroupInput) {
       name: input.name,
       selectionType: input.selectionType,
       isPricingDimension: input.isPricingDimension,
+      isQuantityDimension: input.isQuantityDimension,
       isRequired: input.isRequired,
       icon: input.icon ?? undefined,
       displayOrder: input.displayOrder,
@@ -310,6 +362,8 @@ export async function createSpecOption(specGroupId: string, input: SpecOptionInp
       isDefault: input.isDefault ?? false,
       displayOrder: input.displayOrder ?? 0,
       isActive: input.isActive ?? true,
+      quantityValue: input.quantityValue ?? null,
+      code: input.code ?? null,
     },
   });
   return { id: o.id };
@@ -327,6 +381,8 @@ export async function updateSpecOption(id: string, input: SpecOptionInput) {
       isDefault: input.isDefault,
       displayOrder: input.displayOrder,
       isActive: input.isActive,
+      quantityValue: input.quantityValue === undefined ? undefined : input.quantityValue,
+      code: input.code ?? undefined,
     },
   });
   return { id };
@@ -402,13 +458,15 @@ export async function getMatrix(productId: string) {
     dimensions: p.specGroups.map((g) => ({
       id: g.id,
       name: g.name,
+      isQuantityDimension: g.isQuantityDimension,
       options: g.options.map((o) => ({ id: o.id, name: o.name })),
     })),
     rows: p.priceMatrix.map((m) => ({
       id: m.id,
       optionIds: m.optionIds,
       labels: m.optionIds.map((id) => optName.get(id) ?? id),
-      ratePerSheet: num(m.ratePerSheet) ?? 0,
+      ratePerSheet: num(m.ratePerSheet),
+      flatPrice: num(m.flatPrice),
       isActive: m.isActive,
     })),
   };
@@ -447,7 +505,8 @@ export async function setMatrix(productId: string, input: MatrixInput) {
       productId,
       comboKey,
       optionIds: [...row.optionIds].sort(),
-      ratePerSheet: row.ratePerSheet,
+      ratePerSheet: row.ratePerSheet ?? null,
+      flatPrice: row.flatPrice ?? null,
     };
   });
 

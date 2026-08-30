@@ -13,6 +13,9 @@ interface Category {
   displayOrder: number;
   isActive: boolean;
   productCount: number;
+  parentId?: string | null;
+  parentName?: string | null;
+  childCount?: number;
 }
 
 const iconChoices = ["business_center", "description", "photo_size_select_large", "inventory", "style", "label"];
@@ -30,6 +33,7 @@ export default function AdminCategories() {
   const [newName, setNewName] = useState("");
   const [newIcon, setNewIcon] = useState(iconChoices[0]);
   const [newOrder, setNewOrder] = useState("0");
+  const [newParent, setNewParent] = useState("");
   const [creating, setCreating] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -73,7 +77,7 @@ export default function AdminCategories() {
   }, [modalOpen]);
 
   const modalDirty = () =>
-    newName.trim() !== "" || newIcon !== iconChoices[0] || newOrder !== "0";
+    newName.trim() !== "" || newIcon !== iconChoices[0] || newOrder !== "0" || newParent !== "";
 
   async function closeModal() {
     if (creating) return; // don't dismiss mid-save
@@ -90,6 +94,7 @@ export default function AdminCategories() {
     setModalOpen(false);
     setNewName("");
     setNewIcon(iconChoices[0]);
+    setNewParent("");
     setNewOrder("0");
     setModalError(null);
   }
@@ -106,10 +111,12 @@ export default function AdminCategories() {
         name: newName.trim(),
         icon: newIcon,
         displayOrder: Number(newOrder) || 0,
+        parentId: newParent || null,
       });
       setModalOpen(false);
       setNewName("");
       setNewIcon(iconChoices[0]);
+    setNewParent("");
       setNewOrder("0");
       toast("Category created", "success");
       await fetchCategories(false);
@@ -274,7 +281,19 @@ export default function AdminCategories() {
                         ) : (
                           <>
                             <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary"><span className="material-symbols-outlined">{c.icon ?? "label"}</span></div>
-                            <span className="font-bold text-on-surface">{c.name}</span>
+                            <span className="font-bold text-on-surface">
+                              {c.name}
+                              {c.parentName && (
+                                <span className="block text-[11px] font-medium text-on-surface-variant">
+                                  under {c.parentName}
+                                </span>
+                              )}
+                              {!!c.childCount && (
+                                <span className="block text-[11px] font-medium text-on-surface-variant">
+                                  {c.childCount} sub-categor{c.childCount === 1 ? "y" : "ies"}
+                                </span>
+                              )}
+                            </span>
                           </>
                         )}
                       </div>
@@ -361,6 +380,15 @@ export default function AdminCategories() {
               <div>
                 <label htmlFor="new-category-order" className="block font-label-caps text-label-caps text-on-surface-variant uppercase mb-2">Display Order</label>
                 <input id="new-category-order" value={newOrder} onChange={(e) => setNewOrder(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-surface-container border-none focus:ring-2 focus:ring-secondary-container/50 text-on-surface font-medium" type="number" min={0} />
+              </div>
+              <div>
+                <label htmlFor="new-category-parent" className="block font-label-caps text-label-caps uppercase text-on-surface-variant mb-2">Parent category</label>
+                <select id="new-category-parent" value={newParent} onChange={(e) => setNewParent(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-surface-container border-none focus:ring-2 focus:ring-secondary-container/50 text-on-surface font-medium">
+                  <option value="">None — top level</option>
+                  {categories.filter((c) => !c.parentId).map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="px-8 py-6 border-t border-outline-variant/10 flex justify-end gap-3">

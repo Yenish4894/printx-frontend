@@ -7,6 +7,7 @@ import {
   type MatrixPrice,
 } from "./pricing";
 import { getGstRate } from "./settings";
+import { evaluateVisibility, type VisibilityRuleLite } from "@/lib/visibility";
 import type { QuoteInput } from "@/lib/dto/pricing";
 
 /**
@@ -26,6 +27,7 @@ export async function resolveAndPrice(input: QuoteInput) {
       quantityTiers: { where: { isActive: true } },
       deliverySpeeds: { where: { isActive: true } },
       priceMatrix: { where: { isActive: true } },
+      visibilityRules: { include: { conditions: true } },
     },
   });
 
@@ -67,6 +69,13 @@ export async function resolveAndPrice(input: QuoteInput) {
     }
   }
 
+  // Conditional visibility. Evaluated server-side too: the configurator hides
+  // these, but nothing stops a crafted request selecting a hidden option.
+  const { hiddenGroupIds, hiddenOptionIds } = evaluateVisibility(
+    product.visibilityRules as VisibilityRuleLite[],
+    input.selections,
+  );
+
   const addOns: AddOnLite[] = [];
   const dimensionOptionIds: string[] = [];
   const snapshot: { group: string; option: string; addOn: number }[] = [];
@@ -76,6 +85,15 @@ export async function resolveAndPrice(input: QuoteInput) {
   for (const g of product.specGroups) {
     const sel = input.selections[g.id];
     const ids = sel == null ? [] : Array.isArray(sel) ? sel : [sel];
+
+    // A hidden group is not part of this configuration at all: it must not be
+    // required, and it must not contribute price.
+    if (hiddenGroupIds.has(g.id)) {
+      if (ids.length > 0) {
+        throw new HttpError(422, `"${g.name}" does not apply to this configuration`);
+      }
+      continue;
+    }
 
     if (g.isRequired && ids.length === 0) {
       throw new HttpError(422, `Please select an option for "${g.name}"`);
@@ -88,6 +106,12 @@ export async function resolveAndPrice(input: QuoteInput) {
       const opt = optionIndex.get(id);
       if (!opt || opt.groupId !== g.id) {
         throw new HttpError(422, `Invalid option selected for "${g.name}"`);
+      }
+      if (hiddenOptionIds.has(id)) {
+        throw new HttpError(
+          422,
+          `"${opt.name}" is not available with the other options you selected`,
+        );
       }
       snapshot.push({ group: opt.groupName, option: opt.name, addOn: opt.addOnValue });
       if (opt.isQuantity) {

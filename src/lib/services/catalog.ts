@@ -12,7 +12,7 @@ export async function listProducts(categorySlug?: string) {
       ...(categorySlug ? { category: { slug: categorySlug } } : {}),
     },
     include: {
-      category: true,
+      category: { include: { parent: { select: { slug: true, name: true } } } },
       images: { orderBy: { displayOrder: "asc" }, take: 1 },
     },
     orderBy: { createdAt: "desc" },
@@ -23,7 +23,13 @@ export async function listProducts(categorySlug?: string) {
     slug: p.slug,
     name: p.name,
     description: p.description,
-    category: { slug: p.category.slug, name: p.category.name },
+    category: {
+      slug: p.category.slug,
+      name: p.category.name,
+      parent: p.category.parent
+        ? { slug: p.category.parent.slug, name: p.category.parent.name }
+        : null,
+    },
     badges: p.badges,
     priceFrom: num(p.basePriceFrom),
     image: p.images[0]?.url ?? null,
@@ -71,6 +77,11 @@ export async function getProductBySlug(slug: string) {
     requiresDimensions: p.requiresDimensions,
     unitRate: num(p.unitRate),
     minQuantity: p.minQuantity,
+    maxQuantity: p.maxQuantity,
+    quantityStep: p.quantityStep,
+    productCode: p.productCode,
+    productClass: p.productClass,
+    productionTime: p.productionTime,
     pricesIncludeGst: p.pricesIncludeGst,
     singlePrintThreshold: p.singlePrintThreshold,
     singlePrintRate: num(p.singlePrintRate),
@@ -86,6 +97,7 @@ export async function getProductBySlug(slug: string) {
       selectionType: g.selectionType,
       isRequired: g.isRequired,
       isPricingDimension: g.isPricingDimension,
+      isQuantityDimension: g.isQuantityDimension,
       icon: g.icon,
       options: g.options.map((o) => ({
         id: o.id,
@@ -95,6 +107,8 @@ export async function getProductBySlug(slug: string) {
         addOnValue: num(o.addOnValue) ?? 0,
         perQuantity: o.perQuantity,
         isDefault: o.isDefault,
+        quantityValue: o.quantityValue,
+        code: o.code,
       })),
     })),
     quantityTiers: p.quantityTiers.map((t) => ({

@@ -318,6 +318,7 @@ model SpecOption {
   isActive     Boolean   @default(true)
   displayOrder Int       @default(0)
   quantityValue Int? // set only on options of an isQuantityDimension group (e.g. 2000)
+  code          String? // catalogue code customers quote, e.g. "601" for A4-80 GSM
 
   // rule targeting this option (visibility)
   targetedBy VisibilityRule[] @relation("RuleTargetOption")

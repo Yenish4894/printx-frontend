@@ -14,6 +14,7 @@ export const categorySchema = z.object({
   icon: z.string().max(60).nullable().optional(),
   displayOrder: z.number().int().min(0).optional(),
   isActive: z.boolean().optional(),
+  parentId: z.string().nullable().optional(), // sub-category of another category
 });
 
 // ── Products ──
@@ -30,6 +31,12 @@ export const createProductSchema = z.object({
   requiresDimensions: z.boolean().optional(),
   unitRate: z.number().nonnegative().nullable().optional(),
   minQuantity: z.number().int().positive().optional(),
+  maxQuantity: z.number().int().positive().nullable().optional(),
+  quantityStep: z.number().int().positive().optional(),
+  additionalDesignCharge: z.number().nonnegative().nullable().optional(),
+  productCode: z.string().max(40).nullable().optional(),
+  productClass: z.string().max(60).nullable().optional(),
+  productionTime: z.string().max(120).nullable().optional(),
   pricesIncludeGst: z.boolean().optional(),
   singlePrintThreshold: z.number().int().positive().nullable().optional(),
   singlePrintRate: z.number().nonnegative().nullable().optional(),
@@ -48,6 +55,7 @@ export const specGroupSchema = z.object({
   name: z.string().min(1).max(80),
   selectionType: z.enum(["SINGLE_SELECT", "MULTI_SELECT"]).optional(),
   isPricingDimension: z.boolean().optional(),
+  isQuantityDimension: z.boolean().optional(),
   isRequired: z.boolean().optional(),
   icon: z.string().max(60).nullable().optional(),
   displayOrder: z.number().int().min(0).optional(),
@@ -62,6 +70,8 @@ export const specOptionSchema = z.object({
   isDefault: z.boolean().optional(),
   displayOrder: z.number().int().min(0).optional(),
   isActive: z.boolean().optional(),
+  quantityValue: z.number().int().positive().nullable().optional(),
+  code: z.string().max(40).nullable().optional(),
 });
 
 // ── Tiers / delivery (replace-all) ──
@@ -86,12 +96,20 @@ export const deliverySchema = z.object({
 });
 
 // ── Price matrix (replace-all) ──
+// A row prices its combination EITHER per sheet OR as a flat total for the
+// whole run — never both, never neither (mirrors the DB CHECK constraint).
 export const matrixSchema = z.object({
   rows: z.array(
-    z.object({
-      optionIds: z.array(z.string().min(1)).min(1),
-      ratePerSheet: z.number().nonnegative(),
-    }),
+    z
+      .object({
+        optionIds: z.array(z.string().min(1)).min(1),
+        ratePerSheet: z.number().nonnegative().nullable().optional(),
+        flatPrice: z.number().nonnegative().nullable().optional(),
+      })
+      .refine(
+        (r) => (r.ratePerSheet == null) !== (r.flatPrice == null),
+        "Set exactly one of ratePerSheet or flatPrice",
+      ),
   ),
 });
 
@@ -141,3 +159,28 @@ export type OrderStatusInput = z.infer<typeof orderStatusSchema>;
 export type FileReviewInput = z.infer<typeof fileReviewSchema>;
 export type WalletAdjustInput = z.infer<typeof walletAdjustSchema>;
 export type RefundProcessInput = z.infer<typeof refundProcessSchema>;
+
+// ── Visibility rules ──
+// A rule shows its target (a group, or a single option) only when its
+// conditions hold. See src/lib/visibility.ts for the evaluation semantics.
+export const visibilityRuleSchema = z
+  .object({
+    targetType: z.enum(["GROUP", "OPTION"]),
+    targetGroupId: z.string().nullable().optional(),
+    targetOptionId: z.string().nullable().optional(),
+    logic: z.enum(["AND", "OR"]).optional(),
+    conditions: z
+      .array(
+        z.object({
+          sourceGroupId: z.string().min(1),
+          operator: z.enum(["IS", "IS_NOT", "IN"]).optional(),
+          optionIds: z.array(z.string().min(1)).min(1),
+        }),
+      )
+      .min(1, "A rule needs at least one condition"),
+  })
+  .refine(
+    (r) => (r.targetType === "GROUP" ? !!r.targetGroupId : !!r.targetOptionId),
+    "targetGroupId is required for GROUP rules, targetOptionId for OPTION rules",
+  );
+export type VisibilityRuleInput = z.infer<typeof visibilityRuleSchema>;

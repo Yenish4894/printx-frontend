@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { catalog, cart as cartApi, ApiError, type PriceBreakdown } from "@/lib/api";
 import { useSession, inr } from "@/components/SessionProvider";
+import { evaluateVisibility, pruneSelections, type VisibilityRuleLite } from "@/lib/visibility";
 import { useToast } from "@/components/ui/UIProvider";
 
 interface Option {
@@ -15,12 +16,15 @@ interface Option {
   addOnValue: number;
   perQuantity: number;
   isDefault: boolean;
+  quantityValue?: number | null;
+  code?: string | null;
 }
 interface SpecGroup {
   id: string;
   name: string;
   selectionType: "SINGLE_SELECT" | "MULTI_SELECT";
   isPricingDimension: boolean;
+  isQuantityDimension?: boolean;
   isRequired: boolean;
   options: Option[];
 }
@@ -48,6 +52,7 @@ interface Product {
   specGroups: SpecGroup[];
   quantityTiers: { id: string; quantity: number; basePrice: number; label?: string | null }[];
   deliverySpeeds: DeliverySpeed[];
+  visibilityRules?: VisibilityRuleLite[];
 }
 
 const QTY_CHIPS = [50, 100, 250, 500, 1000];
@@ -154,6 +159,46 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
     };
   }, [product, runQuote]);
 
+  // Which groups/options are conditionally hidden right now. The server
+  // re-evaluates the same rules, so the UI can never offer something the
+  // pricing path would reject.
+  const visibility = useMemo(
+    () => evaluateVisibility(product?.visibilityRules ?? [], selections),
+    [product, selections],
+  );
+  const visibleGroups = useMemo(
+    () => (product?.specGroups ?? []).filter((g) => !visibility.hiddenGroupIds.has(g.id)),
+    [product, visibility],
+  );
+
+  // A product whose quantity is a spec (fixed slabs) drives qty from the
+  // selected option instead of the numeric stepper.
+  const slabGroup = useMemo(
+    () => visibleGroups.find((g) => g.isQuantityDimension) ?? null,
+    [visibleGroups],
+  );
+  const slabQty = useMemo(() => {
+    if (!slabGroup) return null;
+    const sel = selections[slabGroup.id];
+    const id = Array.isArray(sel) ? sel[0] : sel;
+    return slabGroup.options.find((o) => o.id === id)?.quantityValue ?? null;
+  }, [slabGroup, selections]);
+
+  // Drop any selection that a rule has just hidden, so we never quote (or add
+  // to cart) an option the customer can no longer see.
+  useEffect(() => {
+    if (!product?.visibilityRules?.length) return;
+    const pruned = pruneSelections(selections, visibility);
+    if (Object.keys(pruned).length !== Object.keys(selections).length) {
+      setSelections(pruned);
+    }
+  }, [product, selections, visibility]);
+
+  // Keep the quoted quantity in step with the selected slab.
+  useEffect(() => {
+    if (slabQty != null && slabQty !== qty) setQty(slabQty);
+  }, [slabQty, qty]);
+
   const total = breakdown?.total ?? 0;
   const hasQuote = !!breakdown;
   // Only judge wallet sufficiency once we actually have a price.
@@ -163,7 +208,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
 
   const selectedSummary = useMemo(() => {
     if (!product) return "";
-    return product.specGroups
+    return visibleGroups
       .flatMap((g) => {
         const v = selections[g.id];
         const ids = Array.isArray(v) ? v : v ? [v] : [];
@@ -171,7 +216,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
       })
       .filter(Boolean)
       .join(" · ");
-  }, [product, selections]);
+  }, [visibleGroups, selections]);
 
   async function addToCart(thenCheckout: boolean) {
     if (!product || !breakdown) return;
@@ -323,7 +368,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
 
           <div className="space-y-8 pb-32 lg:pb-0">
             {/* Dynamic spec groups */}
-            {product.specGroups.map((g) => (
+            {visibleGroups.map((g) => (
               <section key={g.id} role="group" aria-label={g.name}>
                 <h4 className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-4 tracking-widest flex items-center gap-2">
                   <span className="material-symbols-outlined text-[18px]" aria-hidden="true">{g.isPricingDimension ? "tune" : "flare"}</span>
@@ -332,7 +377,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
                   {!g.isRequired && g.selectionType !== "MULTI_SELECT" && <span className="text-[10px] normal-case tracking-normal text-on-surface-variant">(optional)</span>}
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {g.options.map((o) => {
+                  {g.options.filter((o) => !visibility.hiddenOptionIds.has(o.id)).map((o) => {
                     const active = isSelected(g.id, o.id);
                     return (
                       <button
@@ -343,6 +388,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
                         className={cardCls(active)}
                       >
                         <span className="font-bold text-primary-container">{o.name}</span>
+                        {o.code && <span className="text-[10px] text-on-surface-variant mt-0.5">Code {o.code}</span>}
                         <span className={`font-label-caps text-[10px] uppercase mt-2 ${active ? "text-secondary font-black" : "text-on-surface-variant font-bold"}`}>
                           {g.isPricingDimension ? (active ? "Selected" : "Select") : addOnTag(o)}
                         </span>
@@ -353,7 +399,9 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
               </section>
             ))}
 
-            {/* Quantity */}
+            {/* Quantity — hidden when a spec group already IS the quantity
+                (fixed slabs, e.g. letterheads): the slab buttons above set it. */}
+            {!slabGroup && (
             <section>
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest flex items-center gap-2">
@@ -400,6 +448,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
                 <p className="text-xs text-error mt-2">Minimum order is {minQty.toLocaleString("en-IN")}.</p>
               )}
             </section>
+            )}
 
             {/* Delivery Speed */}
             {product.deliverySpeeds.length > 0 && (

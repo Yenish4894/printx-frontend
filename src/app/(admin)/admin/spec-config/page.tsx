@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { admin, ApiError } from "@/lib/api";
+import RulesEditor from "@/components/admin/RulesEditor";
 import { inr } from "@/components/SessionProvider";
 import { useConfirm, useToast } from "@/components/ui/UIProvider";
 
@@ -22,6 +23,7 @@ type SpecGroup = {
   name: string;
   selectionType: string;
   isPricingDimension: boolean;
+  isQuantityDimension?: boolean;
   isRequired: boolean;
   options: SpecOption[];
 };
@@ -33,8 +35,20 @@ type Product = {
   pricesIncludeGst: boolean;
   specGroups: SpecGroup[];
 };
-type MatrixDimension = { id: string; name: string; options: { id: string; name: string }[] };
-type MatrixRow = { id: string; optionIds: string[]; labels: string[]; ratePerSheet: number; isActive: boolean };
+type MatrixDimension = {
+  id: string;
+  name: string;
+  isQuantityDimension?: boolean;
+  options: { id: string; name: string }[];
+};
+type MatrixRow = {
+  id: string;
+  optionIds: string[];
+  labels: string[];
+  ratePerSheet: number | null;
+  flatPrice: number | null;
+  isActive: boolean;
+};
 type Matrix = {
   productId: string;
   pricingModel: string;
@@ -203,6 +217,8 @@ function ProductEditor({ productId }: { productId: string }) {
       {/* Spec groups */}
       <SpecGroupsSection product={product} onChange={loadProduct} />
 
+      <RulesEditor product={product} />
+
       {/* Price matrix */}
       {product.pricingModel === "MATRIX" && (
         <MatrixEditor productId={productId} matrix={matrix} onReload={loadProduct} />
@@ -216,6 +232,7 @@ function SpecGroupsSection({ product, onChange }: { product: Product; onChange: 
   const [showGroupForm, setShowGroupForm] = useState(false);
   const [gName, setGName] = useState("");
   const [gPricingDim, setGPricingDim] = useState(false);
+  const [gQtyDim, setGQtyDim] = useState(false);
   const [gRequired, setGRequired] = useState(true);
   const [gSelection, setGSelection] = useState("SINGLE_SELECT");
   const [gBusy, setGBusy] = useState(false);
@@ -228,13 +245,17 @@ function SpecGroupsSection({ product, onChange }: { product: Product; onChange: 
     try {
       await admin.products.addSpecGroup(product.id, {
         name: gName.trim(),
-        isPricingDimension: gPricingDim,
+        // A quantity dimension is always a pricing dimension: the run size is
+        // part of the combination that resolves a price.
+        isPricingDimension: gPricingDim || gQtyDim,
+        isQuantityDimension: gQtyDim,
         isRequired: gRequired,
         selectionType: gSelection,
         displayOrder: product.specGroups.length,
       });
       setGName("");
       setGPricingDim(false);
+      setGQtyDim(false);
       setGRequired(true);
       setGSelection("SINGLE_SELECT");
       setShowGroupForm(false);
@@ -278,7 +299,8 @@ function SpecGroupsSection({ product, onChange }: { product: Product; onChange: 
             </div>
           </div>
           <div className="flex flex-wrap gap-6">
-            <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={gPricingDim} onChange={(e) => setGPricingDim(e.target.checked)} className="rounded text-secondary" /> Pricing Dimension</label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={gPricingDim || gQtyDim} disabled={gQtyDim} onChange={(e) => setGPricingDim(e.target.checked)} className="rounded text-secondary" /> Pricing Dimension</label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer" title="This group IS the order quantity: each option carries the number of units, and prices are totals for the whole run."><input type="checkbox" checked={gQtyDim} onChange={(e) => setGQtyDim(e.target.checked)} className="rounded text-secondary" /> Quantity Dimension</label>
             <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={gRequired} onChange={(e) => setGRequired(e.target.checked)} className="rounded text-secondary" /> Required</label>
           </div>
           {gError && <p className="text-error text-xs">{gError}</p>}
@@ -349,8 +371,15 @@ function SpecGroupCard({ group, onChange }: { group: SpecGroup; onChange: () => 
     }
   };
 
+  const [qtyValue, setQtyValue] = useState("");
+  const [code, setCode] = useState("");
+
   const addOption = async () => {
     if (!name.trim()) { setErr("Enter an option name"); return; }
+    if (group.isQuantityDimension && !(Number(qtyValue) > 0)) {
+      setErr("Enter how many units this quantity option represents");
+      return;
+    }
     setBusy(true);
     setErr(null);
     try {
@@ -360,8 +389,12 @@ function SpecGroupCard({ group, onChange }: { group: SpecGroup; onChange: () => 
         addOnValue: Number(addOnValue) || 0,
         perQuantity,
         isDefault,
+        quantityValue: group.isQuantityDimension ? Number(qtyValue) : null,
+        code: code.trim() || null,
       });
       setName("");
+      setQtyValue("");
+      setCode("");
       setAddOnValue("");
       setAddOnType("FLAT");
       setPerQuantity(false);
@@ -380,6 +413,7 @@ function SpecGroupCard({ group, onChange }: { group: SpecGroup; onChange: () => 
       <div className="p-4 flex flex-wrap items-center gap-3 bg-surface-container-low rounded-t-xl">
         <span className="font-bold text-on-surface">{group.name}</span>
         {group.isPricingDimension && <span className="px-2 py-0.5 bg-secondary-fixed text-on-secondary-fixed text-[10px] font-bold rounded-full uppercase">Pricing Dimension</span>}
+        {group.isQuantityDimension && <span className="px-2 py-0.5 bg-tertiary-fixed text-on-tertiary-fixed text-[10px] font-bold rounded-full uppercase">Quantity</span>}
         {group.isRequired && <span className="px-2 py-0.5 bg-surface-container-high text-on-surface-variant text-[10px] font-bold rounded-full uppercase">Required</span>}
         <span className="text-[11px] text-on-surface-variant uppercase font-bold ml-auto">{group.selectionType}</span>
         <button
@@ -442,14 +476,25 @@ function SpecGroupCard({ group, onChange }: { group: SpecGroup; onChange: () => 
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-bold uppercase text-on-surface-variant">Add-on Type</label>
                 <select value={addOnType} onChange={(e) => setAddOnType(e.target.value)} className="border border-surface-container bg-white rounded-lg p-2 text-sm">
-                  <option value="FLAT">Flat</option>
-                  <option value="PERCENT">Percent</option>
-                  <option value="FREE">Free</option>
+                  <option value="FLAT">Flat (once)</option>
+                  <option value="PER_UNIT">Per unit</option>
                 </select>
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-bold uppercase text-on-surface-variant">Value (₹)</label>
                 <input value={addOnValue} onChange={(e) => setAddOnValue(e.target.value)} className="border border-surface-container bg-white rounded-lg p-2 text-sm" type="number" placeholder="0" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {group.isQuantityDimension && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold uppercase text-on-surface-variant">Units in this quantity *</label>
+                  <input value={qtyValue} onChange={(e) => setQtyValue(e.target.value)} className="border border-surface-container bg-white rounded-lg p-2 text-sm" type="number" placeholder="e.g. 1000" />
+                </div>
+              )}
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold uppercase text-on-surface-variant">Catalogue code</label>
+                <input value={code} onChange={(e) => setCode(e.target.value)} className="border border-surface-container bg-white rounded-lg p-2 text-sm" type="text" placeholder="e.g. 601" />
               </div>
             </div>
             <div className="flex flex-wrap gap-6">
@@ -487,7 +532,8 @@ function MatrixEditor({ productId, matrix, onReload }: { productId: string; matr
     if (!matrix) return;
     const next: Record<string, string> = {};
     for (const row of matrix.rows) {
-      next[comboKey(row.optionIds)] = String(row.ratePerSheet);
+      // A row prices either per sheet or as a flat run total — show whichever it uses.
+      next[comboKey(row.optionIds)] = String(row.flatPrice ?? row.ratePerSheet ?? "");
     }
     setRates(next);
     setBaseline(next);
@@ -495,6 +541,11 @@ function MatrixEditor({ productId, matrix, onReload }: { productId: string; matr
 
   const combos = useMemo(() => (matrix ? cartesian(matrix.dimensions) : []), [matrix]);
   const dims = matrix?.dimensions ?? [];
+  // When quantity is one of the dimensions, the combination already names the
+  // run size, so the number entered is the TOTAL for that run — not a per-sheet
+  // rate that would be multiplied again.
+  const isFlat = dims.some((d) => d.isQuantityDimension);
+  const priceLabel = isFlat ? "Total price" : "Rate per sheet";
   const optName = useMemo(() => {
     const m = new Map<string, string>();
     for (const d of dims) for (const o of d.options) m.set(o.id, o.name);
@@ -519,8 +570,16 @@ function MatrixEditor({ productId, matrix, onReload }: { productId: string; matr
   const save = async () => {
     // Build one row per filled-in combination: optionIds (one per dimension) + ratePerSheet.
     const rows = combos
-      .map((ids) => ({ optionIds: ids, ratePerSheet: Number(rates[comboKey(ids)]) }))
-      .filter((r) => Number.isFinite(r.ratePerSheet) && r.ratePerSheet > 0);
+      .map((ids) => {
+        const value = Number(rates[comboKey(ids)]);
+        return isFlat
+          ? { optionIds: ids, flatPrice: value }
+          : { optionIds: ids, ratePerSheet: value };
+      })
+      .filter((r) => {
+        const v = "flatPrice" in r ? r.flatPrice : r.ratePerSheet;
+        return typeof v === "number" && Number.isFinite(v) && v > 0;
+      });
 
     const ok = await confirm({
       title: "Update price matrix?",
@@ -532,7 +591,7 @@ function MatrixEditor({ productId, matrix, onReload }: { productId: string; matr
     setSaving(true);
     try {
       const res = await admin.products.setMatrix(productId, rows);
-      toast(`Saved ${res?.count ?? rows.length} rate rows`, "success");
+      toast(`Saved ${res?.count ?? rows.length} price rows`, "success");
       await onReload();
     } catch (e) {
       toast(e instanceof ApiError ? e.message : "Failed to save matrix", "error");
@@ -574,13 +633,13 @@ function MatrixEditor({ productId, matrix, onReload }: { productId: string; matr
                   {combos.map((ids) => {
                     const key = comboKey(ids);
                     const hasSaved = norm(baseline[key]) !== "";
-                    const label = `Rate per sheet for ${ids.map((oid) => optName.get(oid) ?? oid).join(" / ")}`;
+                    const label = `${priceLabel} for ${ids.map((oid) => optName.get(oid) ?? oid).join(" / ")}`;
                     return (
                       <tr key={key} className={`transition-colors ${hasSaved ? "bg-secondary-container/5" : "hover:bg-surface-container-lowest"}`}>
                         {ids.map((oid, di) => (
                           <td key={dims[di].id} className="py-3 px-2 text-sm font-medium text-on-surface">
                             {optName.get(oid) ?? oid}
-                            {di === 0 && hasSaved && <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-secondary-container align-middle" title="Rate set" aria-hidden="true"></span>}
+                            {di === 0 && hasSaved && <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-secondary-container align-middle" title="Price set" aria-hidden="true"></span>}
                           </td>
                         ))}
                         <td className="py-3 px-2">

@@ -12,7 +12,7 @@ interface ProductCardData {
   slug: string;
   name: string;
   description: string | null;
-  category: { slug: string; name: string };
+  category: { slug: string; name: string; parent?: { slug: string; name: string } | null };
   badges: string[];
   priceFrom: number | null;
   image: string | null;
@@ -58,7 +58,10 @@ export default function ProductsListing() {
   const { user } = useSession();
   const [allProducts, setAllProducts] = useState<ProductCardData[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Two-level browse: pick a top category, then optionally narrow to one of its
+  // sub-categories (e.g. Letterheads → 100 GSM Bond).
   const [category, setCategory] = useState<string | undefined>(undefined);
+  const [subCategory, setSubCategory] = useState<string | undefined>(undefined);
 
   // Fetch the full catalogue once; filter client-side so the category bar stays
   // stable and switching categories never refetches (no collapse, no races).
@@ -75,14 +78,29 @@ export default function ProductsListing() {
     load();
   }, [load]);
 
-  // Category list derived from the FULL catalogue (stable across filtering).
+  // Top-level list derived from the FULL catalogue (stable across filtering):
+  // a product under a sub-category is filed under its parent.
+  const topOf = (p: ProductCardData) => p.category.parent ?? p.category;
   const categories = Array.from(
-    new Map((allProducts ?? []).map((p) => [p.category.slug, p.category.name])).entries(),
+    new Map((allProducts ?? []).map((p) => [topOf(p).slug, topOf(p).name])).entries(),
   );
+  // Sub-categories of the selected top category, if it has any.
+  const subCategories = category
+    ? Array.from(
+        new Map(
+          (allProducts ?? [])
+            .filter((p) => p.category.parent?.slug === category)
+            .map((p) => [p.category.slug, p.category.name]),
+        ).entries(),
+      )
+    : [];
+
   const products = allProducts
-    ? category
-      ? allProducts.filter((p) => p.category.slug === category)
-      : allProducts
+    ? allProducts.filter((p) => {
+        if (subCategory) return p.category.slug === subCategory;
+        if (category) return topOf(p).slug === category;
+        return true;
+      })
     : null;
 
   return (
@@ -117,7 +135,7 @@ export default function ProductsListing() {
       <div className="max-w-container-max mx-auto px-gutter -mt-8 relative z-10">
         <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
           <button
-            onClick={() => setCategory(undefined)}
+            onClick={() => { setCategory(undefined); setSubCategory(undefined); }}
             aria-pressed={!category}
             className={`flex-none bg-surface border px-6 py-4 rounded-xl flex items-center gap-3 hover:border-secondary transition-all ${!category ? "border-secondary shadow-lg" : "border-outline-variant shadow-sm"}`}
           >
@@ -127,7 +145,7 @@ export default function ProductsListing() {
           {categories.map(([slug, name]) => (
             <button
               key={slug}
-              onClick={() => setCategory(slug)}
+              onClick={() => { setCategory(slug); setSubCategory(undefined); }}
               aria-pressed={category === slug}
               className={`flex-none bg-surface border px-6 py-4 rounded-xl flex items-center gap-3 hover:border-secondary transition-all ${category === slug ? "border-secondary shadow-lg" : "border-outline-variant shadow-sm"}`}
             >
@@ -136,6 +154,29 @@ export default function ProductsListing() {
             </button>
           ))}
         </div>
+
+        {/* Second level — only when the chosen category actually has children. */}
+        {subCategories.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar" aria-label="Sub-categories">
+            <button
+              onClick={() => setSubCategory(undefined)}
+              aria-pressed={!subCategory}
+              className={`flex-none px-4 py-2 rounded-full text-sm font-bold border transition-all ${!subCategory ? "border-secondary bg-secondary text-white" : "border-outline-variant bg-surface text-on-surface-variant hover:border-secondary"}`}
+            >
+              All
+            </button>
+            {subCategories.map(([slug, name]) => (
+              <button
+                key={slug}
+                onClick={() => setSubCategory(slug)}
+                aria-pressed={subCategory === slug}
+                className={`flex-none px-4 py-2 rounded-full text-sm font-bold border transition-all ${subCategory === slug ? "border-secondary bg-secondary text-white" : "border-outline-variant bg-surface text-on-surface-variant hover:border-secondary"}`}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Grid */}

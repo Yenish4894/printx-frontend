@@ -205,6 +205,14 @@ export const admin = {
     setMatrix: (id: string, rows: unknown[]) => put<any>(`/admin/products/${id}/matrix`, { rows }),
   },
 
+  rules: {
+    list: (productId: string) => get<{ rules: any[] }>(`/admin/products/${productId}/rules`),
+    create: (productId: string, input: Record<string, unknown>) =>
+      post<{ rule: any }>(`/admin/products/${productId}/rules`, input),
+    update: (id: string, input: Record<string, unknown>) => patch<{ rule: any }>(`/admin/rules/${id}`, input),
+    remove: (id: string) => del<any>(`/admin/rules/${id}`),
+  },
+
   specGroups: {
     update: (id: string, input: Record<string, unknown>) => patch<any>(`/admin/spec-groups/${id}`, input),
     remove: (id: string) => del<any>(`/admin/spec-groups/${id}`),
