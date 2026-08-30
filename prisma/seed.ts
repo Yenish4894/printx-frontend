@@ -1,8 +1,21 @@
 // Seed: super-admin, a demo customer, and Bhagini Graphics' real print products —
 // CMYK Printing and Stickers, both MATRIX / GST-inclusive, priced per sheet from the
-// official rate card. Run: node prisma/seed.ts
+// official rate card.
+//
+// ⚠️ DESTRUCTIVE: this DELETES every user, order, product and category before
+// re-creating demo data. It is a fresh-database tool, not an update. It will
+// destroy the live letterhead catalogue and real orders if pointed at
+// production — so it refuses to run against a database that already holds real
+// data unless you explicitly force it.
+//
+// Run: npm run db:seed                 (safe — aborts if the DB has real data)
+//      SEED_FORCE=1 npm run db:seed    (wipes anyway — you must mean it)
+//
+// Run with tsx, not bare node: the generated client uses extensionless ESM
+// specifiers Node cannot resolve. `npm run db:seed` does this for you.
 import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/client";
+// Node-targeted client — the Cloudflare one cannot run outside Workers.
+import { PrismaClient } from "../src/generated/prisma-node/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import bcrypt from "bcryptjs";
 import { buildComboKey } from "../src/lib/services/pricing.ts";
@@ -45,8 +58,46 @@ const SIZES = ["12 × 18 inch", "13 × 19 inch"];
 const GSMS = ["100 GSM", "130 GSM", "170 GSM", "210 GSM", "250 GSM", "300 GSM", "350 GSM", "Texture Paper"];
 const STICKER_MATERIALS = ["Chromo", "Avery Opaque", "Avery Transparent", "Silver", "Golden"];
 
+/**
+ * Refuse to wipe a database that looks like production. "Real data" = any order
+ * ever placed, or any product this seed does not itself create. Both are things
+ * the seed cannot put back.
+ */
+async function assertSafeToWipe() {
+  if (process.env.SEED_FORCE === "1") {
+    console.warn("⚠️  SEED_FORCE=1 — wiping regardless of existing data.");
+    return;
+  }
+  const SEEDED_SLUGS = ["cmyk-printing", "stickers"];
+  const [orders, foreignProducts] = await Promise.all([
+    prisma.order.count(),
+    prisma.product.count({ where: { slug: { notIn: SEEDED_SLUGS } } }),
+  ]);
+  if (orders === 0 && foreignProducts === 0) return;
+
+  const reasons = [
+    orders > 0 ? `${orders} order${orders === 1 ? "" : "s"}` : null,
+    foreignProducts > 0
+      ? `${foreignProducts} product${foreignProducts === 1 ? "" : "s"} this seed did not create`
+      : null,
+  ].filter(Boolean);
+
+  console.error(`
+✋ Refusing to seed: this database holds real data.
+   Found ${reasons.join(" and ")}.
+
+   This seed DELETES all users, orders, products and categories.
+   Running it here would destroy live data it cannot restore.
+
+   • Fresh/dev database?  SEED_FORCE=1 npm run db:seed
+   • Adding letterheads?  node scripts/seed-letterheads.mjs  (additive, idempotent)
+`);
+  process.exit(1);
+}
+
 async function main() {
   console.log("🌱 Seeding Bhagini Graphics…");
+  await assertSafeToWipe();
 
   // ── Clean (dev only) — FK-safe order so the seed is re-runnable ──
   await prisma.notification.deleteMany();

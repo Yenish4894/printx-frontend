@@ -4,11 +4,25 @@
 // The configurator (Product → SpecGroup → SpecOption + QuantityTier + DeliverySpeed
 // + VisibilityRule) is fully dynamic: admin defines everything, no hardcoded specs.
 
+// The app's client. Targets Cloudflare Workers: engine-free, WASM query
+// compiler, edge runtime. This is the ONLY client the Worker bundles.
 generator client {
   provider     = "prisma-client"
   runtime      = "cloudflare"
   moduleFormat = "esm"
   output       = "../src/generated/prisma"
+}
+
+// A second, Node-targeted client for scripts run on a developer machine (the
+// seed). The Cloudflare client above cannot run under Node — its WASM compiler
+// fails to initialise ("loaded wasm module was unexpectedly undefined") — so
+// anything executed with node/tsx must import this one instead.
+// Never imported by src/app or src/lib, so it never reaches the Worker bundle.
+generator nodeClient {
+  provider     = "prisma-client"
+  runtime      = "nodejs"
+  moduleFormat = "esm"
+  output       = "../src/generated/prisma-node"
 }
 
 datasource db {

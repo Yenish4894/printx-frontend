@@ -9,7 +9,7 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate deploy",
-    "db:seed": "node prisma/seed.ts",
+    "db:seed": "tsx prisma/seed.ts",
     "preview": "prisma generate && opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "prisma generate && opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "upload": "prisma generate && opennextjs-cloudflare build && opennextjs-cloudflare upload",
@@ -37,6 +37,7 @@
     "eslint-config-next": "^16.2.11",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5",
     "wrangler": "^4.113.0"
   }
