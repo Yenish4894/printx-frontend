@@ -43,6 +43,8 @@ interface Product {
   category: { name: string; slug: string };
   pricingModel: "TIERED" | "PER_UNIT" | "MATRIX";
   minQuantity: number;
+  maxQuantity?: number | null;
+  quantityStep?: number;
   pricesIncludeGst: boolean;
   singlePrintThreshold: number | null;
   singlePrintRate: number | null;
@@ -113,7 +115,13 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
           (p.pricingModel === "MATRIX" && p.singlePrintThreshold
             ? Math.max(100, p.singlePrintThreshold)
             : Math.max(1, p.minQuantity));
-        setQty(defaultQty);
+        // Start on a quantity the server will accept (>= min, on a valid step).
+        const step = Math.max(1, p.quantityStep ?? 1);
+        const snapped =
+          step > 1
+            ? p.minQuantity + Math.max(0, Math.round((defaultQty - p.minQuantity) / step)) * step
+            : Math.max(defaultQty, p.minQuantity);
+        setQty(snapped);
         setDeliveryId(p.deliverySpeeds[0]?.id);
       })
       .catch((e) => alive && setLoadErr(e instanceof ApiError ? e.message : "Failed to load product"));
@@ -203,8 +211,44 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
   const hasQuote = !!breakdown;
   // Only judge wallet sufficiency once we actually have a price.
   const enough = hasQuote && (user?.walletBalance ?? 0) >= total;
+  // Quantity rules come from the product, not from constants — a product with
+  // minQuantity 1000 / step 1000 must never be offered 50, and the +/- buttons
+  // must move by a step the server will accept.
   const minQty = Math.max(1, product?.minQuantity ?? 1);
-  const MAX_QTY = 1_000_000;
+  const qtyStep = Math.max(1, product?.quantityStep ?? 1);
+  const maxQty = product?.maxQuantity ?? 1_000_000;
+
+  /** Clamp into [min, max] and land on a valid step above the minimum. */
+  const snapQty = useCallback(
+    (n: number) => {
+      const clamped = Math.min(maxQty, Math.max(minQty, Number.isFinite(n) ? n : minQty));
+      if (qtyStep <= 1) return clamped;
+      const steps = Math.round((clamped - minQty) / qtyStep);
+      return Math.min(maxQty, minQty + Math.max(0, steps) * qtyStep);
+    },
+    [minQty, maxQty, qtyStep],
+  );
+
+  // Preset chips: the product's own tiers if it has them, else the first few
+  // valid steps from the minimum.
+  const qtyChips = useMemo(() => {
+    if (product?.quantityTiers.length) return product.quantityTiers.map((t) => t.quantity);
+    if (qtyStep > 1 || minQty > 1) {
+      return [0, 1, 2, 4, 9]
+        .map((i) => minQty + i * qtyStep)
+        .filter((n) => n <= maxQty);
+    }
+    return QTY_CHIPS;
+  }, [product, minQty, maxQty, qtyStep]);
+
+  const qtyError =
+    qty < minQty
+      ? `Minimum order is ${minQty.toLocaleString("en-IN")}.`
+      : qty > maxQty
+        ? `Maximum order is ${maxQty.toLocaleString("en-IN")}.`
+        : qtyStep > 1 && (qty - minQty) % qtyStep !== 0
+          ? `Quantity must be in multiples of ${qtyStep.toLocaleString("en-IN")} from ${minQty.toLocaleString("en-IN")}.`
+          : null;
 
   const selectedSummary = useMemo(() => {
     if (!product) return "";
@@ -450,10 +494,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
                 </h4>
               </div>
               <div className="flex flex-wrap gap-2 mb-4">
-                {(product.quantityTiers.length
-                  ? product.quantityTiers.map((t) => t.quantity)
-                  : QTY_CHIPS
-                ).map((n) => (
+                {qtyChips.map((n) => (
                   <button
                     key={n}
                     onClick={() => setQty(n)}
@@ -467,26 +508,32 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
               <div className="flex items-center gap-4 bg-surface-container-low p-4 rounded-xl max-w-xs">
                 <label htmlFor="qty-input" className="text-label-caps font-bold text-on-surface-variant">Custom Qty:</label>
                 <div className="flex items-center bg-white rounded-lg border border-outline-variant">
-                  <button type="button" aria-label="Decrease quantity" onClick={() => setQty((q) => Math.max(minQty, q - 50))} className="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-secondary"><span className="material-symbols-outlined" aria-hidden="true">remove</span></button>
+                  <button type="button" aria-label={`Decrease quantity by ${qtyStep}`} onClick={() => setQty((q) => snapQty(q - qtyStep))} className="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-secondary"><span className="material-symbols-outlined" aria-hidden="true">remove</span></button>
                   <input
                     id="qty-input"
-                    className="w-16 border-none text-center font-bold text-primary-container focus:ring-0"
+                    className="w-20 border-none text-center font-bold text-primary-container focus:ring-0"
                     type="number"
                     inputMode="numeric"
                     min={minQty}
-                    max={MAX_QTY}
+                    max={maxQty}
+                    step={qtyStep}
                     value={qty}
+                    // Typing stays unrestricted so the field doesn't fight the
+                    // user mid-entry; the value is snapped to a valid step on blur.
                     onChange={(e) => {
                       const n = parseInt(e.target.value, 10);
-                      setQty(Number.isNaN(n) ? minQty : Math.min(MAX_QTY, Math.max(1, n)));
+                      setQty(Number.isNaN(n) ? minQty : n);
                     }}
-                    onBlur={() => setQty((q) => Math.max(minQty, Math.min(MAX_QTY, q)))}
+                    onBlur={() => setQty((q) => snapQty(q))}
                   />
-                  <button type="button" aria-label="Increase quantity" onClick={() => setQty((q) => Math.min(MAX_QTY, q + 50))} className="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-secondary"><span className="material-symbols-outlined" aria-hidden="true">add</span></button>
+                  <button type="button" aria-label={`Increase quantity by ${qtyStep}`} onClick={() => setQty((q) => snapQty(q + qtyStep))} className="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-secondary"><span className="material-symbols-outlined" aria-hidden="true">add</span></button>
                 </div>
               </div>
-              {qty < minQty && (
-                <p className="text-xs text-error mt-2">Minimum order is {minQty.toLocaleString("en-IN")}.</p>
+              {qtyError && <p className="text-xs text-error mt-2">{qtyError}</p>}
+              {!qtyError && qtyStep > 1 && (
+                <p className="text-xs text-on-surface-variant mt-2">
+                  Sold in multiples of {qtyStep.toLocaleString("en-IN")}.
+                </p>
               )}
             </section>
             )}

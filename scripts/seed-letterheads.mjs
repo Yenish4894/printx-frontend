@@ -7,10 +7,15 @@
 //   604  A4-100 GSM Bond              1 Side  1000        ₹1400
 //   605  A4-(80 white + 60 yellow)    1 Side  500 + 500   ₹1400
 //
-// Modelled as ONE product with three pricing dimensions — Paper × Printing ×
-// Qty — and five flat-priced matrix rows. Printing and Qty each have a single
-// option today; they exist as dimensions so adding "Both Side" or a 2000 slab
-// later is a data change, not a schema change.
+// Modelled as ONE product with two pricing dimensions — Paper × Printing — and
+// five PER-SHEET matrix rows. Quantity is free-typed in steps of 1000 from a
+// 1000 minimum, so 2000 costs exactly twice 1000. Every price on the card
+// divides exactly by 1000 (1100 → ₹1.10, 1250 → ₹1.25), so there is no rounding
+// drift; that is why per-sheet works here and not for the trade card.
+//
+// If volume discounts are ever wanted, the model changes: re-add a Qty spec
+// group (isQuantityDimension) with one option per slab and give each combination
+// a flatPrice instead. The engine already supports both.
 //
 // Idempotent: ids are deterministic, and the product's spec system + matrix are
 // rebuilt on every run. Safe to re-run against production.
@@ -25,7 +30,11 @@ const sql = neon(process.env.DATABASE_URL);
 
 const CAT = "lh_cat_letterheads";
 const PROD = "lh_prod_a4";
-const G = { paper: "lh_g_paper", printing: "lh_g_printing", qty: "lh_g_qty" };
+const G = { paper: "lh_g_paper", printing: "lh_g_printing" };
+
+// Quantity is sold in whole reams of 1000.
+const MIN_QTY = 1000;
+const QTY_STEP = 1000;
 
 const PAPERS = [
   { id: "lh_o_601", code: "601", name: "80 GSM", label: "A4-80 GSM", price: 1100, desc: null },
@@ -39,7 +48,6 @@ const PAPERS = [
   },
 ];
 const O_PRINT_1SIDE = "lh_o_print_1side";
-const O_QTY_1000 = "lh_o_qty_1000";
 
 const comboKey = (ids) => [...ids].sort().join("|");
 
@@ -60,12 +68,13 @@ await sql`
   VALUES (
     ${PROD},${CAT},'Letterhead — A4','letterhead-a4',
     'Professional A4 letterheads (210 × 297 mm) printed on your choice of paper stock.',
-    true,'MATRIX',false,1000,NULL,1,false,'210 × 297 mm (A4)','Single Side',
+    true,'MATRIX',false,${MIN_QTY},NULL,${QTY_STEP},false,'210 × 297 mm (A4)','Single Side',
     'Within 48 hours from file upload',1100,ARRAY['BESTSELLER']::text[],
     ARRAY['PDF','AI','PSD','PNG']::text[],now(),now())
   ON CONFLICT (id) DO UPDATE SET
     "categoryId"=EXCLUDED."categoryId", name=EXCLUDED.name, description=EXCLUDED.description,
     "isActive"=true, "pricingModel"=EXCLUDED."pricingModel", "minQuantity"=EXCLUDED."minQuantity",
+    "maxQuantity"=EXCLUDED."maxQuantity", "quantityStep"=EXCLUDED."quantityStep",
     "pricesIncludeGst"=EXCLUDED."pricesIncludeGst", "standardSizeLabel"=EXCLUDED."standardSizeLabel",
     "printTypeLabel"=EXCLUDED."printTypeLabel", "productionTime"=EXCLUDED."productionTime",
     "basePriceFrom"=EXCLUDED."basePriceFrom", "updatedAt"=now()`;
@@ -79,8 +88,6 @@ await sql`INSERT INTO "SpecGroup" (id,"productId",name,"selectionType","isPricin
           VALUES (${G.paper},${PROD},'Paper','SINGLE_SELECT',true,false,true,'layers',0,true)`;
 await sql`INSERT INTO "SpecGroup" (id,"productId",name,"selectionType","isPricingDimension","isQuantityDimension","isRequired",icon,"displayOrder","isActive")
           VALUES (${G.printing},${PROD},'Printing','SINGLE_SELECT',true,false,true,'print',1,true)`;
-await sql`INSERT INTO "SpecGroup" (id,"productId",name,"selectionType","isPricingDimension","isQuantityDimension","isRequired",icon,"displayOrder","isActive")
-          VALUES (${G.qty},${PROD},'Qty.','SINGLE_SELECT',true,true,true,'reorder',2,true)`;
 
 let order = 0;
 for (const p of PAPERS) {
@@ -91,14 +98,18 @@ for (const p of PAPERS) {
 }
 await sql`INSERT INTO "SpecOption" (id,"specGroupId",name,description,"addOnType","addOnValue","perQuantity","isDefault","isActive","displayOrder","quantityValue",code)
           VALUES (${O_PRINT_1SIDE},${G.printing},'1 Side',NULL,'FLAT',0,1,true,true,0,NULL,NULL)`;
-await sql`INSERT INTO "SpecOption" (id,"specGroupId",name,description,"addOnType","addOnValue","perQuantity","isDefault","isActive","displayOrder","quantityValue",code)
-          VALUES (${O_QTY_1000},${G.qty},'1000',NULL,'FLAT',0,1,true,true,0,1000,NULL)`;
 
 for (const p of PAPERS) {
-  const ids = [p.id, O_PRINT_1SIDE, O_QTY_1000];
+  const ids = [p.id, O_PRINT_1SIDE];
+  // Card price is per 1000; store the per-sheet rate so any multiple prices
+  // correctly. Exact at 2dp for every row on this card — asserted below.
+  const rate = p.price / MIN_QTY;
+  if (Math.round(rate * 100) / 100 !== rate) {
+    throw new Error(`${p.code}: ₹${p.price}/${MIN_QTY} = ${rate} does not fit Decimal(10,2)`);
+  }
   await sql`
     INSERT INTO "PriceMatrix" (id,"productId","comboKey","optionIds","ratePerSheet","flatPrice","isActive","createdAt")
-    VALUES (${"lh_m_" + p.code},${PROD},${comboKey(ids)},${[...ids].sort()},NULL,${p.price},true,now())`;
+    VALUES (${"lh_m_" + p.code},${PROD},${comboKey(ids)},${[...ids].sort()},${rate},NULL,true,now())`;
 }
 
 // Free standard delivery — the card quotes no delivery charge.
@@ -112,15 +123,21 @@ const retired = await sql`
 
 // ── Report ────────────────────────────────────────────────
 const rows = await sql`
-  SELECT o.code, o.name, pm."flatPrice"
+  SELECT o.code, o.name, pm."ratePerSheet"
   FROM "PriceMatrix" pm
   JOIN "SpecOption" o ON o.id = ANY(pm."optionIds") AND o."specGroupId" = ${G.paper}
   WHERE pm."productId" = ${PROD} ORDER BY o.code`;
 
 console.log("── Letterhead — A4 seeded ──");
-console.log("  code  paper                        price (ex-GST)");
+console.log("  code  paper                          ₹/sheet      1000      2000      5000");
 for (const r of rows) {
-  console.log(`  ${r.code}   ${r.name.padEnd(28)} ₹${Number(r.flatPrice).toFixed(2)}`);
+  const rate = Number(r.ratePerSheet);
+  console.log(
+    `  ${r.code}   ${r.name.padEnd(28)} ${rate.toFixed(2).padStart(8)}` +
+      `${(rate * 1000).toFixed(0).padStart(10)}` +
+      `${(rate * 2000).toFixed(0).padStart(10)}` +
+      `${(rate * 5000).toFixed(0).padStart(10)}`,
+  );
 }
-console.log(`\n  ${rows.length} flat-price rows · GST added on top at checkout`);
+console.log(`\n  ${rows.length} per-sheet rows · min ${MIN_QTY} in steps of ${QTY_STEP} · GST on top`);
 console.log(retired.length ? `  retired stale product: ${retired[0].slug}` : "  (no stale letter-pad to retire)");
