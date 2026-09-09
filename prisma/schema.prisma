@@ -459,6 +459,7 @@ model CartItem {
 
   @@index([cartId])
   @@index([productId])
+  @@index([fileUrl]) // ownership lookup for GET /api/files/[key]
 }
 
 // ───────────────────────── Orders ─────────────────────────
@@ -489,6 +490,8 @@ model Order {
   payment       Payment?
 
   @@index([userId])
+  @@index([status]) // admin order list filters by status
+  @@index([placedAt]) // every order list sorts newest-first
 }
 
 model OrderItem {
@@ -516,6 +519,7 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productId])
+  @@index([fileUrl]) // ownership lookup for GET /api/files/[key]
 }
 
 model OrderStatusHistory {
@@ -561,6 +565,7 @@ model WalletTransaction {
   createdAt      DateTime      @default(now())
 
   @@index([userId])
+  @@index([userId, createdAt]) // "my ledger, newest first"
 }
 
 model Refund {
@@ -577,6 +582,7 @@ model Refund {
 
   @@index([userId])
   @@index([orderId])
+  @@index([status]) // admin refund list filters by status
 }
 
 // ───────────────────────── Platform ─────────────────────────

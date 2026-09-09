@@ -1,12 +1,14 @@
 import prisma from "@/lib/prisma";
 import { HttpError } from "@/lib/http";
 import type { RefundProcessInput } from "@/lib/dto/admin";
+import type { RefundStatus } from "@/generated/prisma/client";
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 export async function listRefunds(status?: string) {
+  // Validated by the route; typed here so the filter is not an `as never` cast.
   const refunds = await prisma.refund.findMany({
-    where: status ? { status: status as never } : {},
+    where: status ? { status: status as RefundStatus } : {},
     orderBy: { createdAt: "desc" },
     include: {
       user: { select: { businessName: true, mobile: true } },

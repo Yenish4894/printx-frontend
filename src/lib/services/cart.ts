@@ -1,34 +1,13 @@
 import prisma from "@/lib/prisma";
 import { HttpError } from "@/lib/http";
 import { resolveAndPrice } from "./quote";
-import { GST_RATE } from "./pricing";
-import { getGstRate } from "./settings";
+import { computeTotals } from "./pricing";
+import { getSettings } from "./settings";
 import type { AddCartItemInput } from "@/lib/dto/cart";
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 type Selections = Record<string, string | string[]>;
-
-interface LineLike {
-  lineSubtotal: number; // goods taxable (pre-GST value of base + add-ons)
-  gstAmount: number; // GST on the goods (0 for none; back-calculated for inclusive)
-  deliveryFee: number;
-}
-
-/**
- * Cart/order totals. Each line stores its own taxable value + GST (so GST-inclusive
- * MATRIX lines and GST-exclusive additive lines mix correctly). Delivery is a
- * taxable service — GST added on top.
- */
-export function computeTotals(lines: LineLike[], gstRate = GST_RATE) {
-  const subtotal = round2(lines.reduce((s, l) => s + l.lineSubtotal, 0));
-  const deliveryCharge = round2(lines.reduce((s, l) => s + l.deliveryFee, 0));
-  const goodsGst = round2(lines.reduce((s, l) => s + l.gstAmount, 0));
-  const deliveryGst = round2(deliveryCharge * gstRate);
-  const gst = round2(goodsGst + deliveryGst);
-  const total = round2(subtotal + deliveryCharge + gst);
-  return { subtotal, deliveryCharge, gst, total };
-}
 
 /** Current user's cart with per-item snapshots and cart-level totals. */
 export async function getCart(userId: string) {
@@ -51,7 +30,7 @@ export async function getCart(userId: string) {
     },
   });
 
-  const gstRate = await getGstRate();
+  const { gstRate, freeShippingThreshold } = await getSettings();
   const items = (cart?.items ?? []).map((it) => {
     const deliveryFee = it.deliverySpeed ? Number(it.deliverySpeed.fee) : 0;
     const lineSubtotal = Number(it.lineSubtotal);
@@ -75,7 +54,7 @@ export async function getCart(userId: string) {
     };
   });
 
-  const totals = computeTotals(items, gstRate);
+  const totals = computeTotals(items, gstRate, freeShippingThreshold);
   return { items, ...totals, count: items.length };
 }
 

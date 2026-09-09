@@ -1,9 +1,9 @@
 import prisma from "@/lib/prisma";
 import { HttpError } from "@/lib/http";
-import { computeTotals } from "./cart";
+import { computeTotals } from "./pricing";
 import { resolveAndPrice } from "./quote";
-import { getGstRate } from "./settings";
-import type { OrderStatus } from "@/generated/prisma/client";
+import { getSettings } from "./settings";
+import { CANCELLABLE_STATUSES } from "@/lib/orderStatus";
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -60,7 +60,10 @@ async function placeOrderTxn(userId: string, addressId: string, notes?: string) 
           height: i.height ? Number(i.height) : undefined,
           deliverySpeedId: i.deliverySpeedId ?? undefined,
         });
-        return { item: i, bd: q.breakdown, snapshot: q.specSnapshot };
+        // q.quantity — NOT i.quantity — is what was priced. They differ when the
+        // product prices quantity as a spec slab, and storing the stale one
+        // would file an order whose quantity and price disagree.
+        return { item: i, bd: q.breakdown, snapshot: q.specSnapshot, quantity: q.quantity };
       } catch {
         throw new HttpError(
           422,
@@ -70,13 +73,38 @@ async function placeOrderTxn(userId: string, addressId: string, notes?: string) 
     }),
   );
 
-  const gstRate = await getGstRate();
+  const { gstRate, freeShippingThreshold } = await getSettings();
   const lines = priced.map((p) => ({
     lineSubtotal: p.bd.goodsTaxable,
     gstAmount: p.bd.goodsGst,
     deliveryFee: p.bd.delivery,
   }));
-  const { subtotal, deliveryCharge, gst, total } = computeTotals(lines, gstRate);
+  const { subtotal, deliveryCharge, gst, total } = computeTotals(
+    lines,
+    gstRate,
+    freeShippingThreshold,
+  );
+
+  // Re-pricing protects the business from a stale cart, but it must not silently
+  // charge the customer something other than the total they were shown. Compare
+  // against the cart's own stored figures — exactly what /api/cart rendered —
+  // and make them re-confirm if the number moved.
+  const shownTotal = computeTotals(
+    cart.items.map((i) => ({
+      lineSubtotal: Number(i.lineSubtotal),
+      gstAmount: Number(i.gstAmount),
+      deliveryFee: i.deliverySpeed ? Number(i.deliverySpeed.fee) : 0,
+    })),
+    gstRate,
+    freeShippingThreshold,
+  ).total;
+  if (Math.abs(shownTotal - total) > 0.01) {
+    throw new HttpError(
+      409,
+      `Prices changed while this order was in your cart — it is now ₹${total.toFixed(2)} ` +
+        `instead of ₹${shownTotal.toFixed(2)}. Please review your cart and place the order again.`,
+    );
+  }
 
   return prisma.$transaction(async (tx) => {
     const address = await tx.address.findFirst({ where: { id: addressId, userId } });
@@ -133,10 +161,10 @@ async function placeOrderTxn(userId: string, addressId: string, notes?: string) 
         },
         notes: notes ?? null,
         items: {
-          create: priced.map(({ item: i, bd, snapshot }) => ({
+          create: priced.map(({ item: i, bd, snapshot, quantity }) => ({
             productId: i.productId,
             productName: i.product.name,
-            quantity: i.quantity,
+            quantity,
             width: i.width,
             height: i.height,
             deliverySpeedId: i.deliverySpeedId,
@@ -145,7 +173,7 @@ async function placeOrderTxn(userId: string, addressId: string, notes?: string) 
               : null,
             config: i.config as object,
             specSnapshot: snapshot as object,
-            unitPrice: round2((bd.goodsTaxable + bd.goodsGst) / i.quantity),
+            unitPrice: round2((bd.goodsTaxable + bd.goodsGst) / quantity),
             lineSubtotal: bd.goodsTaxable,
             gstAmount: bd.goodsGst,
             fileUrl: i.fileUrl,
@@ -193,9 +221,6 @@ async function placeOrderTxn(userId: string, addressId: string, notes?: string) 
   });
 }
 
-// Statuses at which a customer may still cancel (before production starts).
-const CANCELLABLE = ["PLACED", "PAYMENT_CONFIRMED", "DESIGN_REVIEW"] as OrderStatus[];
-
 /**
  * Cancel an order and refund its total back to the wallet.
  * All-or-nothing: mark CANCELLED + history → credit wallet + REFUND ledger +
@@ -206,7 +231,7 @@ export async function cancelOrder(userId: string, id: string, reason?: string) {
   return prisma.$transaction(async (tx) => {
     // Atomically claim the cancellation — only one concurrent request wins.
     const claimed = await tx.order.updateMany({
-      where: { id, userId, status: { in: CANCELLABLE } },
+      where: { id, userId, status: { in: CANCELLABLE_STATUSES } },
       data: { status: "CANCELLED" },
     });
     if (claimed.count === 0) {

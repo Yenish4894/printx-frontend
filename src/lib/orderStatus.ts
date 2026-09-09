@@ -64,7 +64,18 @@ export const ORDER_PIPELINE: OrderStatus[] = [
 ];
 
 const TERMINAL = new Set<OrderStatus>(["DELIVERED", "CANCELLED"]);
-const CANCELLABLE = new Set<OrderStatus>(["PLACED", "PAYMENT_CONFIRMED", "DESIGN_REVIEW"]);
+
+/**
+ * Statuses at which an order may still be cancelled (before production starts).
+ * Exported so the order service guards on the SAME list the UI offers — it was
+ * previously duplicated there and the two could silently drift apart.
+ */
+export const CANCELLABLE_STATUSES: OrderStatus[] = [
+  "PLACED",
+  "PAYMENT_CONFIRMED",
+  "DESIGN_REVIEW",
+];
+const CANCELLABLE = new Set<OrderStatus>(CANCELLABLE_STATUSES);
 
 /**
  * Valid next statuses an admin may move an order to: the next pipeline step

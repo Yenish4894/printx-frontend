@@ -1,6 +1,6 @@
 // Verifies the pricing engine against the real CMYK/sticker rate card.
 // Run: node scripts/test-pricing.ts   (Node 24 strips TS types)
-import { computePrice, type PricingInput } from "../src/lib/services/pricing.ts";
+import { computePrice, computeTotals, type PricingInput } from "../src/lib/services/pricing.ts";
 
 let pass = 0;
 let fail = 0;
@@ -97,6 +97,46 @@ check("500 cards + ₹150 add-on + GST", b.total, round2((999 + 150) * 1.18));
 function round2(n: number) {
   return Math.round((n + Number.EPSILON) * 100) / 100;
 }
+
+
+// ── Cart/order totals + free-shipping threshold ──
+// Regression guard: freeShippingThreshold DEFAULTS TO 0 in the database, so a
+// naive `subtotal >= threshold` would waive delivery on every order ever placed.
+console.log("\n── computeTotals: free-shipping threshold ──");
+{
+  const line = (lineSubtotal: number, gstAmount: number, deliveryFee: number) => ({
+    lineSubtotal,
+    gstAmount,
+    deliveryFee,
+  });
+
+  // Threshold 0 = DISABLED. Delivery must still be charged.
+  let t = computeTotals([line(1000, 180, 50)], 0.18, 0);
+  check("threshold 0 → delivery still charged", t.deliveryCharge, 50);
+  check("  total = 1000 + 50 + 180 + 9", t.total, 1239);
+  console.log(`${t.shippingIsFree === false ? "✅" : "❌"}   shippingIsFree is false`);
+  if (t.shippingIsFree !== false) fail++; else pass++;
+
+  // Below the threshold → still charged.
+  t = computeTotals([line(1000, 180, 50)], 0.18, 2000);
+  check("subtotal 1000 < threshold 2000 → delivery charged", t.deliveryCharge, 50);
+
+  // At the threshold → waived, and its GST goes with it.
+  t = computeTotals([line(2000, 360, 50)], 0.18, 2000);
+  check("subtotal 2000 = threshold 2000 → delivery waived", t.deliveryCharge, 0);
+  check("  GST drops to goods-only (no delivery GST)", t.gst, 360);
+  check("  total = 2000 + 360", t.total, 2360);
+
+  // Above the threshold → waived.
+  t = computeTotals([line(5000, 900, 120)], 0.18, 2000);
+  check("subtotal above threshold → delivery waived", t.deliveryCharge, 0);
+
+  // Mixed lines: GST-inclusive line (gstAmount already back-calculated) plus an
+  // exclusive one must not double-tax.
+  t = computeTotals([line(1694.92, 305.08, 0), line(1000, 180, 0)], 0.18, 0);
+  check("mixed inclusive + exclusive lines", t.total, 3180);
+}
+
 
 console.log(`\n${fail === 0 ? "🎉 ALL PASS" : "⚠️  FAILURES"}: ${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

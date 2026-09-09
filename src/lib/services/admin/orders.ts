@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { HttpError } from "@/lib/http";
+import { nextStatuses, statusLabel } from "@/lib/orderStatus";
 import type { OrderStatus } from "@/generated/prisma/client";
 import type { OrderStatusInput, FileReviewInput } from "@/lib/dto/admin";
 
@@ -86,7 +87,23 @@ export async function updateOrderStatus(id: string, input: OrderStatusInput) {
     const order = await tx.order.findUnique({ where: { id } });
     if (!order) throw new HttpError(404, "Order not found");
     if (order.status === input.status) {
-      throw new HttpError(422, `Order is already ${input.status}`);
+      throw new HttpError(422, `Order is already ${statusLabel(input.status)}`);
+    }
+
+    // The pipeline is a business rule, not a UI convenience. Enforcing it only
+    // in the admin dropdown left the API able to move an order anywhere:
+    // DELIVERED → CANCELLED would refund goods already delivered, and
+    // CANCELLED → PLACED would revive an order whose money was already
+    // refunded — the customer keeps both.
+    const allowed = nextStatuses(order.status);
+    if (!allowed.includes(input.status)) {
+      throw new HttpError(
+        422,
+        allowed.length === 0
+          ? `${statusLabel(order.status)} is a final status — this order can no longer be changed.`
+          : `Cannot move an order from ${statusLabel(order.status)} to ${statusLabel(input.status)}. ` +
+            `Allowed: ${allowed.map((s) => statusLabel(s)).join(", ")}.`,
+      );
     }
 
     const cancelling = input.status === "CANCELLED" && order.status !== "CANCELLED";

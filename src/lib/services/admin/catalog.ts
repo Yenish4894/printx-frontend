@@ -129,8 +129,7 @@ async function uniqueSlug(base: string, ignoreId?: string) {
   let slug = base || "product";
   let i = 1;
   // ensure uniqueness
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
+  for (;;) {
     const hit = await prisma.product.findUnique({ where: { slug } });
     if (!hit || hit.id === ignoreId) return slug;
     slug = `${base}-${++i}`;
@@ -308,15 +307,43 @@ export async function getAdminProduct(id: string) {
 
 // ─────────────────── Spec groups / options ───────────────────
 
+/**
+ * A product may have at most ONE quantity dimension — the schema says so but
+ * cannot express it, and resolveAndPrice would silently take whichever group
+ * it happened to read last. `excludeId` skips the row being updated.
+ */
+async function assertSingleQuantityDimension(productId: string, excludeId?: string) {
+  const existing = await prisma.specGroup.findFirst({
+    where: {
+      productId,
+      isQuantityDimension: true,
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+    select: { name: true },
+  });
+  if (existing) {
+    throw new HttpError(
+      422,
+      `"${existing.name}" is already this product's quantity dimension — a product can only have one.`,
+    );
+  }
+}
+
 export async function createSpecGroup(productId: string, input: SpecGroupInput) {
   const product = await prisma.product.findUnique({ where: { id: productId } });
   if (!product) throw new HttpError(404, "Product not found");
+
+  // A quantity dimension is by definition part of the price combination.
+  const isQuantityDimension = input.isQuantityDimension ?? false;
+  if (isQuantityDimension) await assertSingleQuantityDimension(productId);
+
   const g = await prisma.specGroup.create({
     data: {
       productId,
       name: input.name,
       selectionType: input.selectionType ?? "SINGLE_SELECT",
-      isPricingDimension: input.isPricingDimension ?? false,
+      isPricingDimension: (input.isPricingDimension ?? false) || isQuantityDimension,
+      isQuantityDimension,
       isRequired: input.isRequired ?? true,
       icon: input.icon ?? null,
       displayOrder: input.displayOrder ?? 0,
@@ -327,6 +354,14 @@ export async function createSpecGroup(productId: string, input: SpecGroupInput) 
 }
 
 export async function updateSpecGroup(id: string, input: SpecGroupInput) {
+  if (input.isQuantityDimension) {
+    const g = await prisma.specGroup.findUnique({
+      where: { id },
+      select: { productId: true },
+    });
+    if (!g) throw new HttpError(404, "Spec group not found");
+    await assertSingleQuantityDimension(g.productId, id);
+  }
   await prisma.specGroup.update({
     where: { id },
     data: {
@@ -351,6 +386,14 @@ export async function deleteSpecGroup(id: string) {
 export async function createSpecOption(specGroupId: string, input: SpecOptionInput) {
   const g = await prisma.specGroup.findUnique({ where: { id: specGroupId } });
   if (!g) throw new HttpError(404, "Spec group not found");
+  // An option in the quantity group IS a quantity; without a value it would be
+  // saved happily and then fail at quote time with an unhelpful error.
+  if (g.isQuantityDimension && !input.quantityValue) {
+    throw new HttpError(
+      422,
+      `"${g.name}" is the quantity dimension — every option needs the number of units it represents.`,
+    );
+  }
   const o = await prisma.specOption.create({
     data: {
       specGroupId,

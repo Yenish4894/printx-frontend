@@ -22,19 +22,29 @@ export async function POST(req: Request) {
 
     const passwordHash = await hashPassword(data.password);
 
-    const user = await prisma.user.create({
-      data: {
-        businessName: data.businessName,
-        ownerName: data.ownerName,
-        mobile: data.mobile,
-        email: data.email,
-        gstNumber: data.gstNumber ? data.gstNumber : null,
-        passwordHash,
-        // provision cart + wallet settings on signup
-        cart: { create: {} },
-        walletSettings: { create: {} },
-      },
-    });
+    // The check above is advisory: two simultaneous signups both pass it and one
+    // hits the unique index. Catch that so it reads as a conflict, not a 500.
+    let user;
+    try {
+      user = await prisma.user.create({
+        data: {
+          businessName: data.businessName,
+          ownerName: data.ownerName,
+          mobile: data.mobile,
+          email: data.email,
+          gstNumber: data.gstNumber ? data.gstNumber : null,
+          passwordHash,
+          // provision cart + wallet settings on signup
+          cart: { create: {} },
+          walletSettings: { create: {} },
+        },
+      });
+    } catch (e) {
+      if ((e as { code?: string })?.code === "P2002") {
+        throw new HttpError(409, "An account with this mobile number already exists");
+      }
+      throw e;
+    }
 
     await createSession({ id: user.id, mobile: user.mobile, role: user.role });
     return ok({ user: publicUser(user) }, 201);

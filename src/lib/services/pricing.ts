@@ -187,3 +187,37 @@ export function computePrice(input: PricingInput): PriceBreakdown {
     gstInclusive: product.pricesIncludeGst,
   };
 }
+
+// ───────────────────────── Cart / order totals ─────────────────────────
+
+export interface LineLike {
+  lineSubtotal: number; // goods taxable (pre-GST value of base + add-ons)
+  gstAmount: number; // GST on the goods (0 for none; back-calculated for inclusive)
+  deliveryFee: number;
+}
+
+/**
+ * Cart/order totals. Each line stores its own taxable value + GST (so GST-inclusive
+ * MATRIX lines and GST-exclusive additive lines mix correctly). Delivery is a
+ * taxable service — GST added on top.
+ */
+export function computeTotals(
+  lines: LineLike[],
+  gstRate = GST_RATE,
+  freeShippingThreshold = 0,
+) {
+  const subtotal = round2(lines.reduce((s, l) => s + l.lineSubtotal, 0));
+  const goodsGst = round2(lines.reduce((s, l) => s + l.gstAmount, 0));
+
+  // Free delivery over a spend threshold. A threshold of 0 means DISABLED, not
+  // "everything ships free" — the column defaults to 0, so treating it as a
+  // real threshold would waive every delivery charge on the platform.
+  const grossDelivery = round2(lines.reduce((s, l) => s + l.deliveryFee, 0));
+  const shippingIsFree = freeShippingThreshold > 0 && subtotal >= freeShippingThreshold;
+  const deliveryCharge = shippingIsFree ? 0 : grossDelivery;
+
+  const deliveryGst = round2(deliveryCharge * gstRate);
+  const gst = round2(goodsGst + deliveryGst);
+  const total = round2(subtotal + deliveryCharge + gst);
+  return { subtotal, deliveryCharge, gst, total, shippingIsFree };
+}

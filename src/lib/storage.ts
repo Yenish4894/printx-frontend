@@ -29,18 +29,42 @@ interface R2Like {
   get(key: string): Promise<{ arrayBuffer(): Promise<ArrayBuffer> } | null>;
 }
 
-// Returns the bound R2 bucket on Workers, or null in local Node (falls to disk).
-async function r2(): Promise<R2Like | null> {
+/** The bound R2 bucket, or undefined when there is none. */
+async function r2(): Promise<R2Like | undefined> {
   try {
     const { getCloudflareContext } = await import("@opennextjs/cloudflare");
     const env = getCloudflareContext().env as unknown as { UPLOADS?: R2Like };
-    return env.UPLOADS ?? null;
+    return env.UPLOADS;
   } catch {
-    return null; // not running on Workers (local dev / seed)
+    return undefined; // no Cloudflare context at all (plain Node / seed)
   }
 }
 
-export const isObjectStorageConfigured = async () => (await r2()) !== null;
+const NO_BUCKET =
+  "File uploads are not configured on the server. " +
+  "Create the bucket (wrangler r2 bucket create printx-uploads) and uncomment " +
+  "the r2_buckets binding in wrangler.jsonc.";
+
+/**
+ * Wrap the local-disk fallback so a genuinely missing backend reports itself.
+ *
+ * Do NOT try to detect "are we on Workers" — `getCloudflareContext()` also
+ * resolves under `next dev` (initOpenNextCloudflareForDev), so that test says
+ * "Workers" in an environment that has a perfectly good filesystem. Testing the
+ * capability is honest where guessing the environment is not: if the disk write
+ * fails we are somewhere without a filesystem, which means storage really is
+ * unconfigured — say so, instead of surfacing a bare ENOSYS.
+ */
+async function viaDisk<T>(work: () => Promise<T>): Promise<T> {
+  try {
+    return await work();
+  } catch (e) {
+    if ((e as { code?: string })?.code === "ENOENT") throw e; // genuine missing file
+    throw new Error(NO_BUCKET, { cause: e });
+  }
+}
+
+export const isObjectStorageConfigured = async () => !!(await r2());
 
 export interface StoredFile {
   url: string; // served via GET /api/files/[key]
@@ -64,9 +88,11 @@ export async function saveUpload(file: File): Promise<StoredFile> {
   if (bucket) {
     await bucket.put(key, buf, { httpMetadata: { contentType } });
   } else {
-    const { mkdir, writeFile } = await import("node:fs/promises");
-    await mkdir(UPLOAD_DIR, { recursive: true });
-    await writeFile(path.join(UPLOAD_DIR, key), buf);
+    await viaDisk(async () => {
+      const { mkdir, writeFile } = await import("node:fs/promises");
+      await mkdir(UPLOAD_DIR, { recursive: true });
+      await writeFile(path.join(UPLOAD_DIR, key), buf);
+    });
   }
 
   return { url: `/api/files/${key}`, name: file.name, key, size: file.size, contentType };
@@ -86,6 +112,8 @@ export async function readUpload(key: string): Promise<Uint8Array> {
     return new Uint8Array(await obj.arrayBuffer());
   }
 
-  const { readFile } = await import("node:fs/promises");
-  return new Uint8Array(await readFile(path.join(UPLOAD_DIR, safeKey)));
+  return viaDisk(async () => {
+    const { readFile } = await import("node:fs/promises");
+    return new Uint8Array(await readFile(path.join(UPLOAD_DIR, safeKey)));
+  });
 }
