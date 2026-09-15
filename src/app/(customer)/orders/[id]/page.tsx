@@ -5,7 +5,14 @@ import Link from "next/link";
 import { orders as ordersApi, ApiError } from "@/lib/api";
 import { inr } from "@/components/SessionProvider";
 import { useConfirm, useToast } from "@/components/ui/UIProvider";
-import { statusLabel, statusBadge, statusDot, isCancellable } from "@/lib/orderStatus";
+import {
+  statusLabel,
+  statusBadge,
+  statusDot,
+  isCancellable,
+  needsArtwork,
+  fileStatusLabel,
+} from "@/lib/orderStatus";
 import { formatDateTime } from "@/lib/format";
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
@@ -243,12 +250,15 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
           <section className="space-y-6">
             <h2 className="text-headline-md font-headline-md">Order Items &amp; Configuration</h2>
             {order.items.map((it) => {
-              const needsFile = !it.fileStatus || it.fileStatus === "REJECTED" || it.fileStatus === "PENDING";
+              // Was comparing against "PENDING", which is not a FileStatus value
+              // (it is UPLOAD_PENDING). Items still awaiting artwork therefore
+              // rendered as complete and hid their own upload button.
+              const needsFile = needsArtwork(it.fileStatus);
               const rejected = it.fileStatus === "REJECTED";
               const specs = specEntries(it.specSnapshot);
               return (
                 <div key={it.id} className={`bg-surface-container-lowest rounded-xl premium-shadow p-6 border-l-4 ${rejected ? "border-error" : needsFile ? "border-amber-500" : "border-green-500"}`}>
-                  <div className="flex-grow">
+                  <div className="grow">
                     <div className="flex justify-between items-start mb-2 gap-4">
                       <h3 className="text-body-lg font-bold">{it.quantity} × {it.productName}</h3>
                       <span className="text-right">
@@ -274,7 +284,9 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
                       {it.fileStatus && !needsFile && (
                         <p className="flex items-center gap-2 text-green-700 font-medium text-body-md">
                           <span className="material-symbols-outlined text-[18px]" aria-hidden="true">check_circle</span>
-                          {it.fileName ? `${it.fileName} (${it.fileStatus})` : `File ${it.fileStatus}`}
+                          {it.fileName
+                            ? `${it.fileName} · ${fileStatusLabel(it.fileStatus)}`
+                            : fileStatusLabel(it.fileStatus)}
                         </p>
                       )}
                       {rejected && it.fileRejectReason && (

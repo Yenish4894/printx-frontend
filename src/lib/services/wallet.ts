@@ -171,9 +171,15 @@ export async function getWallet(userId: string) {
   });
   if (!user) throw new HttpError(401, "Not authenticated");
 
+  // The top-up range is a PLATFORM setting, not a per-user one. The wallet page
+  // used to hardcode ₹100/₹1,00,000, so an amount the client accepted could be
+  // refused by the server (default minimum is ₹200).
+  const { minTopUp, maxTopUp } = await getSettings();
+
   const s = user.walletSettings;
   return {
     balance: Number(user.walletBalance),
+    topUp: { min: minTopUp, max: maxTopUp },
     settings: s
       ? {
           autoTopUp: s.autoTopUp,

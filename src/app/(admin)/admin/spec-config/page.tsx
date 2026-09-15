@@ -540,7 +540,7 @@ function MatrixEditor({ productId, matrix, onReload }: { productId: string; matr
   }, [matrix]);
 
   const combos = useMemo(() => (matrix ? cartesian(matrix.dimensions) : []), [matrix]);
-  const dims = matrix?.dimensions ?? [];
+  const dims = useMemo(() => matrix?.dimensions ?? [], [matrix]);
   // When quantity is one of the dimensions, the combination already names the
   // run size, so the number entered is the TOTAL for that run — not a per-sheet
   // rate that would be multiplied again.

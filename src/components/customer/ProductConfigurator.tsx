@@ -260,7 +260,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
       })
       .filter(Boolean)
       .join(" · ");
-  }, [visibleGroups, selections]);
+  }, [product, visibleGroups, selections]);
 
   async function addToCart(thenCheckout: boolean) {
     if (!product || !breakdown) return;
@@ -320,10 +320,6 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
     active
       ? "p-4 rounded-xl border-2 border-secondary-container bg-surface-container-lowest text-left transition-all custom-shadow flex flex-col justify-between"
       : "p-4 rounded-xl border-2 border-outline-variant bg-white text-left hover:border-secondary-container/50 transition-all flex flex-col justify-between";
-  const pillCls = (active: boolean) =>
-    active
-      ? "py-3 px-4 rounded-xl border-2 border-secondary-container bg-surface-container-lowest text-center font-bold text-primary-container"
-      : "py-3 px-4 rounded-xl border border-outline-variant bg-white text-center font-bold text-on-surface-variant hover:border-secondary-container/50 transition-colors";
 
   const optionLabel = (g: SpecGroup, o: Option) => {
     const parts = [o.name];

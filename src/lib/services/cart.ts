@@ -21,6 +21,11 @@ export async function getCart(userId: string) {
             select: {
               name: true,
               slug: true,
+              // The cart's +/- controls need the product's ordering rules, or
+              // they step by 1 into quantities the server rejects.
+              minQuantity: true,
+              quantityStep: true,
+              maxQuantity: true,
               images: { take: 1, orderBy: { displayOrder: "asc" } },
             },
           },
@@ -41,6 +46,9 @@ export async function getCart(userId: string) {
       productSlug: it.product.slug,
       image: it.product.images[0]?.url ?? null,
       quantity: it.quantity,
+      minQuantity: it.product.minQuantity,
+      quantityStep: it.product.quantityStep,
+      maxQuantity: it.product.maxQuantity,
       specSnapshot: it.specSnapshot,
       deliverySpeed: it.deliverySpeed?.name ?? null,
       deliveryFee,

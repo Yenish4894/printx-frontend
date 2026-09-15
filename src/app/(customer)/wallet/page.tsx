@@ -11,8 +11,10 @@ const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
 const presetAmounts = [500, 1000, 2000, 5000, 10000, 25000];
 
-const MIN_TOPUP = 100;
-const MAX_TOPUP = 100000;
+// Fallback only. The real range is a platform setting (PlatformSettings
+// minTopUp / maxTopUp) fetched below. Hardcoding it meant the client happily
+// accepted ₹150 while the server refused anything under its ₹200 minimum.
+const FALLBACK_TOPUP = { min: 100, max: 100000 };
 
 interface Txn {
   id: string;
@@ -45,6 +47,7 @@ export default function WalletManagement() {
   const [submitting, setSubmitting] = useState(false);
 
   const [filter, setFilter] = useState<Filter>("All");
+  const [topUpRange, setTopUpRange] = useState(FALLBACK_TOPUP);
 
   const balance = user?.walletBalance ?? 0;
 
@@ -64,16 +67,26 @@ export default function WalletManagement() {
 
   useEffect(() => {
     loadTransactions();
+    // Ask the server what the top-up limits actually are, so the form and the
+    // API agree. On failure keep the fallback — the server still enforces it.
+    walletApi
+      .get()
+      .then((w) => {
+        if (typeof w?.topUp?.min === "number" && typeof w?.topUp?.max === "number") {
+          setTopUpRange({ min: w.topUp.min, max: w.topUp.max });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const numericAmount = typeof amount === "number" ? amount : 0;
-  const validAmount = numericAmount >= MIN_TOPUP && numericAmount <= MAX_TOPUP;
+  const validAmount = numericAmount >= topUpRange.min && numericAmount <= topUpRange.max;
   const rangeHint =
     amount === "" || validAmount
       ? null
-      : numericAmount < MIN_TOPUP
-        ? "Enter an amount of at least ₹100."
-        : "Maximum top-up is ₹1,00,000.";
+      : numericAmount < topUpRange.min
+        ? `Enter an amount of at least ${inr(topUpRange.min)}.`
+        : `Maximum top-up is ${inr(topUpRange.max)}.`;
   const previewBalance = balance + numericAmount;
 
   async function handleTopUp() {
@@ -197,8 +210,8 @@ export default function WalletManagement() {
                       type="number"
                       inputMode="numeric"
                       step={1}
-                      min={MIN_TOPUP}
-                      max={MAX_TOPUP}
+                      min={topUpRange.min}
+                      max={topUpRange.max}
                       aria-describedby="topup-hint"
                       aria-invalid={rangeHint ? true : undefined}
                       value={amount}
@@ -210,7 +223,7 @@ export default function WalletManagement() {
                     role={rangeHint ? "alert" : undefined}
                     className={`text-[10px] mt-2 uppercase font-bold ${rangeHint ? "text-error" : "text-on-surface-variant"}`}
                   >
-                    {rangeHint ?? "min ₹100 / max ₹1,00,000"}
+                    {rangeHint ?? `min ${inr(topUpRange.min)} / max ${inr(topUpRange.max)}`}
                   </p>
                 </div>
                 {validAmount && (

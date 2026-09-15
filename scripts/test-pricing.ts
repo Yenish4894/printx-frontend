@@ -12,7 +12,8 @@ function near(a: number, b: number, eps = 0.02) {
 function check(label: string, got: number, want: number) {
   const ok = near(got, want);
   console.log(`${ok ? "✅" : "❌"} ${label}: got ₹${got.toFixed(2)}, want ₹${want.toFixed(2)}`);
-  ok ? pass++ : fail++;
+  if (ok) pass++;
+  else fail++;
 }
 
 // A MATRIX product like CMYK printing (GST-inclusive rates, ₹20 single-print < 5).

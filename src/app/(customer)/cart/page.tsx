@@ -15,6 +15,9 @@ interface CartItem {
   productSlug: string;
   image: string | null;
   quantity: number;
+  minQuantity: number;
+  quantityStep: number;
+  maxQuantity: number | null;
   specSnapshot: { group: string; option: string }[];
   deliverySpeed: string | null;
   deliveryFee: number;
@@ -91,8 +94,14 @@ export default function CartCheckout() {
     loadAddresses();
   }, [loadCart, loadAddresses]);
 
-  async function changeQty(item: CartItem, delta: number) {
-    const q = Math.max(1, item.quantity + delta);
+  // `direction` is -1 or +1; the actual jump is the product's own step. Stepping
+  // by 1 sent letterheads (min 1000, step 1000) to 1001 and the server rejected
+  // every click.
+  async function changeQty(item: CartItem, direction: number) {
+    const step = Math.max(1, item.quantityStep || 1);
+    const min = Math.max(1, item.minQuantity || 1);
+    const max = item.maxQuantity ?? Number.MAX_SAFE_INTEGER;
+    const q = Math.min(max, Math.max(min, item.quantity + direction * step));
     if (q === item.quantity || busyItems.has(item.id)) return;
     setBusy(item.id, true);
     try {
@@ -263,9 +272,9 @@ export default function CartCheckout() {
                         </div>
                         <div className="flex items-center justify-between mt-6">
                           <div className={`flex items-center border border-outline-variant rounded-lg overflow-hidden h-10 ${busyItems.has(it.id) ? "opacity-60" : ""}`}>
-                            <button onClick={() => changeQty(it, -1)} disabled={busyItems.has(it.id) || it.quantity <= 1} aria-label="Decrease quantity" className="px-3 h-full min-w-11 flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:cursor-not-allowed"><span className="material-symbols-outlined text-[18px]" aria-hidden="true">remove</span></button>
-                            <span className="px-4 font-button text-button border-x border-outline-variant" aria-live="polite">{it.quantity}</span>
-                            <button onClick={() => changeQty(it, 1)} disabled={busyItems.has(it.id)} aria-label="Increase quantity" className="px-3 h-full min-w-11 flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40"><span className="material-symbols-outlined text-[18px]" aria-hidden="true">add</span></button>
+                            <button onClick={() => changeQty(it, -1)} disabled={busyItems.has(it.id) || it.quantity <= (it.minQuantity || 1)} aria-label={`Decrease quantity by ${it.quantityStep || 1}`} className="px-3 h-full min-w-11 flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:cursor-not-allowed"><span className="material-symbols-outlined text-[18px]" aria-hidden="true">remove</span></button>
+                            <span className="px-4 font-button text-button border-x border-outline-variant" aria-live="polite">{it.quantity.toLocaleString("en-IN")}</span>
+                            <button onClick={() => changeQty(it, 1)} disabled={busyItems.has(it.id) || (it.maxQuantity != null && it.quantity >= it.maxQuantity)} aria-label={`Increase quantity by ${it.quantityStep || 1}`} className="px-3 h-full min-w-11 flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40"><span className="material-symbols-outlined text-[18px]" aria-hidden="true">add</span></button>
                           </div>
                           <button onClick={() => removeItem(it)} disabled={busyItems.has(it.id)} aria-label={`Remove ${it.productName}`} className="text-error hover:bg-error-container/20 p-2 rounded-full transition-colors disabled:opacity-40"><span className="material-symbols-outlined" aria-hidden="true">delete</span></button>
                         </div>
@@ -337,7 +346,7 @@ export default function CartCheckout() {
                     />
                   ))}
                   <div className="md:col-span-2 flex gap-2">
-                    <button type="submit" className="primary-accent-gradient text-white px-5 py-2 rounded-lg font-button">Save Address</button>
+                    <button type="submit" disabled={savingAddr} className="primary-accent-gradient text-white px-5 py-2 rounded-lg font-button disabled:opacity-50">{savingAddr ? "Saving…" : "Save Address"}</button>
                     <button type="button" onClick={() => setShowAddrForm(false)} className="px-5 py-2 rounded-lg border border-outline-variant">Cancel</button>
                   </div>
                 </form>
@@ -431,7 +440,7 @@ export default function CartCheckout() {
       </main>
 
       {/* Bottom Sticky Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-[60] bg-surface-container-lowest border-t border-outline-variant shadow-[0_-4px_20px_rgba(0,0,0,0.08)] py-4">
+      <div className="fixed bottom-0 left-0 right-0 z-60 bg-surface-container-lowest border-t border-outline-variant shadow-[0_-4px_20px_rgba(0,0,0,0.08)] py-4">
         <div className="max-w-container-max mx-auto px-margin-desktop flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-center md:text-left">
             <p className="font-headline-md text-headline-md text-on-surface">Total to Pay {inr(total)}</p>
