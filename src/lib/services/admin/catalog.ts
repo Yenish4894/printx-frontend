@@ -166,15 +166,67 @@ export async function createProduct(input: CreateProductInput) {
       bleedArea: input.bleedArea ?? null,
       fileFormats: input.fileFormats ?? [],
       basePriceFrom: input.basePriceFrom ?? null,
-      isActive: input.isActive ?? true,
+      // New products start as DRAFTS. A fresh product has no spec groups,
+      // options or prices yet, so defaulting to live put an unorderable product
+      // straight into the customer catalogue. Publish it once it can be quoted.
+      isActive: input.isActive ?? false,
     },
   });
   return { id: p.id, slug: p.slug };
 }
 
+/**
+ * A product may only go live if a customer could actually get a price for it.
+ *
+ * "visiting card" reached the live storefront with two required spec groups
+ * that had zero options between them, so every quote returned 422 — the
+ * catalogue advertised something nobody could buy, and nothing stopped it.
+ */
+async function assertProductOrderable(productId: string) {
+  const p = await prisma.product.findUnique({
+    where: { id: productId },
+    include: {
+      specGroups: {
+        where: { isActive: true },
+        include: { options: { where: { isActive: true }, select: { id: true } } },
+      },
+      quantityTiers: { where: { isActive: true }, select: { id: true } },
+      priceMatrix: { where: { isActive: true }, select: { id: true } },
+    },
+  });
+  if (!p) throw new HttpError(404, "Product not found");
+
+  const problems: string[] = [];
+  for (const g of p.specGroups) {
+    if (g.isRequired && g.options.length === 0) {
+      problems.push(`"${g.name}" is required but has no options`);
+    }
+  }
+  if (p.pricingModel === "PER_UNIT" && p.unitRate == null) {
+    problems.push("per-unit pricing needs a unit rate");
+  }
+  if (p.pricingModel === "MATRIX" && p.priceMatrix.length === 0) {
+    problems.push("matrix pricing needs at least one price row");
+  }
+  if (p.pricingModel === "TIERED" && p.quantityTiers.length === 0) {
+    problems.push("tiered pricing needs at least one quantity tier");
+  }
+
+  if (problems.length > 0) {
+    throw new HttpError(
+      422,
+      `"${p.name}" is not ready to go live — ${problems.join("; ")}. ` +
+        `Customers would see it in the catalogue but every price request would fail.`,
+    );
+  }
+}
+
 export async function updateProduct(id: string, input: UpdateProductInput) {
   const existing = await prisma.product.findUnique({ where: { id } });
   if (!existing) throw new HttpError(404, "Product not found");
+  // Publishing is the gate, not editing: configure freely, but a product only
+  // becomes visible to customers once it can actually be quoted.
+  if (input.isActive === true) await assertProductOrderable(id);
   const slug = input.slug ? await uniqueSlug(slugify(input.slug), id) : undefined;
   await prisma.product.update({
     where: { id },

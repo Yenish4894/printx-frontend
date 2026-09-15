@@ -30,6 +30,7 @@ export default function AdminProducts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   // Fetch list into state. When `withSpinner` is false the table is NOT blanked
   // (used to refetch after a mutation so the whole table doesn't flash "Loading…").
@@ -69,6 +70,25 @@ export default function AdminProducts() {
       toast(e instanceof ApiError ? e.message : "Failed to delete product", "error");
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  // Publish / unpublish. Products are created as drafts, so this is how they
+  // reach customers. The server refuses to activate one that cannot be quoted
+  // (missing options, rate or price rows) and that refusal is what we show.
+  async function handleToggleActive(p: AdminProduct) {
+    setTogglingId(p.id);
+    try {
+      await admin.products.update(p.id, { isActive: !p.isActive });
+      toast(
+        p.isActive ? `"${p.name}" hidden from the catalog` : `"${p.name}" is now live`,
+        "success",
+      );
+      await fetchProducts(false);
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : "Could not change product status", "error");
+    } finally {
+      setTogglingId(null);
     }
   }
 
@@ -131,7 +151,7 @@ export default function AdminProducts() {
                 <tr key={p.id} className="hover:bg-surface-container-low transition-colors group">
                   <td className="py-4 px-6">
                     <Link href={`/admin/spec-config?product=${p.id}`} className="flex items-center gap-4 group/link">
-                      <div className="w-14 h-14 rounded-lg bg-surface-container-highest flex-shrink-0 flex items-center justify-center border border-outline-variant/20 text-on-surface-variant">
+                      <div className="w-14 h-14 rounded-lg bg-surface-container-highest shrink-0 flex items-center justify-center border border-outline-variant/20 text-on-surface-variant">
                         <span className="material-symbols-outlined">description</span>
                       </div>
                       <div>
@@ -146,9 +166,20 @@ export default function AdminProducts() {
                   <td className="py-4 px-6 text-body-md text-on-surface">{p.matrixRows}</td>
                   <td className="py-4 px-6 text-body-md text-on-surface">{p.orderCount}</td>
                   <td className="py-4 px-6">
-                    {p.isActive
-                      ? <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary-container/10 text-secondary-container text-label-caps font-bold"><span className="w-2 h-2 rounded-full bg-secondary-container"></span> Active</span>
-                      : <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container-highest text-on-surface-variant text-label-caps font-bold"><span className="w-2 h-2 rounded-full bg-outline"></span> Inactive</span>}
+                    <button
+                      onClick={() => handleToggleActive(p)}
+                      disabled={togglingId === p.id}
+                      title={p.isActive ? "Hide from the customer catalog" : "Publish to the customer catalog"}
+                      aria-label={`${p.isActive ? "Hide" : "Publish"} ${p.name}`}
+                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-label-caps font-bold transition-colors disabled:opacity-50 ${
+                        p.isActive
+                          ? "bg-secondary-container/10 text-secondary-container hover:bg-secondary-container/20"
+                          : "bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high"
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${p.isActive ? "bg-secondary-container" : "bg-outline"}`}></span>
+                      {togglingId === p.id ? "Saving…" : p.isActive ? "Active" : "Draft"}
+                    </button>
                   </td>
                   <td className="py-4 px-6 text-right">
                     <div className="flex items-center justify-end gap-1">
