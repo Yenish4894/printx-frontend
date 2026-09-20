@@ -36,9 +36,29 @@ export async function createAddress(userId: string, data: AddressInput) {
   });
 }
 
+/**
+ * Delete one of the user's addresses.
+ *
+ * Safe against order history: an Order stores its own `shippingSnapshot` at
+ * checkout rather than pointing at this row, so removing an address never
+ * rewrites where a past order went.
+ */
 export async function deleteAddress(userId: string, id: string) {
   const address = await prisma.address.findFirst({ where: { id, userId } });
   if (!address) throw new HttpError(404, "Address not found");
   await prisma.address.delete({ where: { id } });
+
+  // Deleting the default would leave the account with none marked default, so
+  // promote the oldest remaining one.
+  if (address.isDefault) {
+    const next = await prisma.address.findFirst({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+      select: { id: true },
+    });
+    if (next) {
+      await prisma.address.update({ where: { id: next.id }, data: { isDefault: true } });
+    }
+  }
   return { success: true };
 }

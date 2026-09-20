@@ -65,6 +65,7 @@ export default function CartCheckout() {
   const [savingAddr, setSavingAddr] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAddrForm, setShowAddrForm] = useState(false);
+  const [deletingAddr, setDeletingAddr] = useState<string | null>(null);
   const [addr, setAddr] = useState(emptyAddr);
   // Per-item in-flight lock so rapid clicks can't race (money-sensitive).
   const [busyItems, setBusyItems] = useState<Set<string>>(new Set());
@@ -162,6 +163,28 @@ export default function CartCheckout() {
       setError(e instanceof ApiError ? e.message : "Could not save address");
     } finally {
       setSavingAddr(false);
+    }
+  }
+
+  async function removeAddress(a: Address) {
+    const ok = await confirm({
+      title: `Delete "${a.label}"?`,
+      message: `${a.line1}, ${a.city} will be removed. Orders you have already placed keep the address they were shipped to.`,
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
+    setDeletingAddr(a.id);
+    try {
+      await addrApi.remove(a.id);
+      // Clear first so loadAddresses re-picks the default (or the next one).
+      if (selectedAddr === a.id) setSelectedAddr(null);
+      await loadAddresses();
+      toast("Address deleted", "success");
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : "Could not delete address", "error");
+    } finally {
+      setDeletingAddr(null);
     }
   }
 
@@ -356,18 +379,37 @@ export default function CartCheckout() {
                 {addresses.map((a) => {
                   const active = selectedAddr === a.id;
                   return (
-                    <button
+                    // A wrapper, not a button: the delete control is a button of
+                    // its own and cannot be nested inside the select button.
+                    <div
                       key={a.id}
-                      onClick={() => setSelectedAddr(a.id)}
-                      className={`relative text-left p-5 rounded-xl transition-all ${active ? "border-2 border-secondary bg-secondary/5" : "border border-outline-variant bg-surface hover:border-on-surface-variant"}`}
+                      className={`relative rounded-xl transition-all ${active ? "border-2 border-secondary bg-secondary/5" : "border border-outline-variant bg-surface hover:border-on-surface-variant"}`}
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="font-button text-button text-on-secondary-container">{a.label}{a.isDefault && <span className="text-label-caps font-label-caps opacity-70 ml-2">(Default)</span>}</span>
-                        <span className={`material-symbols-outlined ${active ? "text-secondary" : "text-outline-variant"}`} style={active ? fill1 : undefined}>{active ? "check_circle" : "circle"}</span>
-                      </div>
-                      <p className="text-body-md text-on-surface-variant leading-relaxed">{a.line1}{a.line2 ? `, ${a.line2}` : ""}, {a.city}, {a.state} {a.pincode}</p>
-                      <p className="mt-3 text-body-md font-semibold text-on-surface">{a.phone}</p>
-                    </button>
+                      <button
+                        onClick={() => setSelectedAddr(a.id)}
+                        aria-pressed={active}
+                        aria-label={`Deliver to ${a.label}`}
+                        className="w-full text-left p-5"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="font-button text-button text-on-secondary-container">{a.label}{a.isDefault && <span className="text-label-caps font-label-caps opacity-70 ml-2">(Default)</span>}</span>
+                          <span className={`material-symbols-outlined ${active ? "text-secondary" : "text-outline-variant"}`} style={active ? fill1 : undefined}>{active ? "check_circle" : "circle"}</span>
+                        </div>
+                        <p className="text-body-md text-on-surface-variant leading-relaxed">{a.line1}{a.line2 ? `, ${a.line2}` : ""}, {a.city}, {a.state} {a.pincode}</p>
+                        <p className="mt-3 pr-10 text-body-md font-semibold text-on-surface">{a.phone}</p>
+                      </button>
+                      <button
+                        onClick={() => removeAddress(a)}
+                        disabled={deletingAddr === a.id}
+                        title="Delete this address"
+                        aria-label={`Delete ${a.label} address`}
+                        className="absolute bottom-3 right-3 p-2 rounded-full text-error hover:bg-error-container/20 transition-colors disabled:opacity-40"
+                      >
+                        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+                          {deletingAddr === a.id ? "hourglass_empty" : "delete"}
+                        </span>
+                      </button>
+                    </div>
                   );
                 })}
                 {addresses.length === 0 && !showAddrForm && (

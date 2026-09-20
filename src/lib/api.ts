@@ -148,6 +148,7 @@ export const cart = {
 export const addresses = {
   list: () => get<{ addresses: any[] }>("/me/addresses"),
   create: (input: Record<string, unknown>) => post<any>("/me/addresses", input),
+  remove: (id: string) => del<{ success: boolean }>(`/me/addresses/${id}`),
 };
 
 // ───────────────────────── Wallet ─────────────────────────
