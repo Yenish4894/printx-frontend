@@ -281,7 +281,7 @@ export default function CartCheckout() {
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start gap-3">
                           <div className="min-w-0">
-                            <h3 className="font-headline-md text-headline-md text-on-surface">{it.quantity.toLocaleString("en-IN")} × {it.productName}</h3>
+                            <h2 className="font-headline-md text-headline-md text-on-surface">{it.quantity.toLocaleString("en-IN")} × {it.productName}</h2>
                             <div className="flex flex-wrap gap-2 mt-2">
                               {it.specSnapshot?.map((s, i) => (
                                 <span key={i} className="bg-surface-container text-on-surface-variant px-2 py-0.5 rounded text-label-caps font-label-caps uppercase">{s.option}</span>
@@ -434,7 +434,7 @@ export default function CartCheckout() {
             <div className="sticky-summary space-y-6">
               <div className="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg overflow-hidden">
                 <div className="header-deep-gradient p-6">
-                  <h3 className="text-white font-headline-md text-headline-md">Order Summary</h3>
+                  <h2 className="text-white font-headline-md text-headline-md">Order Summary</h2>
                 </div>
                 <div className="p-6 space-y-4">
                   <div className="space-y-2 pb-4 border-b border-outline-variant">
@@ -458,7 +458,7 @@ export default function CartCheckout() {
 
               {/* Payment */}
               <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
-                <h3 className="font-headline-md text-headline-md text-on-surface mb-2">Payment Method</h3>
+                <h2 className="font-headline-md text-headline-md text-on-surface mb-2">Payment Method</h2>
                 <p className="text-label-caps font-label-caps text-on-surface-variant mb-6">Orders are paid using your prepaid wallet balance.</p>
                 <div className={`border-2 rounded-xl p-4 ${enough ? "border-secondary bg-secondary/5" : "border-error/50 bg-error-container/20"}`}>
                   <div className="flex justify-between items-center mb-3">

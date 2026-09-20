@@ -93,7 +93,7 @@ export default function AdminTransactions() {
           <div key={label} className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/30 flex flex-col justify-between">
             <p className="font-label-caps text-label-caps text-on-surface-variant mb-2">{label}</p>
             <div className="flex flex-col">
-              <h4 className={`font-headline-md text-headline-md ${color}`}>{inr(value)}</h4>
+              <p className={`font-headline-md text-headline-md ${color}`}>{inr(value)}</p>
               <p className="text-xs text-on-surface-variant mt-1">{sub}</p>
             </div>
           </div>

@@ -6,6 +6,7 @@ import { useSession } from "@/components/SessionProvider";
 import { useConfirm, useToast } from "@/components/ui/UIProvider";
 import Switch from "@/components/ui/Switch";
 import { formatDateTime } from "@/lib/format";
+import Button from "@/components/ui/Button";
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
@@ -211,7 +212,7 @@ export default function AdminUsers() {
         <div className="flex-1">
           {/* A banner label, not a section heading. As an h3 it appeared before
               the page's h1 and broke the heading outline. */}
-          <p className="font-label-caps text-label-caps text-secondary uppercase">{isSuper ? "Super Admin Console" : "Admin View (read-only)"}</p>
+          <p className="font-label-caps text-label-caps text-secondary-container uppercase">{isSuper ? "Super Admin Console" : "Admin View (read-only)"}</p>
           <p className="font-body-md text-on-primary-container text-sm">{isSuper ? "You can invite admins, change roles, and revoke access." : "Only super-admins can invite or modify admin accounts."}</p>
         </div>
       </div>
@@ -349,8 +350,8 @@ export default function AdminUsers() {
               </div>
             </div>
             <div className="px-8 py-6 border-t border-outline-variant/20 flex justify-end gap-3">
-              <button type="button" onClick={closeModal} disabled={saving} className="px-6 py-3 rounded-xl border border-outline-variant font-button text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-60">Cancel</button>
-              <button type="submit" disabled={saving || !formValid} className="px-6 py-3 rounded-xl coral-gradient text-white font-button shadow-lg disabled:opacity-60">{saving ? "Creating…" : "Create Admin"}</button>
+              <Button type="button" variant="secondary" onClick={closeModal} disabled={saving}>Cancel</Button>
+              <Button type="submit" disabled={!formValid} loading={saving}>{saving ? "Creating…" : "Create admin"}</Button>
             </div>
           </form>
         </div>

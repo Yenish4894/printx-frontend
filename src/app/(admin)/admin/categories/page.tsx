@@ -385,8 +385,8 @@ export default function AdminCategories() {
               </div>
             </div>
             <div className="px-8 py-6 border-t border-outline-variant/10 flex justify-end gap-3">
-              <button onClick={closeModal} disabled={creating} className="px-6 py-3 rounded-xl border border-outline-variant font-button text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-60">Cancel</button>
-              <button onClick={handleCreate} disabled={creating} className="px-6 py-3 rounded-xl primary-accent-gradient text-white font-button shadow-lg shadow-secondary-container/20 disabled:opacity-60">{creating ? "Creating…" : "Create Category"}</button>
+              <Button variant="secondary" onClick={closeModal} disabled={creating}>Cancel</Button>
+              <Button onClick={handleCreate} loading={creating}>{creating ? "Creating…" : "Create category"}</Button>
             </div>
           </div>
         </div>

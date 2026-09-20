@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import BrandLogo from "@/components/BrandLogo";
 import { auth, ApiError } from "@/lib/api";
+import Button from "@/components/ui/Button";
 
 
 export default function AdminLogin() {
@@ -80,10 +81,9 @@ export default function AdminLogin() {
                 <span>{error}</span>
               </div>
             )}
-            <button className="w-full py-4 coral-gradient text-white font-button text-button rounded-lg shadow-[0_4px_20px_rgba(252,83,109,0.3)] hover:shadow-[0_6px_25px_rgba(252,83,109,0.45)] hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:pointer-events-none" type="submit" disabled={busy}>
-              <span>{busy ? "Signing in…" : "Sign In to Console"}</span>
-              <span aria-hidden="true" className="material-symbols-outlined text-lg">login</span>
-            </button>
+            <Button type="submit" size="lg" fullWidth loading={busy} iconAfter="login">
+              {busy ? "Signing in…" : "Sign in to console"}
+            </Button>
           </form>
         </div>
       </div>

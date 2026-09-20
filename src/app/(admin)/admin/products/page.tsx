@@ -103,9 +103,7 @@ export default function AdminProducts() {
             {loading ? "Loading catalog…" : `${products.length} Total products in catalog`}
           </p>
         </div>
-        <Link href="/admin/products/new" className="primary-accent-gradient text-white flex items-center gap-2 px-6 py-3 rounded-xl font-button text-button shadow-lg shadow-secondary/20 hover:-translate-y-0.5 transition-all active:scale-95">
-          <span aria-hidden="true" className="material-symbols-outlined text-[20px]">add</span> New Product
-        </Link>
+        <ButtonLink href="/admin/products/new" icon="add">New product</ButtonLink>
       </div>
 
       {error && (

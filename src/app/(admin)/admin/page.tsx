@@ -92,7 +92,7 @@ export default function AdminDashboard() {
             <div className="relative z-10">
               <span className="text-label-caps font-label-caps opacity-60">Total Revenue</span>
               <div className="flex items-baseline gap-4 mt-2">
-                <h3 className="font-display-lg text-display-lg text-secondary-container">{inr(stats.revenue)}</h3>
+                <p className="font-display-lg text-display-lg text-secondary-container">{inr(stats.revenue)}</p>
               </div>
               <p className="text-sm text-white/60 mt-2">{stats.totalOrders.toLocaleString("en-IN")} total orders placed</p>
             </div>
@@ -108,7 +108,7 @@ export default function AdminDashboard() {
             <div>
               <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center mb-4"><span aria-hidden="true" className="material-symbols-outlined text-secondary">print</span></div>
               <span className="text-label-caps text-on-surface-variant uppercase">Active Orders</span>
-              <h3 className="font-headline-md text-headline-md mt-1">{stats.activeOrders.toLocaleString("en-IN")}</h3>
+              <p className="font-headline-md text-headline-md mt-1">{stats.activeOrders.toLocaleString("en-IN")}</p>
             </div>
             <div className="mt-4">
               <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
@@ -123,7 +123,7 @@ export default function AdminDashboard() {
             <div>
               <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center mb-4"><span aria-hidden="true" className="material-symbols-outlined text-primary">group</span></div>
               <span className="text-label-caps text-on-surface-variant uppercase">Customers</span>
-              <h3 className="font-headline-md text-headline-md mt-1">{stats.customers.toLocaleString("en-IN")}</h3>
+              <p className="font-headline-md text-headline-md mt-1">{stats.customers.toLocaleString("en-IN")}</p>
             </div>
             <p className="text-xs text-on-surface-variant font-bold mt-4">{stats.products.toLocaleString("en-IN")} active products</p>
           </div>
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
           {/* Order Queue */}
           <div className="col-span-4 lg:col-span-3 p-8 rounded-xl bg-white shadow-sm border border-outline-variant">
             <div className="flex justify-between items-center mb-6">
-              <h4 className="font-headline-md text-headline-md">Recent Order Queue</h4>
+              <h2 className="font-headline-md text-headline-md">Recent Order Queue</h2>
               <Link href="/admin/orders" className="text-secondary font-button text-sm flex items-center gap-1 hover:underline">View All Orders <span aria-hidden="true" className="material-symbols-outlined text-sm">arrow_forward</span></Link>
             </div>
             <div className="overflow-x-auto">
@@ -174,7 +174,7 @@ export default function AdminDashboard() {
             <div>
               <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center mb-4"><span aria-hidden="true" className="material-symbols-outlined text-secondary">currency_exchange</span></div>
               <span className="text-label-caps text-on-surface-variant uppercase">Pending Refunds</span>
-              <h3 className="font-headline-md text-headline-md mt-1">{stats.pendingRefunds.toLocaleString("en-IN")}</h3>
+              <p className="font-headline-md text-headline-md mt-1">{stats.pendingRefunds.toLocaleString("en-IN")}</p>
             </div>
             <p className="text-xs text-on-surface-variant mt-4">
               {stats.pendingRefunds > 0 ? "Awaiting your review →" : "Nothing to review"}

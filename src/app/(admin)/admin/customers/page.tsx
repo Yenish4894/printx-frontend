@@ -9,6 +9,7 @@ import { statusLabel, statusBadge } from "@/lib/orderStatus";
 import { formatDateTime } from "@/lib/format";
 import Pager from "@/components/ui/Pager";
 import { EmptyState, LoadingState, TableState } from "@/components/ui/States";
+import Button from "@/components/ui/Button";
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
@@ -411,7 +412,7 @@ export default function AdminCustomers() {
                       </p>
                     )}
                     {adjError && <p className="text-error text-xs mb-3" role="alert">{adjError}</p>}
-                    <button onClick={applyAdjustment} disabled={adjBusy || !adjValid} className="w-full primary-accent-gradient text-white py-2 rounded-lg font-button text-sm shadow-md disabled:opacity-50">{adjBusy ? "Applying…" : "Apply Adjustment"}</button>
+                    <Button onClick={applyAdjustment} disabled={!adjValid} loading={adjBusy} size="sm" fullWidth>{adjBusy ? "Applying…" : "Apply adjustment"}</Button>
                   </div>
                 </div>
 

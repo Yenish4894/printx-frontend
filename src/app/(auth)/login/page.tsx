@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import BrandLogo from "@/components/BrandLogo";
 import { auth, ApiError } from "@/lib/api";
+import Button from "@/components/ui/Button";
 
 const features = [
   ["currency_rupee", "Instant Live Pricing", "Get quotes in seconds, no waiting."],
@@ -224,14 +225,9 @@ function LoginForm() {
               </div>
             )}
 
-            <button
-              className="w-full py-4 rounded-xl coral-gradient text-white font-button text-body-md shadow-lg shadow-secondary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:pointer-events-none"
-              type="submit"
-              disabled={busy}
-            >
-              {busy ? "Please wait…" : authTab === "signin" ? "Sign In to Bhagini Graphics" : "Create Account"}
-              <span aria-hidden="true" className="material-symbols-outlined text-[20px]">arrow_forward</span>
-            </button>
+            <Button type="submit" size="lg" fullWidth loading={busy} iconAfter="arrow_forward">
+              {busy ? "Please wait…" : authTab === "signin" ? "Sign in to Bhagini Graphics" : "Create account"}
+            </Button>
 
             {authTab === "create" && (
               <p className="text-center text-label-caps text-on-surface-variant">

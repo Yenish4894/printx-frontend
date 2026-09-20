@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { admin, ApiError } from "@/lib/api";
 import { useToast } from "@/components/ui/UIProvider";
 import Switch from "@/components/ui/Switch";
+import Button, { ButtonLink } from "@/components/ui/Button";
 
 interface Category {
   id: string;
@@ -142,7 +143,7 @@ export default function NewProduct() {
         {/* Main form */}
         <div className="col-span-12 lg:col-span-8 space-y-8">
           <section className="bg-surface-container-lowest rounded-xl premium-shadow p-8">
-            <h3 className="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2"><span aria-hidden="true" className="material-symbols-outlined text-secondary-container">info</span> Basic Info</h3>
+            <h2 className="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2"><span aria-hidden="true" className="material-symbols-outlined text-secondary-container">info</span> Basic Info</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
                 <label htmlFor="product-name" className="block font-label-caps text-label-caps text-on-surface-variant mb-2">Product Name</label>
@@ -207,7 +208,7 @@ export default function NewProduct() {
         <div className="col-span-12 lg:col-span-4 space-y-8">
           <section className="bg-primary-container text-white rounded-xl shadow-xl p-8 overflow-hidden relative">
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-secondary-container/20 blur-3xl rounded-full"></div>
-            <h3 className="font-headline-md text-headline-md mb-6 relative z-10 flex items-center gap-2 text-white"><span aria-hidden="true" className="material-symbols-outlined">payments</span> Pricing Model</h3>
+            <h2 className="font-headline-md text-headline-md mb-6 relative z-10 flex items-center gap-2 text-white"><span aria-hidden="true" className="material-symbols-outlined">payments</span> Pricing Model</h2>
             <div className="space-y-6 relative z-10">
               <div className="space-y-3">
                 {pricingOptions.map((opt) => {
@@ -265,14 +266,10 @@ export default function NewProduct() {
 
       {/* Sticky save bar */}
       <div className="fixed bottom-0 left-0 md:left-64 right-0 z-30 bg-surface border-t border-outline-variant px-4 md:px-margin-desktop py-4 flex items-center justify-end gap-4">
-        <Link href="/admin/products" className="px-6 py-3 rounded-lg border border-outline-variant font-button text-on-surface-variant hover:bg-surface-container transition-colors">Cancel</Link>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="px-6 py-3 rounded-lg primary-accent-gradient text-white font-button shadow-lg shadow-secondary/20 disabled:opacity-60"
-        >
-          {submitting ? "Creating…" : "Create & Configure Specs"}
-        </button>
+        <ButtonLink href="/admin/products" variant="secondary">Cancel</ButtonLink>
+        <Button type="submit" loading={submitting}>
+          {submitting ? "Creating…" : "Create & configure specs"}
+        </Button>
       </div>
     </form>
   );

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { orders as ordersApi, ApiError } from "@/lib/api";
 import { inr } from "@/components/SessionProvider";
+import { ButtonLink } from "@/components/ui/Button";
+import { ErrorState } from "@/components/ui/States";
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
@@ -113,10 +115,11 @@ function OrderConfirmedInner() {
   if (error || !order) {
     return (
       <StateCard tone="error">
-        <span className="material-symbols-outlined text-error text-4xl mb-3" aria-hidden="true">error</span>
-        <p className="font-bold text-primary mb-1">Could not load your order</p>
-        <p className="text-on-surface-variant mb-6">{error ?? "Order not found"}</p>
-        <Link href="/orders" className="px-8 py-3 premium-gradient text-white rounded-lg font-button shadow-md">View My Orders</Link>
+        <ErrorState
+          title="Could not load your order"
+          message={error ?? "Order not found"}
+        />
+        <ButtonLink href="/orders" icon="receipt_long">View my orders</ButtonLink>
       </StateCard>
     );
   }

@@ -14,6 +14,8 @@ import {
   fileStatusLabel,
 } from "@/lib/orderStatus";
 import { formatDateTime, specEntries } from "@/lib/format";
+import Button from "@/components/ui/Button";
+import { ErrorState } from "@/components/ui/States";
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
@@ -147,16 +149,8 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
           <span className="material-symbols-outlined mr-2 group-hover:-translate-x-1 transition-transform" aria-hidden="true">arrow_back</span>
           <span className="font-button text-button">Back to Orders</span>
         </Link>
-        <div role="alert" className="bg-surface-container-lowest rounded-xl premium-shadow p-16 flex flex-col items-center justify-center text-center border-l-4 border-error">
-          <span className="material-symbols-outlined text-error text-4xl mb-3" aria-hidden="true">error</span>
-          <p className="font-bold text-primary mb-1">Could not load order</p>
-          <p className="text-on-surface-variant mb-6">{error ?? "Order not found"}</p>
-          <button
-            onClick={load}
-            className="px-8 py-3 premium-gradient text-white rounded-lg font-button shadow-md active:scale-[0.98] transition-transform"
-          >
-            Retry
-          </button>
+        <div className="bg-surface-container-lowest rounded-xl premium-shadow">
+          <ErrorState title="Could not load order" message={error ?? "Order not found"} onRetry={load} />
         </div>
       </main>
     );
@@ -297,14 +291,13 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
                             className="hidden"
                             onChange={(e) => handleUpload(it.id, e.target.files?.[0])}
                           />
-                          <button
+                          <Button
                             onClick={() => fileInputs.current[it.id]?.click()}
-                            disabled={uploadingItem === it.id}
-                            className="coral-gradient text-white px-6 py-2 rounded-lg font-button text-button shadow-lg flex items-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-60"
+                            loading={uploadingItem === it.id}
+                            icon="upload"
                           >
-                            <span className={`material-symbols-outlined${uploadingItem === it.id ? " animate-spin" : ""}`} aria-hidden="true">{uploadingItem === it.id ? "progress_activity" : "upload"}</span>
-                            {uploadingItem === it.id ? "Uploading…" : rejected ? "Re-upload File" : "Upload File"}
-                          </button>
+                            {uploadingItem === it.id ? "Uploading…" : rejected ? "Re-upload file" : "Upload file"}
+                          </Button>
                           <p className="text-label-caps font-label-caps text-outline mt-2 uppercase">PDF, AI, PSD, PNG or JPG</p>
                         </div>
                       )}

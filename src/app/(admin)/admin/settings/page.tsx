@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { admin, ApiError } from "@/lib/api";
 import { useToast } from "@/components/ui/UIProvider";
 import Switch from "@/components/ui/Switch";
+import Button from "@/components/ui/Button";
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 const inp = "w-full px-4 py-2.5 rounded-lg border border-outline-variant font-medium";
@@ -42,7 +43,7 @@ function CardHead({ icon, title, fill = false }: { icon: string; title: string; 
       <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary">
         <span aria-hidden="true" className="material-symbols-outlined" style={fill ? fill1 : undefined}>{icon}</span>
       </div>
-      <h3 className="font-headline-md text-headline-md">{title}</h3>
+      <h2 className="font-headline-md text-headline-md">{title}</h2>
     </div>
   );
 }
@@ -132,7 +133,7 @@ export default function AdminSettings() {
         <div className="flex items-center gap-3">
           {dirty && !hasErrors && <span className="text-amber-600 font-button flex items-center gap-1" role="status"><span className="material-symbols-outlined" aria-hidden="true">edit</span> Unsaved changes</span>}
           {hasErrors && <span className="text-error font-button flex items-center gap-1" role="status"><span className="material-symbols-outlined" aria-hidden="true">error</span> Fix errors to save</span>}
-          <button onClick={save} disabled={saving || hasErrors || !dirty} className="primary-accent-gradient text-white px-6 py-3 rounded-xl font-button shadow-lg shadow-secondary/20 flex items-center gap-2 disabled:opacity-60"><span className="material-symbols-outlined" aria-hidden="true">save</span> {saving ? "Saving…" : "Save Changes"}</button>
+          <Button onClick={save} disabled={hasErrors || !dirty} loading={saving} icon="save">{saving ? "Saving…" : "Save changes"}</Button>
         </div>
       </div>
 
@@ -178,10 +179,10 @@ export default function AdminSettings() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div className="flex flex-col gap-1.5"><label htmlFor="cancellationWindowHours" className="font-label-caps text-on-surface-variant uppercase tracking-wider">Cancellation Window (Hours)</label><input id="cancellationWindowHours" className={inp} type="number" value={numVal(s.cancellationWindowHours)} onChange={numSet("cancellationWindowHours")} />{err("cancellationWindowHours")}<p className="text-[10px] text-on-surface-variant">Guidance shown to customers; production-stage orders are non-cancellable.</p></div>
-              <div className="p-4 bg-background rounded-lg flex items-center justify-between border border-outline-variant/20"><div><h4 className="font-bold text-sm">File Upload Grace Period</h4><p className="text-xs text-on-surface-variant">Allow customers to update files post-payment.</p></div><Switch checked={s.fileGracePeriod} onChange={(v) => set("fileGracePeriod", v)} label="File upload grace period" /></div>
+              <div className="p-4 bg-background rounded-lg flex items-center justify-between border border-outline-variant/20"><div><h3 className="font-bold text-sm">File Upload Grace Period</h3><p className="text-xs text-on-surface-variant">Allow customers to update files post-payment.</p></div><Switch checked={s.fileGracePeriod} onChange={(v) => set("fileGracePeriod", v)} label="File upload grace period" /></div>
             </div>
             <div className="space-y-4">
-              <h4 className="font-label-caps text-on-surface-variant uppercase tracking-wider">Default File Requirements</h4>
+              <h3 className="font-label-caps text-on-surface-variant uppercase tracking-wider">Default File Requirements</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="defaultDpi" className="text-xs font-bold">Default DPI</label>

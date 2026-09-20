@@ -204,7 +204,7 @@ export default function AdminRefunds() {
                             <button
                               disabled={busyKey === `${r.id}:APPROVE` || busyKey === `${r.id}:REJECT`}
                               onClick={() => approve(r)}
-                              className="px-4 py-1.5 primary-gradient text-white rounded font-button text-[14px] disabled:opacity-50"
+                              className="min-h-9 px-4 py-2 primary-accent-gradient text-white rounded-lg font-button text-sm shadow-lg shadow-secondary/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
                             >
                               {busyKey === `${r.id}:APPROVE` ? "…" : "Approve"}
                             </button>
