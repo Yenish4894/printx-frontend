@@ -11,7 +11,7 @@
   --color-primary: #00000b;
   --color-on-primary: #ffffff;
   --color-primary-container: #1a1a2e;
-  --color-on-primary-container: #83829b;
+  --color-on-primary-container: #9998b5; /* was #83829b: 3.97:1 on the dark cards, 3.41:1 on the lighter ones. Same hue and saturation, lifted to clear 4.5:1 everywhere it is used. */
   --color-primary-fixed: #e2e0fc;
   --color-primary-fixed-dim: #c6c4df;
   --color-on-primary-fixed: #1a1a2e;
@@ -36,6 +36,11 @@
   --color-tertiary-fixed-dim: #bac8dc;
   --color-on-tertiary-fixed: #0f1c2c;
   --color-on-tertiary-fixed-variant: #3a4859;
+
+  /* Success mirrors error: #046b3a reads 5.15:1 on tertiary-fixed, matching
+     #ba1a1a's 5.0:1 on error-container. Replaces a hardcoded text-[#00c853]
+     that measured 1.74:1 on the same pill. */
+  --color-success: #046b3a;
 
   --color-error: #ba1a1a;
   --color-on-error: #ffffff;

@@ -106,7 +106,7 @@ export default function AdminDashboard() {
           <div className="col-span-2 lg:col-span-1 p-8 rounded-xl bg-white shadow-sm border border-outline-variant flex flex-col justify-between hover:shadow-lg transition-all hover:-translate-y-1">
             <div>
               <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center mb-4"><span aria-hidden="true" className="material-symbols-outlined text-secondary">print</span></div>
-              <span className="text-label-caps text-on-surface-variant/60 uppercase">Active Orders</span>
+              <span className="text-label-caps text-on-surface-variant uppercase">Active Orders</span>
               <h3 className="font-headline-md text-headline-md mt-1">{stats.activeOrders.toLocaleString("en-IN")}</h3>
             </div>
             <div className="mt-4">
@@ -121,7 +121,7 @@ export default function AdminDashboard() {
           <div className="col-span-2 lg:col-span-1 p-8 rounded-xl bg-white shadow-sm border border-outline-variant flex flex-col justify-between hover:shadow-lg transition-all hover:-translate-y-1">
             <div>
               <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center mb-4"><span aria-hidden="true" className="material-symbols-outlined text-primary">group</span></div>
-              <span className="text-label-caps text-on-surface-variant/60 uppercase">Customers</span>
+              <span className="text-label-caps text-on-surface-variant uppercase">Customers</span>
               <h3 className="font-headline-md text-headline-md mt-1">{stats.customers.toLocaleString("en-IN")}</h3>
             </div>
             <p className="text-xs text-on-surface-variant font-bold mt-4">{stats.products.toLocaleString("en-IN")} active products</p>
@@ -138,7 +138,7 @@ export default function AdminDashboard() {
                 <thead className="border-b border-outline-variant">
                   <tr>
                     {["Order #", "Client", "Placed", "Status", "Amount"].map((h) => (
-                      <th key={h} className="py-4 font-label-caps text-label-caps text-on-surface-variant/60 uppercase">{h}</th>
+                      <th key={h} className="py-4 font-label-caps text-label-caps text-on-surface-variant uppercase">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -172,7 +172,7 @@ export default function AdminDashboard() {
           <Link href="/admin/refunds" className="col-span-4 lg:col-span-1 p-8 rounded-xl bg-white shadow-sm border border-outline-variant flex flex-col justify-between hover:shadow-lg transition-all hover:-translate-y-1">
             <div>
               <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center mb-4"><span aria-hidden="true" className="material-symbols-outlined text-secondary">currency_exchange</span></div>
-              <span className="text-label-caps text-on-surface-variant/60 uppercase">Pending Refunds</span>
+              <span className="text-label-caps text-on-surface-variant uppercase">Pending Refunds</span>
               <h3 className="font-headline-md text-headline-md mt-1">{stats.pendingRefunds.toLocaleString("en-IN")}</h3>
             </div>
             <p className="text-xs text-on-surface-variant mt-4">

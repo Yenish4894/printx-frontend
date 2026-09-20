@@ -638,7 +638,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
                     <span className="material-symbols-outlined text-[18px]" aria-hidden="true">account_balance_wallet</span>
                     <span className="font-label-caps font-bold">Wallet: {inr(user?.walletBalance)}</span>
                   </div>
-                  <span className={`text-[10px] font-black uppercase tracking-wider ${enough ? "text-[#00c853]" : "text-error"}`}>{enough ? "Enough" : "Top Up"}</span>
+                  <span className={`text-[10px] font-black uppercase tracking-wider ${enough ? "text-success" : "text-error"}`}>{enough ? "Enough" : "Top Up"}</span>
                 </div>
               ) : (
                 <div className="p-3 rounded-lg flex items-center gap-2 mb-2 bg-surface-container text-on-surface-variant">

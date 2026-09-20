@@ -78,7 +78,7 @@ function LoginForm() {
           </div>
         </div>
         <div className="relative z-10 max-w-2xl mt-12">
-          <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-secondary-container font-button text-label-caps mb-8">
+          <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-secondary-fixed-dim font-button text-label-caps mb-8">
             ONLINE PRINTING · PAN-INDIA DELIVERY
           </span>
           {/* The page's top-level heading. It was an h2, which left the login

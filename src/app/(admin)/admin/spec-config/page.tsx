@@ -429,7 +429,7 @@ function SpecGroupCard({ group, onChange }: { group: SpecGroup; onChange: () => 
       <div className="p-6 overflow-x-auto">
         <table className="w-full text-left">
           <thead>
-            <tr className="text-label-caps text-on-surface-variant/70 border-b border-outline-variant">
+            <tr className="text-label-caps text-on-surface-variant border-b border-outline-variant">
               <th scope="col" className="pb-2 font-bold">Option Name</th>
               <th scope="col" className="pb-2 font-bold">Add-on Type</th>
               <th scope="col" className="pb-2 font-bold">Value (₹)</th>

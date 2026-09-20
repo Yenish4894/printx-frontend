@@ -37,7 +37,7 @@ export default function AdminUserChip() {
       >
         <div className="text-right hidden sm:block">
           <p className="font-button text-on-surface leading-none">{user?.ownerName ?? "Admin"}</p>
-          <p className="text-[11px] text-on-surface-variant/70 uppercase font-black tracking-wider">{roleLabel}</p>
+          <p className="text-[11px] text-on-surface-variant uppercase font-black tracking-wider">{roleLabel}</p>
         </div>
         <div className="w-10 h-10 rounded-full border-2 border-secondary-container bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-sm">
           {initials || "A"}

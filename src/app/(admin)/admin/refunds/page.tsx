@@ -207,7 +207,7 @@ export default function AdminRefunds() {
                             </button>
                           </div>
                         ) : (
-                          <span className="text-xs text-on-surface-variant/60 uppercase font-bold">Done</span>
+                          <span className="text-xs text-on-surface-variant uppercase font-bold">Done</span>
                         )}
                       </td>
                     </tr>

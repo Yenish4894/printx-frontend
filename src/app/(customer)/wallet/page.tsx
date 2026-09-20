@@ -159,7 +159,7 @@ export default function WalletManagement() {
           </div>
         </div>
         <div className="flex flex-col items-end z-10">
-          <span className="text-white/40 text-label-caps mb-1">Available for orders</span>
+          <span className="text-white/70 text-label-caps mb-1">Available for orders</span>
           <span className="text-display-lg font-display-lg leading-none">{inr(balance)}</span>
         </div>
         <div className="absolute -right-20 -top-20 w-80 h-80 bg-secondary/20 rounded-full blur-[100px]"></div>

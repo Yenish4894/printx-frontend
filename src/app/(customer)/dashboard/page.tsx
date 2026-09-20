@@ -63,7 +63,7 @@ export default function CustomerDashboard() {
             <h1 className="font-headline-lg text-white">
               Good day 👋 {sessionLoading ? "…" : greetingName}
             </h1>
-            <p className="text-on-primary-container/80 font-body-md mt-1">
+            <p className="text-on-primary-container font-body-md mt-1">
               {user?.businessName ?? "Your Business"} ·{" "}
               {loading ? "Loading orders…" : `${totalOrders} order${totalOrders === 1 ? "" : "s"} placed`}
             </p>
