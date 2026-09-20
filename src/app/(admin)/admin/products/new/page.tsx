@@ -124,7 +124,7 @@ export default function NewProduct() {
         <div>
           <nav className="flex items-center gap-2 text-on-surface-variant font-label-caps text-label-caps mb-2">
             <Link className="hover:text-secondary-container" href="/admin/products">Products</Link>
-            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+            <span aria-hidden="true" className="material-symbols-outlined text-[14px]">chevron_right</span>
             <span className="text-on-surface">New Product</span>
           </nav>
           <h1 className="font-headline-lg text-headline-lg text-on-surface">Create Product</h1>
@@ -142,7 +142,7 @@ export default function NewProduct() {
         {/* Main form */}
         <div className="col-span-12 lg:col-span-8 space-y-8">
           <section className="bg-surface-container-lowest rounded-xl premium-shadow p-8">
-            <h3 className="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2"><span className="material-symbols-outlined text-secondary-container">info</span> Basic Info</h3>
+            <h3 className="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2"><span aria-hidden="true" className="material-symbols-outlined text-secondary-container">info</span> Basic Info</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
                 <label htmlFor="product-name" className="block font-label-caps text-label-caps text-on-surface-variant mb-2">Product Name</label>
@@ -207,7 +207,7 @@ export default function NewProduct() {
         <div className="col-span-12 lg:col-span-4 space-y-8">
           <section className="bg-primary-container text-white rounded-xl shadow-xl p-8 overflow-hidden relative">
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-secondary-container/20 blur-3xl rounded-full"></div>
-            <h3 className="font-headline-md text-headline-md mb-6 relative z-10 flex items-center gap-2 text-white"><span className="material-symbols-outlined">payments</span> Pricing Model</h3>
+            <h3 className="font-headline-md text-headline-md mb-6 relative z-10 flex items-center gap-2 text-white"><span aria-hidden="true" className="material-symbols-outlined">payments</span> Pricing Model</h3>
             <div className="space-y-6 relative z-10">
               <div className="space-y-3">
                 {pricingOptions.map((opt) => {

@@ -207,7 +207,7 @@ export default function AdminUsers() {
     <div className="space-y-6">
       {/* Super Admin banner */}
       <div className="bg-primary-container rounded-xl p-4 flex items-center gap-4">
-        <div className="bg-secondary/10 p-2 rounded-full"><span className="material-symbols-outlined text-secondary" style={fill1}>security</span></div>
+        <div className="bg-secondary/10 p-2 rounded-full"><span aria-hidden="true" className="material-symbols-outlined text-secondary" style={fill1}>security</span></div>
         <div className="flex-1">
           {/* A banner label, not a section heading. As an h3 it appeared before
               the page's h1 and broke the heading outline. */}
@@ -222,7 +222,7 @@ export default function AdminUsers() {
           <p className="font-body-md text-on-surface-variant mt-1">Manage administrative access and audit account activity.</p>
         </div>
         {isSuper && (
-          <button onClick={() => setModalOpen(true)} className="coral-gradient text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 hover:shadow-xl transition-all active:scale-95"><span className="material-symbols-outlined">person_add</span><span className="font-button text-button">Add New Admin</span></button>
+          <button onClick={() => setModalOpen(true)} className="coral-gradient text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 hover:shadow-xl transition-all active:scale-95"><span aria-hidden="true" className="material-symbols-outlined">person_add</span><span className="font-button text-button">Add New Admin</span></button>
         )}
       </div>
 
@@ -302,7 +302,7 @@ export default function AdminUsers() {
               <p className="font-price-lg text-[42px] text-white">{value}</p>
               <p className="mt-4 text-on-primary-container text-sm font-medium">{sub}</p>
             </div>
-            <span className="material-symbols-outlined absolute -bottom-4 -right-4 text-[120px] text-white/5 group-hover:scale-110 transition-transform duration-500">{icon}</span>
+            <span aria-hidden="true" className="material-symbols-outlined absolute -bottom-4 -right-4 text-[120px] text-white/5 group-hover:scale-110 transition-transform duration-500">{icon}</span>
           </div>
         ))}
       </div>

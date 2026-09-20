@@ -50,7 +50,7 @@ function GenericSuccess() {
           <h1 className="font-display-lg text-display-lg text-white mb-4">Thank you! 🎉</h1>
           <p className="font-body-lg text-body-lg text-on-primary-container mb-8">Your order has been placed successfully.</p>
           <Link href="/orders" className="inline-flex items-center gap-3 bg-white text-primary py-3 px-8 rounded-xl font-button shadow-lg">
-            <span className="material-symbols-outlined">receipt_long</span> View My Orders
+            <span aria-hidden="true" className="material-symbols-outlined">receipt_long</span> View My Orders
           </Link>
         </div>
       </section>
@@ -151,7 +151,7 @@ function OrderConfirmedInner() {
               {order.items.map((it) => (
                 <div key={it.id} className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex gap-6 hover:shadow-md transition-shadow">
                   <div className="w-24 h-24 bg-surface-container rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="material-symbols-outlined text-4xl text-outline">print</span>
+                    <span aria-hidden="true" className="material-symbols-outlined text-4xl text-outline">print</span>
                   </div>
                   <div className="flex-1 flex flex-col justify-between py-1">
                     <div className="flex justify-between items-start gap-4">
@@ -160,7 +160,7 @@ function OrderConfirmedInner() {
                     </div>
                     {it.deliveryEtaLabel && (
                       <p className="text-sm text-on-surface-variant mt-1 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-sm">local_shipping</span> {it.deliveryEtaLabel}
+                        <span aria-hidden="true" className="material-symbols-outlined text-sm">local_shipping</span> {it.deliveryEtaLabel}
                       </p>
                     )}
                   </div>
@@ -173,7 +173,7 @@ function OrderConfirmedInner() {
               <div className="bg-surface-container-low p-8 rounded-2xl">
                 <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-4 uppercase">Shipping Address</h3>
                 <div className="flex gap-4">
-                  <span className="material-symbols-outlined text-on-surface-variant">home_pin</span>
+                  <span aria-hidden="true" className="material-symbols-outlined text-on-surface-variant">home_pin</span>
                   <div>
                     {s.name && <p className="font-bold">{s.name}</p>}
                     <p className="text-sm text-on-surface-variant leading-relaxed">
@@ -208,14 +208,14 @@ function OrderConfirmedInner() {
 
             <div className="space-y-3">
               <Link href={`/orders/${order.id}`} className="w-full bg-primary text-white py-4 rounded-xl font-button flex items-center justify-center gap-3 hover:bg-on-surface transition-colors shadow-lg">
-                <span className="material-symbols-outlined text-xl">map</span> Track My Order
+                <span aria-hidden="true" className="material-symbols-outlined text-xl">map</span> Track My Order
               </Link>
               <div className="grid grid-cols-2 gap-3">
                 <Link href="/orders" className="bg-surface-container-high py-3 rounded-xl text-sm font-bold flex flex-col items-center gap-1 hover:bg-surface-container-highest transition-colors">
-                  <span className="material-symbols-outlined">receipt_long</span> My Orders
+                  <span aria-hidden="true" className="material-symbols-outlined">receipt_long</span> My Orders
                 </Link>
                 <Link href="/products" className="bg-surface-container-high py-3 rounded-xl text-sm font-bold flex flex-col items-center gap-1 hover:bg-surface-container-highest transition-colors">
-                  <span className="material-symbols-outlined">shopping_bag</span> Shopping
+                  <span aria-hidden="true" className="material-symbols-outlined">shopping_bag</span> Shopping
                 </Link>
               </div>
             </div>

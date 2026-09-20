@@ -210,7 +210,7 @@ export default function CartCheckout() {
   if (!cart) {
     return (
       <main className="max-w-container-max mx-auto px-margin-desktop py-24 text-center text-on-surface-variant">
-        <span className="material-symbols-outlined animate-spin text-4xl">progress_activity</span>
+        <span aria-hidden="true" className="material-symbols-outlined animate-spin text-4xl">progress_activity</span>
       </main>
     );
   }
@@ -218,7 +218,7 @@ export default function CartCheckout() {
   if (cart.items.length === 0) {
     return (
       <main className="max-w-container-max mx-auto px-margin-desktop py-24 text-center">
-        <span className="material-symbols-outlined text-6xl text-on-surface-variant/40 mb-4">shopping_cart</span>
+        <span aria-hidden="true" className="material-symbols-outlined text-6xl text-on-surface-variant/40 mb-4">shopping_cart</span>
         <h1 className="font-headline-lg text-headline-lg mb-2">Your cart is empty</h1>
         <p className="text-on-surface-variant mb-8">Browse the catalog and configure your print job.</p>
         <Link href="/products" className="primary-accent-gradient text-white px-8 py-3 rounded-lg font-button">Browse Products</Link>
@@ -232,7 +232,7 @@ export default function CartCheckout() {
         <section className="mb-10">
           <nav className="flex items-center gap-2 text-label-caps font-label-caps text-on-surface-variant mb-4">
             <Link className="hover:text-primary" href="/dashboard">Home</Link>
-            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+            <span aria-hidden="true" className="material-symbols-outlined text-[14px]">chevron_right</span>
             <span className="text-primary font-bold">Cart</span>
           </nav>
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -242,7 +242,7 @@ export default function CartCheckout() {
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center bg-primary-container text-on-primary px-4 py-2 rounded-lg border border-outline-variant shadow-sm">
-                <span className="material-symbols-outlined text-[20px] mr-2">account_balance_wallet</span>
+                <span aria-hidden="true" className="material-symbols-outlined text-[20px] mr-2">account_balance_wallet</span>
                 <span className="font-button text-button">{inr(user?.walletBalance)}</span>
               </div>
               <div className="bg-secondary-container text-on-secondary-container px-4 py-2 rounded-lg font-button text-button">Items in Cart: {cart.count}</div>
@@ -252,7 +252,7 @@ export default function CartCheckout() {
 
         {error && (
           <div className="mb-6 px-4 py-3 rounded-xl bg-error-container/60 text-on-error-container flex items-center gap-2">
-            <span className="material-symbols-outlined text-[20px]">error</span>{error}
+            <span aria-hidden="true" className="material-symbols-outlined text-[20px]">error</span>{error}
           </div>
         )}
 
@@ -270,7 +270,7 @@ export default function CartCheckout() {
                           // eslint-disable-next-line @next/next/no-img-element
                           <img className="w-full h-full object-cover" alt={it.productName} src={it.image} />
                         ) : (
-                          <span className="material-symbols-outlined text-4xl text-on-surface-variant/30">print</span>
+                          <span aria-hidden="true" className="material-symbols-outlined text-4xl text-on-surface-variant/30">print</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -283,7 +283,7 @@ export default function CartCheckout() {
                               ))}
                               {it.deliverySpeed && (
                                 <span className="bg-on-tertiary-container/10 text-on-tertiary-container px-2 py-0.5 rounded text-label-caps font-label-caps flex items-center">
-                                  <span className="material-symbols-outlined text-[14px] mr-1">bolt</span> {it.deliverySpeed}
+                                  <span aria-hidden="true" className="material-symbols-outlined text-[14px] mr-1">bolt</span> {it.deliverySpeed}
                                 </span>
                               )}
                             </div>
@@ -305,12 +305,12 @@ export default function CartCheckout() {
                     <div className="mt-6 pt-4 border-t border-outline-variant flex items-center justify-between">
                       {ready ? (
                         <div className="flex items-center text-secondary font-medium text-body-md">
-                          <span className="material-symbols-outlined mr-2 text-[20px]">check_circle</span>
+                          <span aria-hidden="true" className="material-symbols-outlined mr-2 text-[20px]">check_circle</span>
                           <span>{it.fileName} · Ready for print</span>
                         </div>
                       ) : (
                         <div className="flex items-center text-on-tertiary-container font-medium text-body-md">
-                          <span className="material-symbols-outlined mr-2 text-[20px] text-on-secondary-container">warning</span>
+                          <span aria-hidden="true" className="material-symbols-outlined mr-2 text-[20px] text-on-secondary-container">warning</span>
                           <span>Design file not uploaded</span>
                         </div>
                       )}
@@ -332,7 +332,7 @@ export default function CartCheckout() {
             </div>
 
             <Link className="inline-flex items-center text-primary font-button text-button hover:underline group" href="/products">
-              <span className="material-symbols-outlined mr-2 group-hover:-translate-x-1 transition-transform">arrow_back</span> Continue Shopping
+              <span aria-hidden="true" className="material-symbols-outlined mr-2 group-hover:-translate-x-1 transition-transform">arrow_back</span> Continue Shopping
             </Link>
 
             {/* Delivery Address */}
@@ -340,7 +340,7 @@ export default function CartCheckout() {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="font-headline-md text-headline-md text-on-surface">Delivery Address</h2>
                 <button onClick={() => setShowAddrForm((v) => !v)} className="text-secondary font-button text-button flex items-center hover:bg-secondary-fixed/30 px-3 py-1.5 rounded-lg transition-colors">
-                  <span className="material-symbols-outlined mr-1 text-[20px]">add</span> Add New Address
+                  <span aria-hidden="true" className="material-symbols-outlined mr-1 text-[20px]">add</span> Add New Address
                 </button>
               </div>
 
@@ -392,7 +392,7 @@ export default function CartCheckout() {
                       >
                         <div className="flex justify-between items-start mb-2">
                           <span className="font-button text-button text-on-secondary-container">{a.label}{a.isDefault && <span className="text-label-caps font-label-caps opacity-70 ml-2">(Default)</span>}</span>
-                          <span className={`material-symbols-outlined ${active ? "text-secondary" : "text-outline-variant"}`} style={active ? fill1 : undefined}>{active ? "check_circle" : "circle"}</span>
+                          <span aria-hidden="true" className={`material-symbols-outlined ${active ? "text-secondary" : "text-outline-variant"}`} style={active ? fill1 : undefined}>{active ? "check_circle" : "circle"}</span>
                         </div>
                         <p className="text-body-md text-on-surface-variant leading-relaxed">{a.line1}{a.line2 ? `, ${a.line2}` : ""}, {a.city}, {a.state} {a.pincode}</p>
                         <p className="mt-3 pr-10 text-body-md font-semibold text-on-surface">{a.phone}</p>
@@ -458,10 +458,10 @@ export default function CartCheckout() {
                 <div className={`border-2 rounded-xl p-4 ${enough ? "border-secondary bg-secondary/5" : "border-error/50 bg-error-container/20"}`}>
                   <div className="flex justify-between items-center mb-3">
                     <div className="flex items-center gap-3">
-                      <span className="material-symbols-outlined text-secondary" style={fill1}>wallet</span>
+                      <span aria-hidden="true" className="material-symbols-outlined text-secondary" style={fill1}>wallet</span>
                       <span className="font-button text-button">Bhagini Wallet</span>
                     </div>
-                    <span className={`material-symbols-outlined ${enough ? "text-secondary" : "text-error"}`}>{enough ? "check_circle" : "error"}</span>
+                    <span aria-hidden="true" className={`material-symbols-outlined ${enough ? "text-secondary" : "text-error"}`}>{enough ? "check_circle" : "error"}</span>
                   </div>
                   <div className="flex items-center justify-between pl-9">
                     <p className="text-label-caps font-label-caps text-on-surface-variant">Available Balance</p>

@@ -46,7 +46,7 @@ function ProductCard({ p }: { p: ProductCardData }) {
             <span className="font-price-lg text-price-lg">{p.priceFrom ? inr(p.priceFrom) : "Configure →"}</span>
           </div>
           <span className="w-12 h-12 bg-primary-container text-white rounded-full flex items-center justify-center group-hover:bg-secondary transition-all active:scale-90">
-            <span className="material-symbols-outlined">arrow_forward</span>
+            <span aria-hidden="true" className="material-symbols-outlined">arrow_forward</span>
           </span>
         </div>
       </div>
@@ -123,7 +123,7 @@ export default function ProductsListing() {
             <div>
               <nav className="flex items-center gap-2 text-on-primary-container font-label-caps mb-4">
                 <Link className="hover:text-white transition-colors" href="/dashboard">HOME</Link>
-                <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+                <span aria-hidden="true" className="material-symbols-outlined text-[14px]">chevron_right</span>
                 <span className="text-white">PRINT CATALOG</span>
               </nav>
               <h1 className="font-display-lg text-display-lg font-extrabold mb-2 leading-none">The Print Studio</h1>
@@ -135,7 +135,7 @@ export default function ProductsListing() {
                 <span className="font-price-lg text-price-lg text-secondary-container">{inr(user?.walletBalance)}</span>
               </div>
               <div className="bg-secondary-container/20 p-2 rounded-lg">
-                <span className="material-symbols-outlined text-secondary-container" style={fill1}>account_balance_wallet</span>
+                <span aria-hidden="true" className="material-symbols-outlined text-secondary-container" style={fill1}>account_balance_wallet</span>
               </div>
             </div>
           </div>

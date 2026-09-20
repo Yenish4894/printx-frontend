@@ -210,13 +210,13 @@ export default function AdminCategories() {
         <div>
           <nav className="flex items-center gap-2 text-on-surface-variant font-label-caps mb-2">
             <span>Catalog</span>
-            <span className="material-symbols-outlined text-xs">chevron_right</span>
+            <span aria-hidden="true" className="material-symbols-outlined text-xs">chevron_right</span>
             <span className="text-secondary font-bold">Categories</span>
           </nav>
           <h1 className="font-headline-lg text-headline-lg text-primary">Categories</h1>
         </div>
         <button onClick={() => { setModalOpen(true); setModalError(null); }} className="primary-accent-gradient text-white px-6 py-3 rounded-xl font-button shadow-lg shadow-secondary-container/20 flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-transform">
-          <span className="material-symbols-outlined">add</span><span>Add Category</span>
+          <span aria-hidden="true" className="material-symbols-outlined">add</span><span>Add Category</span>
         </button>
       </div>
 
@@ -253,7 +253,7 @@ export default function AdminCategories() {
                 <tr>
                   <td colSpan={6} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3 text-on-surface-variant">
-                      <span className="material-symbols-outlined text-[48px] opacity-50">category</span>
+                      <span aria-hidden="true" className="material-symbols-outlined text-[48px] opacity-50">category</span>
                       <p>No categories yet.</p>
                     </div>
                   </td>
@@ -274,7 +274,7 @@ export default function AdminCategories() {
                           </>
                         ) : (
                           <>
-                            <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary"><span className="material-symbols-outlined">{c.icon ?? "label"}</span></div>
+                            <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary"><span aria-hidden="true" className="material-symbols-outlined">{c.icon ?? "label"}</span></div>
                             <span className="font-bold text-on-surface">
                               {c.name}
                               {c.parentName && (

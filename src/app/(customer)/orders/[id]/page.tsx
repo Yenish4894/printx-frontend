@@ -170,7 +170,7 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
       {/* Header */}
       <div className="mb-8">
         <Link href="/orders" className="flex items-center text-on-surface-variant hover:text-primary transition-colors mb-4 group w-fit">
-          <span className="material-symbols-outlined mr-2 group-hover:-translate-x-1 transition-transform">arrow_back</span>
+          <span aria-hidden="true" className="material-symbols-outlined mr-2 group-hover:-translate-x-1 transition-transform">arrow_back</span>
           <span className="font-button text-button">Back to Orders</span>
         </Link>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">

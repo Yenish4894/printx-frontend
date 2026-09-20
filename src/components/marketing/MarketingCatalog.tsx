@@ -51,7 +51,7 @@ export default function MarketingCatalog() {
               // eslint-disable-next-line @next/next/no-img-element
               <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={p.name} src={p.image} />
             ) : (
-              <span className="material-symbols-outlined text-5xl text-on-surface-variant/30">print</span>
+              <span aria-hidden="true" className="material-symbols-outlined text-5xl text-on-surface-variant/30">print</span>
             )}
           </div>
           <div className="p-6 flex flex-col flex-1">
@@ -60,7 +60,7 @@ export default function MarketingCatalog() {
             <p className="text-on-surface-variant text-sm mb-5 line-clamp-2 flex-1">{p.description}</p>
             <span className="inline-flex items-center gap-1 font-button text-sm text-secondary group-hover:gap-2 transition-all">
               Configure &amp; get live pricing
-              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+              <span aria-hidden="true" className="material-symbols-outlined text-[18px]">arrow_forward</span>
             </span>
           </div>
         </Link>

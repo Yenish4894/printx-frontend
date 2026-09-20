@@ -50,7 +50,7 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/login" className="primary-gradient text-white px-8 py-4 rounded-xl font-button text-button shadow-lg flex items-center justify-center gap-2 group">
                 Get Started
-                <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                <span aria-hidden="true" className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
               </Link>
               <Link href="/products" className="border border-white/20 hover:bg-white/5 text-white px-8 py-4 rounded-xl font-button text-button transition-colors text-center">
                 Browse Products
@@ -120,7 +120,7 @@ export default function LandingPage() {
               <h2 className="font-display-lg text-headline-lg md:text-display-lg text-primary">What we print</h2>
             </div>
             <Link href="/products" className="hidden md:flex items-center gap-2 font-button text-button text-primary hover:text-secondary transition-colors">
-              View all products <span className="material-symbols-outlined">arrow_right_alt</span>
+              View all products <span aria-hidden="true" className="material-symbols-outlined">arrow_right_alt</span>
             </Link>
           </div>
           <MarketingCatalog />

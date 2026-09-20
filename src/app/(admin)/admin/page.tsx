@@ -67,7 +67,7 @@ export default function AdminDashboard() {
 
       {loading && (
         <div className="flex items-center justify-center py-24 text-on-surface-variant">
-          <span className="material-symbols-outlined animate-spin mr-3">progress_activity</span> Loading dashboard...
+          <span aria-hidden="true" className="material-symbols-outlined animate-spin mr-3">progress_activity</span> Loading dashboard...
         </div>
       )}
 
@@ -96,7 +96,7 @@ export default function AdminDashboard() {
               <p className="text-sm text-white/60 mt-2">{stats.totalOrders.toLocaleString("en-IN")} total orders placed</p>
             </div>
             <div className="mt-6 flex items-center gap-2 text-white/70 text-sm relative z-10">
-              <span className="material-symbols-outlined text-secondary-container text-[20px]">payments</span>
+              <span aria-hidden="true" className="material-symbols-outlined text-secondary-container text-[20px]">payments</span>
               Revenue excludes cancelled orders
             </div>
             <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-secondary/20 rounded-full blur-3xl"></div>
@@ -105,7 +105,7 @@ export default function AdminDashboard() {
           {/* Active Orders */}
           <div className="col-span-2 lg:col-span-1 p-8 rounded-xl bg-white shadow-sm border border-outline-variant flex flex-col justify-between hover:shadow-lg transition-all hover:-translate-y-1">
             <div>
-              <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center mb-4"><span className="material-symbols-outlined text-secondary">print</span></div>
+              <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center mb-4"><span aria-hidden="true" className="material-symbols-outlined text-secondary">print</span></div>
               <span className="text-label-caps text-on-surface-variant/60 uppercase">Active Orders</span>
               <h3 className="font-headline-md text-headline-md mt-1">{stats.activeOrders.toLocaleString("en-IN")}</h3>
             </div>
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
           {/* Customers */}
           <div className="col-span-2 lg:col-span-1 p-8 rounded-xl bg-white shadow-sm border border-outline-variant flex flex-col justify-between hover:shadow-lg transition-all hover:-translate-y-1">
             <div>
-              <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center mb-4"><span className="material-symbols-outlined text-primary">group</span></div>
+              <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center mb-4"><span aria-hidden="true" className="material-symbols-outlined text-primary">group</span></div>
               <span className="text-label-caps text-on-surface-variant/60 uppercase">Customers</span>
               <h3 className="font-headline-md text-headline-md mt-1">{stats.customers.toLocaleString("en-IN")}</h3>
             </div>
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
           <div className="col-span-4 lg:col-span-3 p-8 rounded-xl bg-white shadow-sm border border-outline-variant">
             <div className="flex justify-between items-center mb-6">
               <h4 className="font-headline-md text-headline-md">Recent Order Queue</h4>
-              <Link href="/admin/orders" className="text-secondary font-button text-sm flex items-center gap-1 hover:underline">View All Orders <span className="material-symbols-outlined text-sm">arrow_forward</span></Link>
+              <Link href="/admin/orders" className="text-secondary font-button text-sm flex items-center gap-1 hover:underline">View All Orders <span aria-hidden="true" className="material-symbols-outlined text-sm">arrow_forward</span></Link>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -171,7 +171,7 @@ export default function AdminDashboard() {
           {/* Pending refunds */}
           <Link href="/admin/refunds" className="col-span-4 lg:col-span-1 p-8 rounded-xl bg-white shadow-sm border border-outline-variant flex flex-col justify-between hover:shadow-lg transition-all hover:-translate-y-1">
             <div>
-              <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center mb-4"><span className="material-symbols-outlined text-secondary">currency_exchange</span></div>
+              <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center mb-4"><span aria-hidden="true" className="material-symbols-outlined text-secondary">currency_exchange</span></div>
               <span className="text-label-caps text-on-surface-variant/60 uppercase">Pending Refunds</span>
               <h3 className="font-headline-md text-headline-md mt-1">{stats.pendingRefunds.toLocaleString("en-IN")}</h3>
             </div>

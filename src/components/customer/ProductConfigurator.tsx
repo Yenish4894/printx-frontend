@@ -310,7 +310,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
   if (!product) {
     return (
       <main className="max-w-container-max mx-auto px-4 py-24 text-center text-on-surface-variant">
-        <span className="material-symbols-outlined animate-spin text-4xl">progress_activity</span>
+        <span aria-hidden="true" className="material-symbols-outlined animate-spin text-4xl">progress_activity</span>
         <p className="mt-4">Loading product…</p>
       </main>
     );
@@ -339,9 +339,9 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
       <div className="mb-8">
         <nav className="flex items-center gap-2 mb-4 text-on-surface-variant font-label-caps text-label-caps">
           <Link className="hover:text-secondary" href="/dashboard">Home</Link>
-          <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-[14px]">chevron_right</span>
           <Link className="hover:text-secondary" href="/products">Products</Link>
-          <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-[14px]">chevron_right</span>
           <span className="text-on-surface">{product.name}</span>
         </nav>
         {product.badges?.[0] && (
@@ -358,7 +358,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
         <div className="lg:col-span-4 space-y-8">
           <div className="bg-surface-container-lowest rounded-xl custom-shadow p-6">
             <h3 className="font-headline-md text-headline-md text-primary-container mb-6 flex items-center gap-2">
-              <span className="material-symbols-outlined text-secondary-container">description</span> Product Details
+              <span aria-hidden="true" className="material-symbols-outlined text-secondary-container">description</span> Product Details
             </h3>
             <div className="grid grid-cols-2 gap-y-4 gap-x-8">
               {product.printTypeLabel && (
@@ -486,7 +486,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
             <section>
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[18px]">reorder</span> Quantity
+                  <span aria-hidden="true" className="material-symbols-outlined text-[18px]">reorder</span> Quantity
                 </h4>
               </div>
               <div className="flex flex-wrap gap-2 mb-4">
@@ -538,7 +538,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
             {product.deliverySpeeds.length > 0 && (
               <section>
                 <h4 className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-4 tracking-widest flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[18px]">local_shipping</span> Delivery Speed
+                  <span aria-hidden="true" className="material-symbols-outlined text-[18px]">local_shipping</span> Delivery Speed
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {product.deliverySpeeds.map((d) => {
@@ -581,7 +581,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
             {/* Special Instructions */}
             <section>
               <h4 className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-4 tracking-widest flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">edit_note</span> Special Instructions
+                <span aria-hidden="true" className="material-symbols-outlined text-[18px]">edit_note</span> Special Instructions
               </h4>
               <textarea
                 value={notes}
@@ -601,7 +601,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
 
             {quoteErr ? (
               <div className="mb-6 px-4 py-3 rounded-lg bg-error-container/60 text-on-error-container text-sm flex items-start gap-2">
-                <span className="material-symbols-outlined text-[18px]">info</span>
+                <span aria-hidden="true" className="material-symbols-outlined text-[18px]">info</span>
                 <span>{quoteErr}</span>
               </div>
             ) : (

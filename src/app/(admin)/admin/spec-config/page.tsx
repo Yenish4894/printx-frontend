@@ -139,7 +139,7 @@ function ProductPicker() {
             >
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-bold text-on-surface">{p.name}</h3>
-                <span className="material-symbols-outlined text-secondary">chevron_right</span>
+                <span aria-hidden="true" className="material-symbols-outlined text-secondary">chevron_right</span>
               </div>
               <p className="text-xs text-on-surface-variant">{p.category}</p>
               <div className="flex flex-wrap gap-2 mt-3">
@@ -203,7 +203,7 @@ function ProductEditor({ productId }: { productId: string }) {
       <div className="flex flex-col md:flex-row md:items-center gap-4">
         <div className="flex items-center gap-4">
           <Link href="/admin/spec-config" className="flex items-center gap-1 text-on-surface-variant hover:text-primary text-sm font-semibold">
-            <span className="material-symbols-outlined text-[18px]">arrow_back</span> Products
+            <span aria-hidden="true" className="material-symbols-outlined text-[18px]">arrow_back</span> Products
           </Link>
           <span className="text-on-surface-variant font-medium">Editing:</span>
           <span className="px-4 py-2 bg-white border border-outline-variant rounded-lg font-semibold text-primary">{product.name}</span>
@@ -270,7 +270,7 @@ function SpecGroupsSection({ product, onChange }: { product: Product; onChange: 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <span className="material-symbols-outlined text-secondary">layers</span>
+        <span aria-hidden="true" className="material-symbols-outlined text-secondary">layers</span>
         <h2 className="font-headline-md text-[20px]">Specification Groups</h2>
       </div>
 
@@ -311,7 +311,7 @@ function SpecGroupsSection({ product, onChange }: { product: Product; onChange: 
         </div>
       ) : (
         <button onClick={() => setShowGroupForm(true)} className="w-full py-4 border-2 border-dashed border-outline-variant rounded-xl flex items-center justify-center gap-2 text-on-surface-variant font-bold hover:bg-surface-container-low hover:border-secondary-container transition-all">
-          <span className="material-symbols-outlined">add_box</span> Add Spec Group
+          <span aria-hidden="true" className="material-symbols-outlined">add_box</span> Add Spec Group
         </button>
       )}
     </div>
@@ -509,7 +509,7 @@ function SpecGroupCard({ group, onChange }: { group: SpecGroup; onChange: () => 
           </div>
         ) : (
           <button onClick={() => setShowForm(true)} className="mt-4 text-[13px] font-bold text-secondary-container flex items-center gap-1 hover:gap-2 transition-all">
-            <span className="material-symbols-outlined text-[18px]">add</span> Add Option
+            <span aria-hidden="true" className="material-symbols-outlined text-[18px]">add</span> Add Option
           </button>
         )}
       </div>
@@ -604,7 +604,7 @@ function MatrixEditor({ productId, matrix, onReload }: { productId: string; matr
     <section className="bg-surface-container-lowest rounded-xl premium-shadow overflow-hidden border border-outline-variant/30">
       <div className="px-6 py-4 border-b border-outline-variant bg-surface-container-low flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-secondary">grid_on</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-secondary">grid_on</span>
           <h2 className="font-headline-md text-[20px]">Price Matrix (₹ / sheet)</h2>
         </div>
         <span className="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed text-[11px] font-bold rounded-full uppercase">

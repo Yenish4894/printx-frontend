@@ -40,7 +40,7 @@ function CardHead({ icon, title, fill = false }: { icon: string; title: string; 
   return (
     <div className="flex items-center gap-3 mb-6">
       <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary">
-        <span className="material-symbols-outlined" style={fill ? fill1 : undefined}>{icon}</span>
+        <span aria-hidden="true" className="material-symbols-outlined" style={fill ? fill1 : undefined}>{icon}</span>
       </div>
       <h3 className="font-headline-md text-headline-md">{title}</h3>
     </div>

@@ -102,7 +102,7 @@ export default function AdminProducts() {
           </p>
         </div>
         <Link href="/admin/products/new" className="primary-accent-gradient text-white flex items-center gap-2 px-6 py-3 rounded-xl font-button text-button shadow-lg shadow-secondary/20 hover:-translate-y-0.5 transition-all active:scale-95">
-          <span className="material-symbols-outlined text-[20px]">add</span> New Product
+          <span aria-hidden="true" className="material-symbols-outlined text-[20px]">add</span> New Product
         </Link>
       </div>
 
@@ -143,7 +143,7 @@ export default function AdminProducts() {
                 <tr>
                   <td colSpan={8} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3 text-on-surface-variant">
-                      <span className="material-symbols-outlined text-[48px] opacity-50">inventory_2</span>
+                      <span aria-hidden="true" className="material-symbols-outlined text-[48px] opacity-50">inventory_2</span>
                       <p className="font-body-md">No products yet.</p>
                       <Link href="/admin/products/new" className="text-secondary font-button hover:underline">Create your first product</Link>
                     </div>
@@ -155,7 +155,7 @@ export default function AdminProducts() {
                   <td className="py-4 px-6">
                     <Link href={`/admin/spec-config?product=${p.id}`} className="flex items-center gap-4 group/link">
                       <div className="w-14 h-14 rounded-lg bg-surface-container-highest shrink-0 flex items-center justify-center border border-outline-variant/20 text-on-surface-variant">
-                        <span className="material-symbols-outlined">description</span>
+                        <span aria-hidden="true" className="material-symbols-outlined">description</span>
                       </div>
                       <div>
                         <div className="font-body-md font-bold text-primary group-hover/link:text-secondary transition-colors">{p.name}</div>
