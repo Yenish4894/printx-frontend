@@ -145,7 +145,7 @@ export default function CustomerDashboard() {
       {/* Recent Activity (full width) */}
       <section>
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-headline-md text-on-surface">Recent Orders</h3>
+          <h2 className="font-headline-md text-on-surface">Recent Orders</h2>
           <Link className="text-secondary font-bold text-xs hover:underline" href="/orders">View All</Link>
         </div>
         <div className="bg-white rounded-xl border border-outline-variant/10 divide-y divide-outline-variant/10 overflow-hidden shadow-sm">

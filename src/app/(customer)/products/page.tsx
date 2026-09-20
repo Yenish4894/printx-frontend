@@ -37,7 +37,7 @@ function ProductCard({ p }: { p: ProductCardData }) {
       <div className="p-6 flex flex-col flex-1">
         <div className="mb-2">
           <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{p.category.name}</span>
-          <h3 className="font-headline-md text-[20px]">{p.name}</h3>
+          <h2 className="font-headline-md text-[20px]">{p.name}</h2>
         </div>
         <p className="text-on-surface-variant text-sm mb-6 line-clamp-2">{p.description}</p>
         <div className="mt-auto pt-6 border-t border-outline-variant flex items-center justify-between">
