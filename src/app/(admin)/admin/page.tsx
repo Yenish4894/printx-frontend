@@ -7,6 +7,7 @@ import { inr } from "@/components/SessionProvider";
 import { formatDateTime } from "@/lib/format";
 import { statusLabel, statusBadge } from "@/lib/orderStatus";
 import PageHeader from "@/components/ui/PageHeader";
+import { LoadingState } from "@/components/ui/States";
 
 type RecentOrder = {
   id: string;
@@ -67,9 +68,7 @@ export default function AdminDashboard() {
       />
 
       {loading && (
-        <div className="flex items-center justify-center py-24 text-on-surface-variant">
-          <span aria-hidden="true" className="material-symbols-outlined animate-spin mr-3">progress_activity</span> Loading dashboard...
-        </div>
+        <LoadingState label="Loading dashboard" />
       )}
 
       {error && !loading && (

@@ -7,6 +7,7 @@ import { catalog, cart as cartApi, ApiError, type PriceBreakdown } from "@/lib/a
 import { useSession, inr } from "@/components/SessionProvider";
 import { evaluateVisibility, pruneSelections, type VisibilityRuleLite } from "@/lib/visibility";
 import { useToast } from "@/components/ui/UIProvider";
+import Button from "@/components/ui/Button";
 
 interface Option {
   id: string;
@@ -647,20 +648,26 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
                 </div>
               )}
 
-              <button
-                disabled={!breakdown || adding}
+              <Button
+                size="lg"
+                fullWidth
+                disabled={!breakdown}
+                loading={adding}
                 onClick={() => addToCart(true)}
-                className="w-full primary-accent-gradient text-white py-4 rounded-xl font-button text-button shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+                iconAfter="payments"
               >
-                {adding ? "Adding…" : "Add & Checkout"} <span className="material-symbols-outlined" aria-hidden="true">payments</span>
-              </button>
-              <button
+                {adding ? "Adding…" : "Add & checkout"}
+              </Button>
+              <Button
+                size="lg"
+                fullWidth
+                variant="secondary"
                 disabled={!breakdown || adding}
                 onClick={() => addToCart(false)}
-                className="w-full border-2 border-secondary text-secondary py-4 rounded-xl font-button text-button hover:bg-secondary/5 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+                iconAfter="shopping_cart"
               >
-                Add to Cart <span className="material-symbols-outlined" aria-hidden="true">shopping_cart</span>
-              </button>
+                Add to cart
+              </Button>
               {hasQuote && !enough && (
                 <Link href="/wallet" className="block text-center text-secondary font-button text-sm hover:underline">
                   Top up wallet to check out
@@ -677,13 +684,14 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
           <p className="text-[10px] text-on-surface-variant font-label-caps uppercase">Total (incl. GST)</p>
           <p className="text-xl font-black text-secondary">{breakdown ? inr(total) : "—"}</p>
         </div>
-        <button
-          disabled={!breakdown || adding}
+        <Button
+          disabled={!breakdown}
+          loading={adding}
           onClick={() => addToCart(true)}
-          className="flex-1 max-w-[62%] primary-accent-gradient text-white py-3 rounded-xl font-button text-button shadow-lg disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+          className="flex-1 max-w-[62%]"
         >
-          {adding ? "Adding…" : "Add & Checkout"}
-        </button>
+          {adding ? "Adding…" : "Add & checkout"}
+        </Button>
       </div>
     </main>
   );

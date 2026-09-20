@@ -8,6 +8,7 @@ import { inr } from "@/components/SessionProvider";
 import { useConfirm, useToast } from "@/components/ui/UIProvider";
 import { statusLabel, statusBadge, nextStatuses, REFUND_STATUS, FILE_STATUS, fileStatusLabel } from "@/lib/orderStatus";
 import { formatDateTime, specEntries } from "@/lib/format";
+import { LoadingState } from "@/components/ui/States";
 
 type Item = {
   id: string;
@@ -171,9 +172,7 @@ export default function AdminOrderDetail() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24 text-on-surface-variant">
-        <span className="material-symbols-outlined animate-spin mr-3" aria-hidden="true">progress_activity</span> Loading order...
-      </div>
+      <LoadingState label="Loading order" />
     );
   }
 
