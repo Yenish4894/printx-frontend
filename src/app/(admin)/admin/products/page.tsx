@@ -127,7 +127,10 @@ export default function AdminProducts() {
                 {["Product Info", "Category", "Pricing", "Spec Groups", "Matrix Rows", "Orders", "Status"].map((h, i) => (
                   <th key={i} scope="col" className="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">{h}</th>
                 ))}
-                <th scope="col" className="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-right">
+                <th scope="col" className="relative py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-right">
+                  {/* relative: .sr-only is position:absolute, and against a
+                      static cell it resolved past the viewport and gave the
+                      page 8px of horizontal scroll. */}
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>

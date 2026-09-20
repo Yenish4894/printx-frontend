@@ -435,7 +435,7 @@ function SpecGroupCard({ group, onChange }: { group: SpecGroup; onChange: () => 
               <th scope="col" className="pb-2 font-bold">Value (₹)</th>
               <th scope="col" className="pb-2 font-bold">Per Qty</th>
               <th scope="col" className="pb-2 font-bold">Default</th>
-              <th scope="col" className="pb-2 font-bold text-right"><span className="sr-only">Actions</span></th>
+              <th scope="col" className="relative pb-2 font-bold text-right"><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-outline-variant/20">
