@@ -5,6 +5,7 @@ import { admin, ApiError } from "@/lib/api";
 import { inr } from "@/components/SessionProvider";
 import { formatDateTime } from "@/lib/format";
 import { EmptyState, LoadingState, ErrorState, TableState } from "@/components/ui/States";
+import PageHeader from "@/components/ui/PageHeader";
 
 interface Txn {
   id: string;
@@ -73,10 +74,11 @@ export default function AdminTransactions() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-headline-lg text-headline-lg text-primary">Wallet &amp; Transactions</h1>
-        <p className="font-body-md text-on-surface-variant">Ledger of all wallet activity across customers.</p>
-      </div>
+      <PageHeader
+        title="Wallet & Transactions"
+        description="Ledger of all wallet activity across customers."
+        className="mb-0"
+      />
 
       {error && (
         <div className="px-4 py-3 rounded-xl bg-error-container/60 text-on-error-container flex items-center justify-between gap-4" role="alert">

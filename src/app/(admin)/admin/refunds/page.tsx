@@ -8,6 +8,7 @@ import { statusLabel, statusBadge, REFUND_STATUS } from "@/lib/orderStatus";
 import { formatDateTime } from "@/lib/format";
 import Pager from "@/components/ui/Pager";
 import { EmptyState, LoadingState, TableState } from "@/components/ui/States";
+import PageHeader from "@/components/ui/PageHeader";
 
 type Refund = {
   id: string;
@@ -131,10 +132,11 @@ export default function AdminRefunds() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight">Refunds</h1>
-        <p className="font-body-md text-on-surface-variant">{counts.All ?? 0} total refund requests</p>
-      </div>
+      <PageHeader
+        title="Refunds"
+        description={`${counts.All ?? 0} total refund requests`}
+        className="mb-0"
+      />
 
       <div className="flex items-center gap-2 border-b border-outline-variant overflow-x-auto no-scrollbar">
         {STATUS_TABS.map((label) => {

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { admin, ApiError } from "@/lib/api";
 import { useConfirm, useToast } from "@/components/ui/UIProvider";
 import Switch from "@/components/ui/Switch";
+import PageHeader from "@/components/ui/PageHeader";
+import Button from "@/components/ui/Button";
 
 interface Category {
   id: string;
@@ -206,19 +208,16 @@ export default function AdminCategories() {
 
   return (
     <>
-      <div className="flex items-end justify-between mb-8">
-        <div>
-          <nav className="flex items-center gap-2 text-on-surface-variant font-label-caps mb-2">
-            <span>Catalog</span>
-            <span aria-hidden="true" className="material-symbols-outlined text-xs">chevron_right</span>
-            <span className="text-secondary font-bold">Categories</span>
-          </nav>
-          <h1 className="font-headline-lg text-headline-lg text-primary">Categories</h1>
-        </div>
-        <button onClick={() => { setModalOpen(true); setModalError(null); }} className="primary-accent-gradient text-white px-6 py-3 rounded-xl font-button shadow-lg shadow-secondary-container/20 flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-transform">
-          <span aria-hidden="true" className="material-symbols-outlined">add</span><span>Add Category</span>
-        </button>
-      </div>
+      <PageHeader
+        title="Categories"
+        description="Group products so customers can browse the catalogue."
+        crumbs={[{ label: "Catalog" }, { label: "Categories" }]}
+        actions={
+          <Button onClick={() => { setModalOpen(true); setModalError(null); }} icon="add">
+            Add category
+          </Button>
+        }
+      />
 
       {error && (
         <div className="mb-6 flex flex-wrap items-center gap-2 rounded-xl border border-error/30 bg-error-container/20 px-4 py-3 text-body-md text-error" role="alert">

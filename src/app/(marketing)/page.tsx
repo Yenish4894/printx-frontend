@@ -3,6 +3,7 @@ import Link from "next/link";
 import MarketingNav from "@/components/marketing/MarketingNav";
 import MarketingCatalog from "@/components/marketing/MarketingCatalog";
 import BrandLogo from "@/components/BrandLogo";
+import { ButtonLink } from "@/components/ui/Button";
 
 export const metadata: Metadata = {
   title: "Bhagini Graphics | Online Printing in India",
@@ -48,13 +49,19 @@ export default function LandingPage() {
               wallet, and track it to delivery — all in one place.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/login" className="primary-gradient text-white px-8 py-4 rounded-xl font-button text-button shadow-lg flex items-center justify-center gap-2 group">
-                Get Started
-                <span aria-hidden="true" className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-              </Link>
-              <Link href="/products" className="border border-white/20 hover:bg-white/5 text-white px-8 py-4 rounded-xl font-button text-button transition-colors text-center">
-                Browse Products
-              </Link>
+              {/* "Get Started" named no outcome. Step 01 of this page's own
+                  "How it works" is Create your account, so the CTA says that. */}
+              <ButtonLink href="/login?tab=create" size="lg" iconAfter="arrow_forward">
+                Create your account
+              </ButtonLink>
+              <ButtonLink
+                href="/products"
+                size="lg"
+                variant="ghost"
+                className="border border-white/20 text-white hover:bg-white/10"
+              >
+                Browse the catalogue
+              </ButtonLink>
             </div>
           </div>
 
@@ -82,9 +89,7 @@ export default function LandingPage() {
                     <p className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-1">Total (GST incl.)</p>
                     <p className="font-display-lg text-display-lg text-primary">₹2,000</p>
                   </div>
-                  <Link href="/products/cmyk-printing" className="primary-gradient text-white px-6 py-3 rounded-xl font-button text-button shadow-lg">
-                    Try it live
-                  </Link>
+                  <ButtonLink href="/products/cmyk-printing">Try it live</ButtonLink>
                 </div>
               </div>
             </div>
@@ -163,12 +168,15 @@ export default function LandingPage() {
             Create an account and get an instant quote on your next print job.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/login?tab=create" className="primary-gradient text-white px-10 py-4 rounded-xl font-button text-button shadow-lg active:scale-95 transition-transform">
-              Create account
-            </Link>
-            <Link href="/login" className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-10 py-4 rounded-xl font-button text-button transition-colors">
+            <ButtonLink href="/login?tab=create" size="lg">Create your account</ButtonLink>
+            <ButtonLink
+              href="/login"
+              size="lg"
+              variant="ghost"
+              className="border border-white/20 text-white hover:bg-white/10"
+            >
               Sign in
-            </Link>
+            </ButtonLink>
           </div>
         </div>
       </section>

@@ -8,6 +8,7 @@ import { statusLabel, statusBadge, statusDot } from "@/lib/orderStatus";
 import { formatDateTime } from "@/lib/format";
 import Pager from "@/components/ui/Pager";
 import { EmptyState, LoadingState, ErrorState, TableState } from "@/components/ui/States";
+import PageHeader from "@/components/ui/PageHeader";
 
 type OrderRow = {
   id: string;
@@ -85,10 +86,11 @@ export default function AdminOrders() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight">Orders Management</h1>
-        <p className="font-body-md text-on-surface-variant">{meta.total.toLocaleString("en-IN")} {activeFilter ? statusLabel(activeFilter).toLowerCase() : "total"} orders</p>
-      </div>
+      <PageHeader
+        title="Orders"
+        description={`${meta.total.toLocaleString("en-IN")} ${activeFilter ? statusLabel(activeFilter).toLowerCase() : "total"} orders`}
+        className="mb-0"
+      />
 
       {/* Toolbar */}
       <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/30 space-y-6">

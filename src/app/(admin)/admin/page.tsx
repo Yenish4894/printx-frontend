@@ -6,6 +6,7 @@ import { admin, ApiError } from "@/lib/api";
 import { inr } from "@/components/SessionProvider";
 import { formatDateTime } from "@/lib/format";
 import { statusLabel, statusBadge } from "@/lib/orderStatus";
+import PageHeader from "@/components/ui/PageHeader";
 
 type RecentOrder = {
   id: string;
@@ -60,10 +61,10 @@ export default function AdminDashboard() {
 
   return (
     <>
-      <header className="mb-8">
-        <h1 className="font-headline-lg text-headline-lg text-primary">Overview Dashboard</h1>
-        <p className="text-on-surface-variant font-body-lg">Here&apos;s a snapshot of your printing press operations today.</p>
-      </header>
+      <PageHeader
+        title="Overview Dashboard"
+        description="A snapshot of your printing press operations today."
+      />
 
       {loading && (
         <div className="flex items-center justify-center py-24 text-on-surface-variant">
