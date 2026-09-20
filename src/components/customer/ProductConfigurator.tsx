@@ -357,9 +357,9 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
         {/* Left: Details */}
         <div className="lg:col-span-4 space-y-8">
           <div className="bg-surface-container-lowest rounded-xl custom-shadow p-6">
-            <h3 className="font-headline-md text-headline-md text-primary-container mb-6 flex items-center gap-2">
+            <h2 className="font-headline-md text-headline-md text-primary-container mb-6 flex items-center gap-2">
               <span aria-hidden="true" className="material-symbols-outlined text-secondary-container">description</span> Product Details
-            </h3>
+            </h2>
             <div className="grid grid-cols-2 gap-y-4 gap-x-8">
               {product.printTypeLabel && (
                 <div>
@@ -395,7 +395,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
           <div className="header-deep-gradient rounded-xl p-8 text-on-primary shadow-lg relative overflow-hidden">
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
-                <h2 className="font-headline-md text-headline-md text-white mb-1">{product.name}</h2>
+                <p className="font-headline-md text-headline-md text-white mb-1">{product.name}</p>
                 <p className="text-on-tertiary-container font-body-md">{selectedSummary}</p>
               </div>
               <div className="text-right">
@@ -417,12 +417,12 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
             {/* Dynamic spec groups */}
             {visibleGroups.map((g) => (
               <section key={g.id} role="group" aria-label={g.name}>
-                <h4 className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-4 tracking-widest flex items-center gap-2">
+                <h3 className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-4 tracking-widest flex items-center gap-2">
                   <span className="material-symbols-outlined text-[18px]" aria-hidden="true">{g.isPricingDimension ? "tune" : "flare"}</span>
                   {g.name}
                   {g.selectionType === "MULTI_SELECT" && <span className="text-[10px] normal-case tracking-normal text-on-surface-variant">(choose any)</span>}
                   {!g.isRequired && g.selectionType !== "MULTI_SELECT" && <span className="text-[10px] normal-case tracking-normal text-on-surface-variant">(optional)</span>}
-                </h4>
+                </h3>
                 {g.selectionType === "SINGLE_SELECT" ? (
                   // Single-choice groups are dropdowns (matching how the trade
                   // portal presents them) — compact, and it scales to the long
@@ -485,9 +485,9 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
             {!slabGroup && (
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest flex items-center gap-2">
+                <h3 className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest flex items-center gap-2">
                   <span aria-hidden="true" className="material-symbols-outlined text-[18px]">reorder</span> Quantity
-                </h4>
+                </h3>
               </div>
               <div className="flex flex-wrap gap-2 mb-4">
                 {qtyChips.map((n) => (
@@ -537,9 +537,9 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
             {/* Delivery Speed */}
             {product.deliverySpeeds.length > 0 && (
               <section>
-                <h4 className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-4 tracking-widest flex items-center gap-2">
+                <h3 className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-4 tracking-widest flex items-center gap-2">
                   <span aria-hidden="true" className="material-symbols-outlined text-[18px]">local_shipping</span> Delivery Speed
-                </h4>
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {product.deliverySpeeds.map((d) => {
                     const active = deliveryId === d.id;
@@ -560,9 +560,9 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
 
             {/* Upload */}
             <section>
-              <h4 className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-4 tracking-widest flex items-center gap-2">
+              <h3 className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-4 tracking-widest flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px]" aria-hidden="true">cloud_upload</span> Upload Artwork
-              </h4>
+              </h3>
               <label className="border-2 border-dashed border-outline-variant bg-surface-container-low rounded-xl p-10 flex flex-col items-center text-center group hover:border-secondary-container focus-within:border-secondary-container focus-within:ring-2 focus-within:ring-secondary/30 transition-all cursor-pointer">
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-secondary mb-4 shadow-sm group-hover:scale-110 transition-transform">
                   <span className="material-symbols-outlined text-3xl" aria-hidden="true">upload_file</span>
@@ -580,9 +580,9 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
 
             {/* Special Instructions */}
             <section>
-              <h4 className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-4 tracking-widest flex items-center gap-2">
+              <h3 className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-4 tracking-widest flex items-center gap-2">
                 <span aria-hidden="true" className="material-symbols-outlined text-[18px]">edit_note</span> Special Instructions
-              </h4>
+              </h3>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -597,7 +597,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
         {/* Right: Order Summary (sticky) */}
         <aside className="lg:col-span-3">
           <div className="lg:sticky lg:top-24 bg-surface-container-lowest rounded-xl custom-shadow p-6 border border-outline-variant/10">
-            <h4 className="font-headline-md text-headline-md text-primary-container mb-6">Order Summary</h4>
+            <h2 className="font-headline-md text-headline-md text-primary-container mb-6">Order Summary</h2>
 
             {quoteErr ? (
               <div className="mb-6 px-4 py-3 rounded-lg bg-error-container/60 text-on-error-container text-sm flex items-start gap-2">

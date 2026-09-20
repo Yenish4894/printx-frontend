@@ -20,7 +20,7 @@ export default function CustomerFooter() {
           </p>
         </div>
         <div>
-          <h5 className="text-white font-bold text-sm mb-4">Quick Links</h5>
+          <h2 className="text-white font-bold text-sm mb-4">Quick Links</h2>
           <ul className="space-y-2 text-sm">
             <li><Link className="hover:text-white transition-colors" href="/dashboard">Dashboard</Link></li>
             <li><Link className="hover:text-white transition-colors" href="/products">Products</Link></li>
@@ -29,7 +29,7 @@ export default function CustomerFooter() {
           </ul>
         </div>
         <div>
-          <h5 className="text-white font-bold text-sm mb-4">Contact</h5>
+          <h2 className="text-white font-bold text-sm mb-4">Contact</h2>
           <ul className="space-y-2 text-sm">
             <li><a className="flex items-center gap-2 hover:text-white transition-colors" href={`tel:${PHONE.replace(/\s/g, "")}`}><span className="material-symbols-outlined text-[18px]" aria-hidden="true">call</span>{PHONE}</a></li>
             <li><a className="flex items-center gap-2 hover:text-white transition-colors" href={`mailto:${EMAIL}`}><span className="material-symbols-outlined text-[18px]" aria-hidden="true">mail</span>{EMAIL}</a></li>
