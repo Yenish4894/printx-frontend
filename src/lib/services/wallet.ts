@@ -104,10 +104,15 @@ export async function verifyTopUp(
 }
 
 /**
- * Manual wallet top-up — DEV/fallback only. Blocked once Razorpay is configured
- * so production always goes through the real gateway. Credits directly.
+ * Manual wallet top-up — DEV ONLY. Credits spendable balance directly, with no
+ * payment behind it, so it is refused in production unconditionally: gating it
+ * on "are the Razorpay keys present" made a missing or mistyped env var mint
+ * free money. Production always goes through the real gateway.
  */
 export async function topUpWallet(userId: string, amount: number) {
+  if (process.env.NODE_ENV === "production") {
+    throw new HttpError(503, "Online payment is not available right now. Please try again shortly.");
+  }
   if (isRazorpayConfigured()) {
     throw new HttpError(400, "Please use online payment to top up your wallet");
   }

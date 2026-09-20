@@ -65,12 +65,23 @@ export default function ProductsListing() {
 
   // Fetch the full catalogue once; filter client-side so the category bar stays
   // stable and switching categories never refetches (no collapse, no races).
+  // The single unbounded query behind this is now a sequence of bounded pages:
+  // same result, but one runaway table cannot take the page down.
   const load = useCallback(() => {
     setAllProducts(null);
     setError(null);
-    catalog
-      .products()
-      .then((r) => setAllProducts(r.products as unknown as ProductCardData[]))
+    (async () => {
+      const PAGE_SIZE = 200;
+      const MAX_PAGES = 20; // 4,000 products — a hard stop, not an expectation
+      const acc: ProductCardData[] = [];
+      for (let page = 1; page <= MAX_PAGES; page++) {
+        const r = await catalog.products(undefined, { page, pageSize: PAGE_SIZE });
+        acc.push(...(r.products as unknown as ProductCardData[]));
+        if (!r.hasMore) break;
+      }
+      return acc;
+    })()
+      .then(setAllProducts)
       .catch((e) => setError(e instanceof ApiError ? e.message : "Failed to load products"));
   }, []);
 

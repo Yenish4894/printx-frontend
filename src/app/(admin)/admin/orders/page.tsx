@@ -6,6 +6,7 @@ import { admin, ApiError } from "@/lib/api";
 import { inr } from "@/components/SessionProvider";
 import { statusLabel, statusBadge, statusDot } from "@/lib/orderStatus";
 import { formatDateTime } from "@/lib/format";
+import Pager from "@/components/ui/Pager";
 
 type OrderRow = {
   id: string;
@@ -45,39 +46,47 @@ export default function AdminOrders() {
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string | undefined>(undefined);
   const [search, setSearch] = useState("");
+  // Debounced so typing does not fire a query per keystroke; the search itself
+  // runs in the DB, so it covers every order and not just the page on screen.
+  const [term, setTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ total: 0, pageSize: 50, hasMore: false });
+
+  // Debounced, and a new search always starts from page 1 — landing on page 3
+  // of a different result set would show an empty table.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setTerm(search.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const { orders } = await admin.orders.list(activeFilter);
-      setOrders(orders);
+      const res = await admin.orders.list(activeFilter, { page, q: term || undefined });
+      setOrders(res.orders);
+      setMeta({ total: res.total, pageSize: res.pageSize, hasMore: res.hasMore });
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Failed to load orders");
     } finally {
       setLoading(false);
     }
-  }, [activeFilter]);
+  }, [activeFilter, page, term]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const q = search.trim().toLowerCase();
-  const visible = q
-    ? orders.filter(
-        (o) =>
-          o.orderNumber.toLowerCase().includes(q) ||
-          o.customer.toLowerCase().includes(q) ||
-          o.customerMobile.toLowerCase().includes(q),
-      )
-    : orders;
+  const visible = orders;
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight">Orders Management</h1>
-        <p className="font-body-md text-on-surface-variant">{visible.length.toLocaleString("en-IN")} {activeFilter ? statusLabel(activeFilter).toLowerCase() : "total"} orders</p>
+        <p className="font-body-md text-on-surface-variant">{meta.total.toLocaleString("en-IN")} {activeFilter ? statusLabel(activeFilter).toLowerCase() : "total"} orders</p>
       </div>
 
       {/* Toolbar */}
@@ -93,7 +102,7 @@ export default function AdminOrders() {
             {FILTERS.map((f) => {
               const active = f.value === activeFilter;
               return (
-                <button key={f.label} onClick={() => setActiveFilter(f.value)} className={`px-4 py-2 rounded-full font-label-caps text-label-caps flex items-center gap-2 transition-all ${active ? "bg-primary-container text-on-primary-container" : "hover:bg-surface-container-high text-on-surface-variant"}`}>
+                <button key={f.label} onClick={() => { setActiveFilter(f.value); setPage(1); }} className={`px-4 py-2 rounded-full font-label-caps text-label-caps flex items-center gap-2 transition-all ${active ? "bg-primary-container text-on-primary-container" : "hover:bg-surface-container-high text-on-surface-variant"}`}>
                   {f.label}
                 </button>
               );
@@ -153,9 +162,17 @@ export default function AdminOrders() {
             </tbody>
           </table>
         </div>
-        {!loading && !error && visible.length > 0 && (
-          <div className="px-6 py-4 bg-surface-container-low flex items-center justify-between gap-4 border-t border-outline-variant">
-            <div className="text-sm text-on-surface-variant">Showing <span className="font-semibold text-primary">{visible.length.toLocaleString("en-IN")}</span> orders</div>
+        {!loading && !error && meta.total > meta.pageSize && (
+          <div className="px-6 py-4 bg-surface-container-low border-t border-outline-variant">
+            <Pager
+              page={page}
+              pageSize={meta.pageSize}
+              total={meta.total}
+              hasMore={meta.hasMore}
+              onPage={setPage}
+              busy={loading}
+              label="orders"
+            />
           </div>
         )}
       </div>

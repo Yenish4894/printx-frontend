@@ -11,31 +11,34 @@ type Selections = Record<string, string | string[]>;
 
 /** Current user's cart with per-item snapshots and cart-level totals. */
 export async function getCart(userId: string) {
-  const cart = await prisma.cart.findUnique({
-    where: { userId },
-    include: {
-      items: {
-        orderBy: { createdAt: "asc" },
-        include: {
-          product: {
-            select: {
-              name: true,
-              slug: true,
-              // The cart's +/- controls need the product's ordering rules, or
-              // they step by 1 into quantities the server rejects.
-              minQuantity: true,
-              quantityStep: true,
-              maxQuantity: true,
-              images: { take: 1, orderBy: { displayOrder: "asc" } },
+  // Both round trips go to Neon in ap-southeast-1 and neither depends on the
+  // other, so they run together rather than back to back.
+  const [cart, { gstRate, freeShippingThreshold }] = await Promise.all([
+    prisma.cart.findUnique({
+      where: { userId },
+      include: {
+        items: {
+          orderBy: { createdAt: "asc" },
+          include: {
+            product: {
+              select: {
+                name: true,
+                slug: true,
+                // The cart's +/- controls need the product's ordering rules, or
+                // they step by 1 into quantities the server rejects.
+                minQuantity: true,
+                quantityStep: true,
+                maxQuantity: true,
+                images: { take: 1, orderBy: { displayOrder: "asc" } },
+              },
             },
+            deliverySpeed: { select: { name: true, fee: true } },
           },
-          deliverySpeed: { select: { name: true, fee: true } },
         },
       },
-    },
-  });
-
-  const { gstRate, freeShippingThreshold } = await getSettings();
+    }),
+    getSettings(),
+  ]);
   const items = (cart?.items ?? []).map((it) => {
     const deliveryFee = it.deliverySpeed ? Number(it.deliverySpeed.fee) : 0;
     const lineSubtotal = Number(it.lineSubtotal);

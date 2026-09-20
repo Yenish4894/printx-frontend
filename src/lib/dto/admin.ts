@@ -49,6 +49,8 @@ export const createProductSchema = z.object({
   isActive: z.boolean().optional(),
 });
 export const updateProductSchema = createProductSchema.partial();
+/** PATCH is partial: sending only { isActive } must not require re-sending name. */
+export const updateCategorySchema = categorySchema.partial();
 
 // ── Spec groups / options ──
 export const specGroupSchema = z.object({
@@ -148,6 +150,7 @@ export const refundProcessSchema = z.object({
 });
 
 export type CategoryInput = z.infer<typeof categorySchema>;
+export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 export type SpecGroupInput = z.infer<typeof specGroupSchema>;

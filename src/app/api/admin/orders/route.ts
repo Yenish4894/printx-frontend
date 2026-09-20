@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/auth";
 import { listAllOrders } from "@/lib/services/admin/orders";
 import { ok, handleError, HttpError } from "@/lib/http";
+import { pageParams } from "@/lib/pagination";
 import { ORDER_STATUS } from "@/lib/orderStatus";
 import type { OrderStatus } from "@/generated/prisma/client";
 
@@ -15,7 +16,8 @@ export async function GET(req: Request) {
     if (status && !Object.hasOwn(ORDER_STATUS, status)) {
       throw new HttpError(400, `Unknown order status "${status}"`);
     }
-    return ok({ orders: await listAllOrders((status as OrderStatus) ?? undefined) });
+    const q = new URL(req.url).searchParams.get("q") ?? undefined;
+    return ok(await listAllOrders((status as OrderStatus) ?? undefined, pageParams(req.url), q));
   } catch (err) {
     return handleError(err);
   }

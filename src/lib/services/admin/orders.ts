@@ -1,21 +1,47 @@
 import prisma from "@/lib/prisma";
 import { HttpError } from "@/lib/http";
 import { nextStatuses, statusLabel } from "@/lib/orderStatus";
-import type { OrderStatus } from "@/generated/prisma/client";
+import type { OrderStatus, Prisma } from "@/generated/prisma/client";
 import type { OrderStatusInput, FileReviewInput } from "@/lib/dto/admin";
+import { firstPage, pageMeta, type PageParams } from "@/lib/pagination";
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
-export async function listAllOrders(status?: OrderStatus) {
-  const orders = await prisma.order.findMany({
-    where: status ? { status } : {},
-    orderBy: { placedAt: "desc" },
-    include: {
-      user: { select: { businessName: true, ownerName: true, mobile: true } },
-      _count: { select: { items: true } },
-    },
-  });
-  return orders.map((o) => ({
+export async function listAllOrders(
+  status?: OrderStatus,
+  page: PageParams = firstPage(),
+  q?: string,
+) {
+  // Search runs in the DB, not in the browser: filtering client-side over a
+  // paginated list would only ever search the page you are looking at.
+  const term = q?.trim();
+  const where: Prisma.OrderWhereInput = {
+    ...(status ? { status } : {}),
+    ...(term
+      ? {
+          OR: [
+            { orderNumber: { contains: term, mode: "insensitive" as const } },
+            { user: { businessName: { contains: term, mode: "insensitive" as const } } },
+            { user: { ownerName: { contains: term, mode: "insensitive" as const } } },
+            { user: { mobile: { contains: term } } },
+          ],
+        }
+      : {}),
+  };
+  const [orders, total] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      orderBy: { placedAt: "desc" },
+      skip: page.skip,
+      take: page.take,
+      include: {
+        user: { select: { businessName: true, ownerName: true, mobile: true } },
+        _count: { select: { items: true } },
+      },
+    }),
+    prisma.order.count({ where }),
+  ]);
+  const rows = orders.map((o) => ({
     id: o.id,
     orderNumber: o.orderNumber,
     status: o.status,
@@ -25,6 +51,7 @@ export async function listAllOrders(status?: OrderStatus) {
     itemCount: o._count.items,
     placedAt: o.placedAt,
   }));
+  return { orders: rows, ...pageMeta(rows.length, total, page) };
 }
 
 export async function getAdminOrder(id: string) {

@@ -17,30 +17,23 @@ interface OrderRow {
   placedAt: string;
 }
 
-// Orders still moving through fulfilment (counts toward "in progress").
-const IN_PROGRESS = new Set([
-  "PLACED",
-  "PAYMENT_CONFIRMED",
-  "DESIGN_REVIEW",
-  "IN_PRODUCTION",
-  "PRINTING",
-  "READY",
-  "SHIPPED",
-  "OUT_FOR_DELIVERY",
-]);
-
 export default function CustomerDashboard() {
   const { user, loading: sessionLoading } = useSession();
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [stats, setStats] = useState({ totalOrders: 0, inProgress: 0, paidOrderCount: 0, totalSpent: 0 });
+
   const loadOrders = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await ordersApi.list();
+      // The page renders five rows and four KPIs. It used to download every
+      // order ever placed to work those out; the KPIs are DB aggregates now.
+      const res = await ordersApi.list({ pageSize: 5 });
       setOrders((res.orders as OrderRow[]) ?? []);
+      setStats(res.stats);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to load your orders.");
     } finally {
@@ -52,12 +45,8 @@ export default function CustomerDashboard() {
     loadOrders();
   }, [loadOrders]);
 
-  const totalOrders = orders?.length ?? 0;
-  const inProgress = orders?.filter((o) => IN_PROGRESS.has(o.status)).length ?? 0;
-  const nonCancelled = orders?.filter((o) => o.status !== "CANCELLED") ?? [];
-  const paidOrderCount = nonCancelled.length;
-  const totalSpent = nonCancelled.reduce((sum, o) => sum + o.totalAmount, 0);
-  const recent = orders?.slice(0, 5) ?? [];
+  const { totalOrders, inProgress, paidOrderCount, totalSpent } = stats;
+  const recent = orders ?? [];
 
   const greetingName = user?.ownerName ?? user?.businessName ?? "there";
   const walletBalance = user?.walletBalance ?? 0;

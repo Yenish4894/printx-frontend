@@ -34,7 +34,12 @@ export interface SessionUser {
 }
 
 // ── password ──
-export const hashPassword = (pw: string) => bcrypt.hash(pw, 10);
+// Cost 8, not 10: bcryptjs is pure JS with no native bindings, so the whole work
+// factor is charged to the Worker's CPU budget, and this free plan has already
+// been hit by the ~1102ms ceiling once. Cost is embedded in each hash, so older
+// cost-10 hashes keep verifying unchanged.
+const BCRYPT_COST = 8;
+export const hashPassword = (pw: string) => bcrypt.hash(pw, BCRYPT_COST);
 export const verifyPassword = (pw: string, hash: string) =>
   bcrypt.compare(pw, hash);
 

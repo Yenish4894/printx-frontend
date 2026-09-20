@@ -1,16 +1,57 @@
 import prisma from "@/lib/prisma";
 import { HttpError } from "@/lib/http";
+import type { Prisma } from "@/generated/prisma/client";
 import type { WalletAdjustInput } from "@/lib/dto/admin";
+import { firstPage, pageMeta, type PageParams } from "@/lib/pagination";
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
-export async function listCustomers() {
-  const users = await prisma.user.findMany({
-    where: { role: "CUSTOMER" },
-    orderBy: { createdAt: "desc" },
-    include: { _count: { select: { orders: true } } },
-  });
-  return users.map((u) => ({
+export async function listCustomers(
+  page: PageParams = firstPage(),
+  q?: string,
+  isActive?: boolean,
+) {
+  // Search and the active/inactive filter both run in the DB: applied in the
+  // browser over a paginated list they would only ever cover the current page.
+  const term = q?.trim();
+  const where: Prisma.UserWhereInput = {
+    role: "CUSTOMER",
+    ...(isActive === undefined ? {} : { isActive }),
+    ...(term
+      ? {
+          OR: [
+            { businessName: { contains: term, mode: "insensitive" as const } },
+            { ownerName: { contains: term, mode: "insensitive" as const } },
+            { email: { contains: term, mode: "insensitive" as const } },
+            { mobile: { contains: term } },
+          ],
+        }
+      : {}),
+  };
+  const [users, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: page.skip,
+      take: page.take,
+      // Explicit select: a bare findMany pulled passwordHash out of the DB for
+      // a mapper that uses nine fields.
+      select: {
+        id: true,
+        businessName: true,
+        ownerName: true,
+        mobile: true,
+        email: true,
+        gstNumber: true,
+        walletBalance: true,
+        isActive: true,
+        createdAt: true,
+        _count: { select: { orders: true } },
+      },
+    }),
+    prisma.user.count({ where }),
+  ]);
+  const rows = users.map((u) => ({
     id: u.id,
     businessName: u.businessName,
     ownerName: u.ownerName,
@@ -22,22 +63,33 @@ export async function listCustomers() {
     orderCount: u._count.orders,
     joinedAt: u.createdAt,
   }));
+  return { customers: rows, ...pageMeta(rows.length, total, page) };
 }
 
 export async function getCustomer(id: string) {
-  const u = await prisma.user.findUnique({
-    where: { id },
-    include: {
-      addresses: true,
-      orders: { orderBy: { placedAt: "desc" }, select: { id: true, orderNumber: true, status: true, totalAmount: true, placedAt: true } },
-      walletTransactions: { orderBy: { createdAt: "desc" }, take: 20 },
-    },
-  });
+  // Orders are capped like walletTransactions already was; total spend comes
+  // from an aggregate rather than from summing every order ever placed in JS.
+  const [u, spend] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id },
+      include: {
+        addresses: true,
+        orders: {
+          orderBy: { placedAt: "desc" },
+          take: 20,
+          select: { id: true, orderNumber: true, status: true, totalAmount: true, placedAt: true },
+        },
+        walletTransactions: { orderBy: { createdAt: "desc" }, take: 20 },
+      },
+    }),
+    prisma.order.aggregate({
+      _sum: { totalAmount: true },
+      where: { userId: id, status: { not: "CANCELLED" } },
+    }),
+  ]);
   if (!u || u.role !== "CUSTOMER") throw new HttpError(404, "Customer not found");
 
-  const spent = u.orders
-    .filter((o) => o.status !== "CANCELLED")
-    .reduce((s, o) => s + Number(o.totalAmount), 0);
+  const spent = Number(spend._sum.totalAmount ?? 0);
 
   return {
     id: u.id,

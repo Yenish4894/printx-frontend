@@ -21,7 +21,7 @@ export async function POST(
     } catch (e) {
       return fail(422, e instanceof Error ? e.message : "Upload failed");
     }
-    return ok({ cart: await setCartItemFile(user.id, id, stored) });
+    return ok(await setCartItemFile(user.id, id, stored));
   } catch (err) {
     return handleError(err);
   }

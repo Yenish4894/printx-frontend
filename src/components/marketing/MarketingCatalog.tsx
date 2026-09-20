@@ -17,8 +17,9 @@ export default function MarketingCatalog() {
   const [products, setProducts] = useState<Card[] | null>(null);
 
   useEffect(() => {
+    // A landing teaser grid, not the catalogue: one bounded page is plenty.
     catalog
-      .products()
+      .products(undefined, { pageSize: 9 })
       .then((r) => setProducts(r.products as unknown as Card[]))
       .catch(() => setProducts([]));
   }, []);

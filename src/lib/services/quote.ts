@@ -9,6 +9,40 @@ import {
 import { getGstRate } from "./settings";
 import { evaluateVisibility, type VisibilityRuleLite } from "@/lib/visibility";
 import type { QuoteInput } from "@/lib/dto/pricing";
+import type { Prisma } from "@/generated/prisma/client";
+
+/** Everything the pricing engine needs off a Product, in one shape. */
+const PRICING_INCLUDE = {
+  specGroups: {
+    where: { isActive: true },
+    include: { options: { where: { isActive: true } } },
+  },
+  quantityTiers: { where: { isActive: true } },
+  deliverySpeeds: { where: { isActive: true } },
+  priceMatrix: { where: { isActive: true } },
+  visibilityRules: { include: { conditions: true } },
+} satisfies Prisma.ProductInclude;
+
+export type PricingProduct = Prisma.ProductGetPayload<{ include: typeof PRICING_INCLUDE }>;
+
+/**
+ * Load the full pricing graph for several products in ONE round trip, keyed by
+ * id. Checkout re-prices every cart line, and doing that one product at a time
+ * cost a Neon round trip per line.
+ */
+export async function loadPricingProducts(ids: string[]) {
+  const rows = await prisma.product.findMany({
+    where: { id: { in: [...new Set(ids)] } },
+    include: PRICING_INCLUDE,
+  });
+  return new Map(rows.map((p) => [p.id, p]));
+}
+
+/** Pre-fetched values a caller pricing many lines at once can share. */
+export interface PricingContext {
+  product?: PricingProduct;
+  gstRate?: number;
+}
 
 /**
  * Loads the product, validates the selected config against its spec system,
@@ -16,20 +50,20 @@ import type { QuoteInput } from "@/lib/dto/pricing";
  * matrix + delivery, and runs the authoritative pricing engine.
  * Returns a priced breakdown + a resolved snapshot (for cart/order storage).
  */
-export async function resolveAndPrice(input: QuoteInput) {
-  const product = await prisma.product.findUnique({
-    where: { id: input.productId },
-    include: {
-      specGroups: {
-        where: { isActive: true },
-        include: { options: { where: { isActive: true } } },
-      },
-      quantityTiers: { where: { isActive: true } },
-      deliverySpeeds: { where: { isActive: true } },
-      priceMatrix: { where: { isActive: true } },
-      visibilityRules: { include: { conditions: true } },
-    },
-  });
+export async function resolveAndPrice(input: QuoteInput, ctx: PricingContext = {}) {
+  // This is the hottest endpoint in the app: it runs on every debounced
+  // configurator keystroke, every cart mutation, and once per line at checkout.
+  // The GST rate is a singleton that does not depend on the product, so the two
+  // ap-southeast-1 round trips go out together instead of one after the other —
+  // and a caller pricing a whole cart passes both in, so neither is issued here.
+  const [product, gstRate] = await Promise.all([
+    ctx.product ??
+      prisma.product.findUnique({
+        where: { id: input.productId },
+        include: PRICING_INCLUDE,
+      }),
+    ctx.gstRate ?? getGstRate(),
+  ]);
 
   if (!product || !product.isActive) {
     throw new HttpError(404, "Product not found");
@@ -186,7 +220,6 @@ export async function resolveAndPrice(input: QuoteInput) {
     deliveryLabel = d.name;
   }
 
-  const gstRate = await getGstRate();
 
   const breakdown = computePrice({
     product: {

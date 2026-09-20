@@ -7,6 +7,7 @@ import { useConfirm, useToast } from "@/components/ui/UIProvider";
 import Switch from "@/components/ui/Switch";
 import { statusLabel, statusBadge } from "@/lib/orderStatus";
 import { formatDateTime } from "@/lib/format";
+import Pager from "@/components/ui/Pager";
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
@@ -52,6 +53,8 @@ export default function AdminCustomers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Inactive">("All");
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ total: 0, pageSize: 50, hasMore: false });
 
   const [detail, setDetail] = useState<CustomerDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -72,14 +75,18 @@ export default function AdminCustomers() {
     if (!opts?.silent) setLoading(true);
     setError(null);
     try {
-      const { customers } = await admin.customers.list();
-      setCustomers(customers as Customer[]);
+      const res = await admin.customers.list({
+        page,
+        active: statusFilter === "All" ? undefined : String(statusFilter === "Active"),
+      });
+      setCustomers(res.customers as Customer[]);
+      setMeta({ total: res.total, pageSize: res.pageSize, hasMore: res.hasMore });
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Failed to load customers");
     } finally {
       if (!opts?.silent) setLoading(false);
     }
-  }, []);
+  }, [page, statusFilter]);
 
   useEffect(() => {
     load();
@@ -202,16 +209,15 @@ export default function AdminCustomers() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drawerOpen, adjBusy, toggleBusyId]);
 
-  const visible = customers.filter((c) =>
-    statusFilter === "All" ? true : statusFilter === "Active" ? c.isActive : !c.isActive,
-  );
+  // Filtering happens in the DB now, so the page shows exactly what came back.
+  const visible = customers;
 
   return (
     <>
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>
           <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight">Customers</h1>
-          <p className="font-body-md text-on-surface-variant">{customers.length} registered customers</p>
+          <p className="font-body-md text-on-surface-variant">{meta.total} registered customers</p>
         </div>
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex flex-col gap-1">
@@ -220,7 +226,7 @@ export default function AdminCustomers() {
               {(["All", "Active", "Inactive"] as const).map((t) => (
                 <button
                   key={t}
-                  onClick={() => setStatusFilter(t)}
+                  onClick={() => { setStatusFilter(t); setPage(1); }}
                   className={`px-4 py-1.5 rounded-md text-xs font-bold ${statusFilter === t ? "bg-white shadow-sm text-secondary" : "text-on-surface-variant hover:bg-white/50"}`}
                 >
                   {t}
@@ -284,8 +290,22 @@ export default function AdminCustomers() {
             </tbody>
           </table>
         </div>
-        <div className="p-4 border-t border-surface-container bg-surface-container-low flex items-center justify-between">
-          <p className="text-sm text-on-surface-variant font-label-caps">Showing {visible.length} of {customers.length} customers</p>
+        <div className="p-4 border-t border-surface-container bg-surface-container-low">
+          {meta.total > meta.pageSize ? (
+            <Pager
+              page={page}
+              pageSize={meta.pageSize}
+              total={meta.total}
+              hasMore={meta.hasMore}
+              onPage={setPage}
+              busy={loading}
+              label="customers"
+            />
+          ) : (
+            <p className="text-sm text-on-surface-variant font-label-caps">
+              Showing {visible.length} of {meta.total} customers
+            </p>
+          )}
         </div>
       </div>
 

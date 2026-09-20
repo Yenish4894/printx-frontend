@@ -158,6 +158,9 @@ model User {
   walletSettings      WalletSettings?
   refunds             Refund[]
   payments            Payment[]
+
+  @@index([role]) // admin + stats queries all filter on role
+  @@index([role, createdAt]) // customer and staff lists: by role, newest/oldest first
 }
 
 model Address {
@@ -492,6 +495,8 @@ model Order {
   @@index([userId])
   @@index([status]) // admin order list filters by status
   @@index([placedAt]) // every order list sorts newest-first
+  @@index([status, placedAt]) // admin filters by status AND sorts by date in one query
+  @@index([userId, placedAt]) // "my orders, newest first"
 }
 
 model OrderItem {
@@ -566,6 +571,8 @@ model WalletTransaction {
 
   @@index([userId])
   @@index([userId, createdAt]) // "my ledger, newest first"
+  @@index([createdAt]) // admin finance sorts the WHOLE table newest-first
+  @@index([type]) // CREDIT / DEBIT / REFUND aggregates
 }
 
 model Refund {

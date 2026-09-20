@@ -5,6 +5,7 @@ import Link from "next/link";
 import { admin, ApiError } from "@/lib/api";
 import { inr } from "@/components/SessionProvider";
 import { formatDateTime } from "@/lib/format";
+import { statusLabel, statusBadge } from "@/lib/orderStatus";
 
 type RecentOrder = {
   id: string;
@@ -25,21 +26,6 @@ type Stats = {
   ordersByStatus: Record<string, number>;
   recentOrders: RecentOrder[];
 };
-
-const STATUS_STYLES: Record<string, string> = {
-  PLACED: "bg-orange-100 text-orange-700",
-  PAYMENT_CONFIRMED: "bg-indigo-100 text-indigo-700",
-  DESIGN_REVIEW: "bg-blue-100 text-blue-700",
-  PRINTING: "bg-secondary/10 text-secondary",
-  QUALITY_CHECK: "bg-yellow-100 text-yellow-700",
-  OUT_FOR_DELIVERY: "bg-purple-100 text-purple-700",
-  DELIVERED: "bg-emerald-100 text-emerald-700",
-  CANCELLED: "bg-red-100 text-red-700",
-};
-
-function statusLabel(s: string) {
-  return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
 
 function initials(name: string) {
   return (name || "?")
@@ -172,7 +158,7 @@ export default function AdminDashboard() {
                           </div>
                         </td>
                         <td className="py-4 text-on-surface-variant text-sm">{formatDateTime(o.placedAt)}</td>
-                        <td className="py-4"><span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tight ${STATUS_STYLES[o.status] ?? "bg-surface-container text-on-surface-variant"}`}>{statusLabel(o.status)}</span></td>
+                        <td className="py-4"><span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tight ${statusBadge(o.status)}`}>{statusLabel(o.status)}</span></td>
                         <td className="py-4 font-bold">{inr(o.totalAmount)}</td>
                       </tr>
                     ))

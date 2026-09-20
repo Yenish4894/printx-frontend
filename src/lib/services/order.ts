@@ -1,9 +1,11 @@
 import prisma from "@/lib/prisma";
 import { HttpError } from "@/lib/http";
 import { computeTotals } from "./pricing";
-import { resolveAndPrice } from "./quote";
+import { resolveAndPrice, loadPricingProducts } from "./quote";
 import { getSettings } from "./settings";
-import { CANCELLABLE_STATUSES } from "@/lib/orderStatus";
+import { firstPage, pageMeta, type PageParams } from "@/lib/pagination";
+import { CANCELLABLE_STATUSES, ORDER_PIPELINE } from "@/lib/orderStatus";
+import type { Prisma } from "@/generated/prisma/client";
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -49,17 +51,28 @@ async function placeOrderTxn(userId: string, addressId: string, notes?: string) 
     throw new HttpError(422, "Your cart is empty");
   }
 
+  // Re-pricing every line used to cost two Neon round trips per line (the
+  // product graph + the GST rate). Both are shared across the whole cart, so
+  // they are fetched once here and handed to each call.
+  const [products, { gstRate, freeShippingThreshold }] = await Promise.all([
+    loadPricingProducts(cart.items.map((i) => i.productId)),
+    getSettings(),
+  ]);
+
   const priced = await Promise.all(
     cart.items.map(async (i) => {
       try {
-        const q = await resolveAndPrice({
-          productId: i.productId,
-          quantity: i.quantity,
-          selections: (i.config as Record<string, string | string[]>) ?? {},
-          width: i.width ? Number(i.width) : undefined,
-          height: i.height ? Number(i.height) : undefined,
-          deliverySpeedId: i.deliverySpeedId ?? undefined,
-        });
+        const q = await resolveAndPrice(
+          {
+            productId: i.productId,
+            quantity: i.quantity,
+            selections: (i.config as Record<string, string | string[]>) ?? {},
+            width: i.width ? Number(i.width) : undefined,
+            height: i.height ? Number(i.height) : undefined,
+            deliverySpeedId: i.deliverySpeedId ?? undefined,
+          },
+          { product: products.get(i.productId), gstRate },
+        );
         // q.quantity — NOT i.quantity — is what was priced. They differ when the
         // product prices quantity as a spec slab, and storing the stale one
         // would file an order whose quantity and price disagree.
@@ -73,7 +86,6 @@ async function placeOrderTxn(userId: string, addressId: string, notes?: string) 
     }),
   );
 
-  const { gstRate, freeShippingThreshold } = await getSettings();
   const lines = priced.map((p) => ({
     lineSubtotal: p.bd.goodsTaxable,
     gstAmount: p.bd.goodsGst,
@@ -292,13 +304,75 @@ export async function cancelOrder(userId: string, id: string, reason?: string) {
   });
 }
 
-export async function listOrders(userId: string) {
-  const orders = await prisma.order.findMany({
-    where: { userId },
-    orderBy: { placedAt: "desc" },
-    include: { items: { select: { productName: true, quantity: true } } },
-  });
-  return orders.map((o) => ({
+/** The tabs the orders page offers, as server-side status filters. */
+export type OrderBucket = "all" | "active" | "completed" | "cancelled";
+
+const ACTIVE_STATUSES = ORDER_PIPELINE.filter((s) => s !== "DELIVERED");
+
+function bucketFilter(bucket: OrderBucket): Prisma.OrderWhereInput {
+  if (bucket === "active") return { status: { in: ACTIVE_STATUSES } };
+  if (bucket === "completed") return { status: "DELIVERED" };
+  if (bucket === "cancelled") return { status: "CANCELLED" };
+  return {};
+}
+
+export async function listOrders(
+  userId: string,
+  page: PageParams = firstPage(),
+  bucket: OrderBucket = "all",
+  q?: string,
+) {
+  const term = q?.trim();
+  // Search narrows the tab badges too, minus the tab's own filter: otherwise a
+  // search matching nothing still renders "All 1" above an empty list.
+  const searched: Prisma.OrderWhereInput = {
+    userId,
+    ...(term
+      ? {
+          OR: [
+            { orderNumber: { contains: term, mode: "insensitive" as const } },
+            { items: { some: { productName: { contains: term, mode: "insensitive" as const } } } },
+          ],
+        }
+      : {}),
+  };
+  const where: Prisma.OrderWhereInput = { ...searched, ...bucketFilter(bucket) };
+  // The dashboard KPIs used to be computed in the browser by downloading every
+  // order the customer had ever placed. They are aggregates now, so the list
+  // itself can be a page.
+  const [orders, total, byStatus, spend] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      orderBy: { placedAt: "desc" },
+      skip: page.skip,
+      take: page.take,
+      include: { items: { select: { productName: true, quantity: true } } },
+    }),
+    prisma.order.count({ where }),
+    // One groupBy powers every tab badge and the dashboard KPIs; counting them
+    // in the browser meant downloading every order the customer ever placed.
+    prisma.order.groupBy({ by: ["status"], _count: { _all: true }, where: searched }),
+    prisma.order.aggregate({
+      _sum: { totalAmount: true },
+      _count: true,
+      where: { userId, status: { not: "CANCELLED" } },
+    }),
+  ]);
+
+  const per: Record<string, number> = {};
+  let allCount = 0;
+  for (const g of byStatus) {
+    per[g.status] = g._count._all;
+    allCount += g._count._all;
+  }
+  const activeCount = ACTIVE_STATUSES.reduce((n, s) => n + (per[s] ?? 0), 0);
+  const buckets = {
+    all: allCount,
+    active: activeCount,
+    completed: per.DELIVERED ?? 0,
+    cancelled: per.CANCELLED ?? 0,
+  };
+  const rows = orders.map((o) => ({
     id: o.id,
     orderNumber: o.orderNumber,
     status: o.status,
@@ -307,6 +381,17 @@ export async function listOrders(userId: string) {
     items: o.items.map((i) => `${i.quantity} × ${i.productName}`),
     placedAt: o.placedAt,
   }));
+  return {
+    orders: rows,
+    ...pageMeta(rows.length, total, page),
+    buckets,
+    stats: {
+      totalOrders: allCount,
+      inProgress: activeCount,
+      paidOrderCount: spend._count,
+      totalSpent: round2(Number(spend._sum.totalAmount ?? 0)),
+    },
+  };
 }
 
 /** Attach / replace an uploaded artwork file on an order item. */

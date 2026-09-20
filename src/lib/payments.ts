@@ -5,15 +5,20 @@
 // Cloudflare Workers and keeps the Worker bundle small.
 import crypto from "node:crypto";
 
-const KEY_ID = process.env.RAZORPAY_KEY_ID;
-const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+// Read lazily, never at module-eval time. On Workers the env is injected into
+// process.env per request, so a const captured at import can be undefined
+// forever — and here that misreads as "Razorpay not configured", which is the
+// branch that hands out free wallet credit. auth.ts reads JWT_SECRET lazily for
+// the same reason.
+const keyId = () => process.env.RAZORPAY_KEY_ID;
+const keySecret = () => process.env.RAZORPAY_KEY_SECRET;
 const API = "https://api.razorpay.com/v1";
 
-export const isRazorpayConfigured = () => !!(KEY_ID && KEY_SECRET);
-export const razorpayKeyId = () => KEY_ID ?? null;
+export const isRazorpayConfigured = () => !!(keyId() && keySecret());
+export const razorpayKeyId = () => keyId() ?? null;
 
 function authHeader(): string {
-  return "Basic " + Buffer.from(`${KEY_ID}:${KEY_SECRET}`).toString("base64");
+  return "Basic " + Buffer.from(`${keyId()}:${keySecret()}`).toString("base64");
 }
 
 /** Create a Razorpay order. `amount` is in rupees; Razorpay wants paise. */
@@ -34,9 +39,10 @@ export async function createRazorpayOrder(amountRupees: number, receipt: string)
 
 /** Verify the checkout callback signature (HMAC-SHA256 of "order_id|payment_id"). */
 export function verifyPaymentSignature(orderId: string, paymentId: string, signature: string): boolean {
-  if (!KEY_SECRET) return false;
+  const secret = keySecret();
+  if (!secret) return false;
   const expected = crypto
-    .createHmac("sha256", KEY_SECRET)
+    .createHmac("sha256", secret)
     .update(`${orderId}|${paymentId}`)
     .digest("hex");
   // timing-safe compare

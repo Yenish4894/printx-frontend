@@ -166,13 +166,7 @@ export default function AdminCategories() {
     setBusyId(c.id);
     setError(null);
     try {
-      // Send the FULL current fields so the backend can't wipe icon/displayOrder.
-      await admin.categories.update(c.id, {
-        name: c.name,
-        icon: c.icon,
-        displayOrder: c.displayOrder,
-        isActive: !c.isActive,
-      });
+      await admin.categories.update(c.id, { isActive: !c.isActive });
       toast(!c.isActive ? "Category activated" : "Category deactivated", "success");
       await fetchCategories(false);
     } catch (e) {

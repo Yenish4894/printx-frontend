@@ -26,9 +26,22 @@ const publicStaff = (u: {
 });
 
 export async function listStaff() {
+  // Explicit select: a bare findMany pulled every column, passwordHash included,
+  // for a mapper that uses nine fields.
   const users = await prisma.user.findMany({
     where: { role: { in: ["ADMIN", "SUPER_ADMIN"] } },
     orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      ownerName: true,
+      businessName: true,
+      mobile: true,
+      email: true,
+      role: true,
+      isActive: true,
+      lastLoginAt: true,
+      createdAt: true,
+    },
   });
   const stats = {
     total: users.length,

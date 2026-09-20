@@ -116,10 +116,33 @@ export const auth = {
   me: () => get<{ user: SessionUser | null }>("/auth/me"),
 };
 
+/** Page metadata every list endpoint returns alongside its rows. */
+export interface PageMeta {
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+/** Build "?a=1&b=2", skipping undefined/empty values. */
+function qs(params: Record<string, string | number | undefined>): string {
+  const sp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== "") sp.set(k, String(v));
+  }
+  const s = sp.toString();
+  return s ? `?${s}` : "";
+}
+
+export interface PageOpts {
+  page?: number;
+  pageSize?: number;
+}
+
 // ───────────────────────── Catalog (customer) ─────────────────────────
 export const catalog = {
-  products: (category?: string) =>
-    get<{ products: unknown[] }>(`/products${category ? `?category=${category}` : ""}`),
+  products: (category?: string, opts: PageOpts = {}) =>
+    get<{ products: unknown[] } & PageMeta>(`/products${qs({ category, ...opts })}`),
   product: (slug: string) => get<{ product: Record<string, any> }>(`/products/${slug}`),
   quote: (input: {
     productId: string;
@@ -170,7 +193,14 @@ export const wallet = {
 
 // ───────────────────────── Orders ─────────────────────────
 export const orders = {
-  list: () => get<{ orders: any[] }>("/orders"),
+  list: (opts: PageOpts & { bucket?: string; q?: string } = {}) =>
+    get<
+      {
+        orders: any[];
+        buckets: { all: number; active: number; completed: number; cancelled: number };
+        stats: { totalOrders: number; inProgress: number; paidOrderCount: number; totalSpent: number };
+      } & PageMeta
+    >(`/orders${qs({ ...opts })}`),
   get: (id: string) => get<{ order: any }>(`/orders/${id}`),
   place: (addressId: string, notes?: string) =>
     post<{ order: any }>("/orders", { addressId, notes }),
@@ -225,7 +255,7 @@ export const admin = {
   },
 
   orders: {
-    list: (status?: string) => get<{ orders: any[] }>(`/admin/orders${status ? `?status=${status}` : ""}`),
+    list: (status?: string, opts: PageOpts & { q?: string } = {}) => get<{ orders: any[] } & PageMeta>(`/admin/orders${qs({ status, ...opts })}`),
     get: (id: string) => get<{ order: any }>(`/admin/orders/${id}`),
     setStatus: (id: string, status: string, note?: string) => patch<any>(`/admin/orders/${id}/status`, { status, note }),
     reviewFile: (id: string, itemId: string, action: "APPROVE" | "REJECT", reason?: string) =>
@@ -233,14 +263,14 @@ export const admin = {
   },
 
   customers: {
-    list: () => get<{ customers: any[] }>("/admin/customers"),
+    list: (opts: PageOpts & { q?: string; active?: string } = {}) => get<{ customers: any[] } & PageMeta>(`/admin/customers${qs({ ...opts })}`),
     get: (id: string) => get<{ customer: any }>(`/admin/customers/${id}`),
     setActive: (id: string, isActive: boolean) => patch<any>(`/admin/customers/${id}`, { isActive }),
     adjustWallet: (id: string, amount: number, note?: string) => post<any>(`/admin/customers/${id}/wallet`, { amount, note }),
   },
 
   refunds: {
-    list: (status?: string) => get<{ refunds: any[] }>(`/admin/refunds${status ? `?status=${status}` : ""}`),
+    list: (status?: string, opts: PageOpts = {}) => get<{ refunds: any[]; counts: Record<string, number> } & PageMeta>(`/admin/refunds${qs({ status, ...opts })}`),
     process: (id: string, action: "APPROVE" | "REJECT", note?: string) => patch<any>(`/admin/refunds/${id}`, { action, note }),
   },
 

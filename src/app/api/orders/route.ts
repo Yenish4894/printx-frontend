@@ -1,14 +1,19 @@
 import { requireUser } from "@/lib/auth";
-import { placeOrder, listOrders } from "@/lib/services/order";
+import { placeOrder, listOrders, type OrderBucket } from "@/lib/services/order";
 import { placeOrderSchema } from "@/lib/dto/order";
 import { ok, handleError } from "@/lib/http";
+import { pageParams } from "@/lib/pagination";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const user = await requireUser();
-    return ok({ orders: await listOrders(user.id) });
+    const sp = new URL(req.url).searchParams;
+    const raw = sp.get("bucket");
+    const bucket: OrderBucket =
+      raw === "active" || raw === "completed" || raw === "cancelled" ? raw : "all";
+    return ok(await listOrders(user.id, pageParams(req.url), bucket, sp.get("q") ?? undefined));
   } catch (err) {
     return handleError(err);
   }

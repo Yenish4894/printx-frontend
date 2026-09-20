@@ -4,6 +4,7 @@ import { buildComboKey } from "@/lib/services/pricing";
 import { slugify } from "@/lib/dto/admin";
 import type {
   CategoryInput,
+  UpdateCategoryInput,
   CreateProductInput,
   UpdateProductInput,
   SpecGroupInput,
@@ -76,7 +77,7 @@ async function assertNoCategoryCycle(id: string, parentId: string | null | undef
   }
 }
 
-export async function updateCategory(id: string, input: CategoryInput) {
+export async function updateCategory(id: string, input: UpdateCategoryInput) {
   await assertNoCategoryCycle(id, input.parentId);
   await prisma.category.update({
     where: { id },

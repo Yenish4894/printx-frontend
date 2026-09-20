@@ -6,16 +6,8 @@ import Link from "next/link";
 import { admin, ApiError } from "@/lib/api";
 import { inr } from "@/components/SessionProvider";
 import { useConfirm, useToast } from "@/components/ui/UIProvider";
-import { statusLabel, statusBadge, nextStatuses, REFUND_STATUS } from "@/lib/orderStatus";
-import { formatDateTime } from "@/lib/format";
-
-const FILE_STATUS_STYLES: Record<string, string> = {
-  UPLOADED: "bg-blue-100 text-blue-700",
-  APPROVED: "bg-emerald-100 text-emerald-700",
-  REJECTED: "bg-red-100 text-red-700",
-  PENDING: "bg-surface-container text-on-surface-variant",
-  MISSING: "bg-surface-container text-on-surface-variant",
-};
+import { statusLabel, statusBadge, nextStatuses, REFUND_STATUS, FILE_STATUS, fileStatusLabel } from "@/lib/orderStatus";
+import { formatDateTime, specEntries } from "@/lib/format";
 
 type Item = {
   id: string;
@@ -50,20 +42,6 @@ type Order = {
   refunds: { id: string; amount: number; status: string; reason: string | null }[];
   payment: { method: string; status: string; amount: number } | null;
 };
-
-function specEntries(spec: unknown): [string, string][] {
-  if (!spec || typeof spec !== "object") return [];
-  const out: [string, string][] = [];
-  for (const [k, v] of Object.entries(spec as Record<string, unknown>)) {
-    if (v == null) continue;
-    let val: string;
-    if (Array.isArray(v)) val = v.join(", ");
-    else if (typeof v === "object") val = JSON.stringify(v);
-    else val = String(v);
-    out.push([statusLabel(k), val]);
-  }
-  return out;
-}
 
 export default function AdminOrderDetail() {
   const params = useParams<{ id: string }>();
@@ -313,7 +291,7 @@ export default function AdminOrderDetail() {
                         <div className="flex items-center gap-3 mb-3 flex-wrap">
                           <h4 className="font-headline-md text-lg text-primary">{item.productName}</h4>
                           {item.fileStatus && (
-                            <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${FILE_STATUS_STYLES[item.fileStatus] ?? "bg-surface-container text-on-surface-variant"}`}>{statusLabel(item.fileStatus)}</span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${statusBadge(item.fileStatus ?? "UPLOAD_PENDING", FILE_STATUS)}`}>{fileStatusLabel(item.fileStatus)}</span>
                           )}
                         </div>
                         <div className="grid grid-cols-2 gap-y-2">

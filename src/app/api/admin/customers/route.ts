@@ -1,13 +1,20 @@
 import { requireAdmin } from "@/lib/auth";
 import { listCustomers } from "@/lib/services/admin/customers";
 import { ok, handleError } from "@/lib/http";
+import { pageParams } from "@/lib/pagination";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     await requireAdmin();
-    return ok({ customers: await listCustomers() });
+    const sp = new URL(req.url).searchParams;
+    const q = sp.get("q") ?? undefined;
+    // Only the two literal values filter; anything else means "no filter",
+    // rather than silently collapsing to inactive-only.
+    const active = sp.get("active");
+    const isActive = active === "true" ? true : active === "false" ? false : undefined;
+    return ok(await listCustomers(pageParams(req.url), q, isActive));
   } catch (err) {
     return handleError(err);
   }

@@ -139,8 +139,7 @@ export default function CartCheckout() {
   async function uploadFor(item: CartItem, file: File) {
     setBusy(item.id, true);
     try {
-      const res = await cartApi.uploadFile(item.id, file);
-      setCart(res.cart as Cart);
+      setCart((await cartApi.uploadFile(item.id, file)) as Cart);
       toast("Artwork uploaded", "success");
     } catch (e) {
       toast(e instanceof ApiError ? e.message : "Upload failed", "error");

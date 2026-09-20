@@ -13,7 +13,7 @@ import {
   needsArtwork,
   fileStatusLabel,
 } from "@/lib/orderStatus";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, specEntries } from "@/lib/format";
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
@@ -55,13 +55,6 @@ interface OrderDetail {
   placedAt: string;
   items: OrderItem[];
   statusHistory: { status: string; note: string | null; at: string }[];
-}
-
-function specEntries(spec: unknown): [string, string][] {
-  if (!spec || typeof spec !== "object") return [];
-  return Object.entries(spec as Record<string, unknown>)
-    .filter(([, v]) => v != null && typeof v !== "object")
-    .map(([k, v]) => [k, String(v)]);
 }
 
 export default function OrderDetails({ params }: { params: Promise<{ id: string }> }) {

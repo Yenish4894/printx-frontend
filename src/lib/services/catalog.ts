@@ -1,24 +1,45 @@
 import prisma from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
+import { firstPage, pageMeta, type PageParams } from "@/lib/pagination";
 
 const num = (d: Prisma.Decimal | null | undefined) =>
   d == null ? null : Number(d);
 
 // ── Product card (listing) ──
-export async function listProducts(categorySlug?: string) {
-  const products = await prisma.product.findMany({
-    where: {
-      isActive: true,
-      ...(categorySlug ? { category: { slug: categorySlug } } : {}),
-    },
-    include: {
-      category: { include: { parent: { select: { slug: true, name: true } } } },
-      images: { orderBy: { displayOrder: "asc" }, take: 1 },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+export async function listProducts(categorySlug?: string, page: PageParams = firstPage()) {
+  const where = {
+    isActive: true,
+    ...(categorySlug ? { category: { slug: categorySlug } } : {}),
+  };
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      skip: page.skip,
+      take: page.take,
+      // Narrow select: the card renders eight fields, so there is no reason to
+      // pull every Product and Category column across the wire.
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        description: true,
+        badges: true,
+        basePriceFrom: true,
+        category: {
+          select: {
+            slug: true,
+            name: true,
+            parent: { select: { slug: true, name: true } },
+          },
+        },
+        images: { orderBy: { displayOrder: "asc" }, take: 1, select: { url: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.product.count({ where }),
+  ]);
 
-  return products.map((p) => ({
+  const rows = products.map((p) => ({
     id: p.id,
     slug: p.slug,
     name: p.name,
@@ -34,12 +55,16 @@ export async function listProducts(categorySlug?: string) {
     priceFrom: num(p.basePriceFrom),
     image: p.images[0]?.url ?? null,
   }));
+  return { products: rows, ...pageMeta(rows.length, total, page) };
 }
 
 // ── Full product (configurator) ──
 export async function getProductBySlug(slug: string) {
-  const p = await prisma.product.findUnique({
-    where: { slug },
+  // isActive matters: the listing hides drafts and /api/pricing/quote 404s them,
+  // so without it a draft product page rendered fully to anonymous visitors and
+  // then failed on every quote.
+  const p = await prisma.product.findFirst({
+    where: { slug, isActive: true },
     include: {
       category: true,
       images: { orderBy: { displayOrder: "asc" } },

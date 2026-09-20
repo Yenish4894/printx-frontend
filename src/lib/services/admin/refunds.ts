@@ -2,20 +2,35 @@ import prisma from "@/lib/prisma";
 import { HttpError } from "@/lib/http";
 import type { RefundProcessInput } from "@/lib/dto/admin";
 import type { RefundStatus } from "@/generated/prisma/client";
+import { firstPage, pageMeta, type PageParams } from "@/lib/pagination";
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
-export async function listRefunds(status?: string) {
+export async function listRefunds(status?: string, page: PageParams = firstPage()) {
   // Validated by the route; typed here so the filter is not an `as never` cast.
-  const refunds = await prisma.refund.findMany({
-    where: status ? { status: status as RefundStatus } : {},
-    orderBy: { createdAt: "desc" },
-    include: {
-      user: { select: { businessName: true, mobile: true } },
-      order: { select: { orderNumber: true } },
-    },
-  });
-  return refunds.map((r) => ({
+  const where = status ? { status: status as RefundStatus } : {};
+  const [refunds, total, byStatus] = await Promise.all([
+    prisma.refund.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: page.skip,
+      take: page.take,
+      include: {
+        user: { select: { businessName: true, mobile: true } },
+        order: { select: { orderNumber: true } },
+      },
+    }),
+    prisma.refund.count({ where }),
+    // Tab badges used to be counted in the browser off the full list. One
+    // groupBy keeps them correct now that the list is a page.
+    prisma.refund.groupBy({ by: ["status"], _count: { _all: true } }),
+  ]);
+  const counts: Record<string, number> = { All: 0 };
+  for (const g of byStatus) {
+    counts[g.status] = g._count._all;
+    counts.All += g._count._all;
+  }
+  const rows = refunds.map((r) => ({
     id: r.id,
     orderNumber: r.order.orderNumber,
     customer: r.user.businessName,
@@ -26,6 +41,7 @@ export async function listRefunds(status?: string) {
     createdAt: r.createdAt,
     processedAt: r.processedAt,
   }));
+  return { refunds: rows, counts, ...pageMeta(rows.length, total, page) };
 }
 
 /**

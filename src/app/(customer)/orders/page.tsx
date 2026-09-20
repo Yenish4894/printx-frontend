@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { orders as ordersApi, ApiError } from "@/lib/api";
 import { inr } from "@/components/SessionProvider";
 import { statusLabel, statusBadge, statusDot } from "@/lib/orderStatus";
 import { formatDate } from "@/lib/format";
+import Pager from "@/components/ui/Pager";
 
 interface OrderSummary {
   id: string;
@@ -17,59 +18,48 @@ interface OrderSummary {
   placedAt: string;
 }
 
-const COMPLETED = new Set(["DELIVERED"]);
-const ACTIVE = new Set(["PLACED", "PAYMENT_CONFIRMED", "DESIGN_REVIEW", "PRINTING", "QUALITY_CHECK", "OUT_FOR_DELIVERY"]);
-
 export default function MyOrders() {
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"all" | "active" | "completed" | "cancelled">("all");
   const [search, setSearch] = useState("");
+  const [term, setTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ total: 0, pageSize: 50, hasMore: false });
+  const [counts, setCounts] = useState({ all: 0, active: 0, completed: 0, cancelled: 0 });
+
+  // Debounced, and a new search always starts from page 1.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setTerm(search.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const load = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await ordersApi.list();
+      // Tab, search and paging all resolve in the DB, so the tab badges and the
+      // rows agree even when the history runs past one page.
+      const res = await ordersApi.list({ page, bucket: tab, q: term || undefined });
       setOrders(res.orders as OrderSummary[]);
+      setCounts(res.buckets);
+      setMeta({ total: res.total, pageSize: res.pageSize, hasMore: res.hasMore });
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Failed to load orders");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, tab, term]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const counts = useMemo(() => {
-    let active = 0, completed = 0, cancelled = 0;
-    for (const o of orders) {
-      if (o.status === "CANCELLED") cancelled++;
-      else if (COMPLETED.has(o.status)) completed++;
-      else if (ACTIVE.has(o.status)) active++;
-    }
-    return { all: orders.length, active, completed, cancelled };
-  }, [orders]);
-
-  const filtered = useMemo(() => {
-    let list = orders;
-    if (tab === "active") list = list.filter((o) => ACTIVE.has(o.status));
-    else if (tab === "completed") list = list.filter((o) => COMPLETED.has(o.status));
-    else if (tab === "cancelled") list = list.filter((o) => o.status === "CANCELLED");
-    const q = search.trim().toLowerCase();
-    if (q) {
-      list = list.filter(
-        (o) =>
-          o.orderNumber.toLowerCase().includes(q) ||
-          statusLabel(o.status).toLowerCase().includes(q) ||
-          o.items.some((i) => i.toLowerCase().includes(q)),
-      );
-    }
-    return list;
-  }, [orders, tab, search]);
+  const filtered = orders;
 
   const tabs: { key: typeof tab; label: string; count: number }[] = [
     { key: "all", label: "All Orders", count: counts.all },
@@ -133,7 +123,7 @@ export default function MyOrders() {
             {tabs.map((t) => (
               <button
                 key={t.key}
-                onClick={() => setTab(t.key)}
+                onClick={() => { setTab(t.key); setPage(1); }}
                 className={t.key === tab
                   ? "px-6 py-4 border-b-2 border-secondary text-secondary font-bold whitespace-nowrap"
                   : "px-6 py-4 border-b-2 border-transparent text-on-surface-variant hover:text-secondary font-medium whitespace-nowrap transition-colors"}
@@ -222,6 +212,18 @@ export default function MyOrders() {
                 );
               })}
             </div>
+          )}
+
+          {!loading && !error && meta.total > meta.pageSize && (
+            <Pager
+              page={page}
+              pageSize={meta.pageSize}
+              total={meta.total}
+              hasMore={meta.hasMore}
+              onPage={setPage}
+              busy={loading}
+              label="orders"
+            />
           )}
         </div>
       </div>

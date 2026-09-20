@@ -6,6 +6,7 @@ import { inr } from "@/components/SessionProvider";
 import { useConfirm, useToast } from "@/components/ui/UIProvider";
 import { statusLabel, statusBadge, REFUND_STATUS } from "@/lib/orderStatus";
 import { formatDateTime } from "@/lib/format";
+import Pager from "@/components/ui/Pager";
 
 type Refund = {
   id: string;
@@ -29,6 +30,9 @@ export default function AdminRefunds() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<(typeof STATUS_TABS)[number]>("All");
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ total: 0, pageSize: 50, hasMore: false });
+  const [counts, setCounts] = useState<Record<string, number>>({});
   const [busyKey, setBusyKey] = useState<string | null>(null); // `${id}:${action}`
 
   // Inline reject flow
@@ -41,14 +45,16 @@ export default function AdminRefunds() {
     if (!opts?.silent) setLoading(true);
     setError(null);
     try {
-      const { refunds } = await admin.refunds.list();
-      setRefunds(refunds as Refund[]);
+      const res = await admin.refunds.list(filter === "All" ? undefined : filter, { page });
+      setRefunds(res.refunds as Refund[]);
+      setCounts(res.counts);
+      setMeta({ total: res.total, pageSize: res.pageSize, hasMore: res.hasMore });
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Failed to load refunds");
     } finally {
       if (!opts?.silent) setLoading(false);
     }
-  }, []);
+  }, [filter, page]);
 
   useEffect(() => {
     load();
@@ -118,18 +124,15 @@ export default function AdminRefunds() {
     return () => window.removeEventListener("keydown", onKey);
   }, [rejectTarget, rejectSaving]);
 
-  const counts = STATUS_TABS.reduce<Record<string, number>>((acc, t) => {
-    acc[t] = t === "All" ? refunds.length : refunds.filter((r) => r.status === t).length;
-    return acc;
-  }, {});
-
-  const visible = filter === "All" ? refunds : refunds.filter((r) => r.status === filter);
+  // Both the tab counts and the rows come from the server now: counted in the
+  // browser they would only ever reflect the page on screen.
+  const visible = refunds;
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight">Refunds</h1>
-        <p className="font-body-md text-on-surface-variant">{refunds.length} total refund requests</p>
+        <p className="font-body-md text-on-surface-variant">{counts.All ?? 0} total refund requests</p>
       </div>
 
       <div className="flex items-center gap-2 border-b border-outline-variant overflow-x-auto no-scrollbar">
@@ -138,7 +141,7 @@ export default function AdminRefunds() {
           return (
             <button
               key={label}
-              onClick={() => setFilter(label)}
+              onClick={() => { setFilter(label); setPage(1); }}
               className={`px-6 py-3 whitespace-nowrap font-button text-sm flex items-center gap-2 border-b-2 transition-colors capitalize ${active ? "border-secondary text-secondary font-bold" : "border-transparent text-on-surface-variant hover:text-secondary"}`}
             >
               {label.toLowerCase()}{" "}
@@ -214,8 +217,22 @@ export default function AdminRefunds() {
             </tbody>
           </table>
         </div>
-        <div className="px-6 py-4 bg-surface-container-lowest border-t border-outline-variant flex items-center justify-between">
-          <p className="text-label-caps text-on-surface-variant">Showing {visible.length} of {refunds.length} results</p>
+        <div className="px-6 py-4 bg-surface-container-lowest border-t border-outline-variant">
+          {meta.total > meta.pageSize ? (
+            <Pager
+              page={page}
+              pageSize={meta.pageSize}
+              total={meta.total}
+              hasMore={meta.hasMore}
+              onPage={setPage}
+              busy={loading}
+              label="refunds"
+            />
+          ) : (
+            <p className="text-label-caps text-on-surface-variant">
+              Showing {visible.length} of {meta.total} results
+            </p>
+          )}
         </div>
       </div>
 
