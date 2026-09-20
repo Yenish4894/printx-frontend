@@ -138,7 +138,7 @@ function ProductPicker() {
               className="block bg-surface-container-lowest rounded-xl premium-shadow border border-outline-variant/30 p-5 hover:border-secondary-container transition-colors"
             >
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-bold text-on-surface">{p.name}</h3>
+                <h2 className="font-bold text-on-surface">{p.name}</h2>
                 <span aria-hidden="true" className="material-symbols-outlined text-secondary">chevron_right</span>
               </div>
               <p className="text-xs text-on-surface-variant">{p.category}</p>

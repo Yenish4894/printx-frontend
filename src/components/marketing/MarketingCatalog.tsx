@@ -56,7 +56,7 @@ export default function MarketingCatalog() {
           </div>
           <div className="p-6 flex flex-col flex-1">
             <span className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">{p.category.name}</span>
-            <h4 className="font-headline-md text-[20px] text-primary mb-2">{p.name}</h4>
+            <h3 className="font-headline-md text-[20px] text-primary mb-2">{p.name}</h3>
             <p className="text-on-surface-variant text-sm mb-5 line-clamp-2 flex-1">{p.description}</p>
             <span className="inline-flex items-center gap-1 font-button text-sm text-secondary group-hover:gap-2 transition-all">
               Configure &amp; get live pricing

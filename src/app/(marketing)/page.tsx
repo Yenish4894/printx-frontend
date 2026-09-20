@@ -69,7 +69,7 @@ export default function LandingPage() {
           <div id="pricing" className="relative scroll-mt-24">
             <div className="bg-white rounded-xl p-8 shadow-2xl relative">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="font-headline-md text-headline-md text-primary">Example quote</h3>
+                <h2 className="font-headline-md text-headline-md text-primary">Example quote</h2>
                 <span className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-full">Illustrative</span>
               </div>
               <div className="space-y-4">
@@ -194,7 +194,7 @@ export default function LandingPage() {
             </p>
           </div>
           <div>
-            <h4 className="font-button text-white mb-5">Explore</h4>
+            <h2 className="font-button text-white mb-5">Explore</h2>
             <ul className="space-y-3 text-on-primary-container text-sm">
               <li><Link href="/products" className="hover:text-white transition-colors">Products</Link></li>
               <li><Link href="/login" className="hover:text-white transition-colors">Sign in</Link></li>
@@ -202,7 +202,7 @@ export default function LandingPage() {
             </ul>
           </div>
           <div>
-            <h4 className="font-button text-white mb-5">Contact</h4>
+            <h2 className="font-button text-white mb-5">Contact</h2>
             <ul className="space-y-3 text-on-primary-container text-sm">
               <li><a href={`tel:${PHONE.replace(/\s/g, "")}`} className="flex items-center gap-2 hover:text-white transition-colors"><span aria-hidden="true" className="material-symbols-outlined text-[18px]">call</span>{PHONE}</a></li>
               <li><a href={`mailto:${EMAIL}`} className="flex items-center gap-2 hover:text-white transition-colors"><span aria-hidden="true" className="material-symbols-outlined text-[18px]">mail</span>{EMAIL}</a></li>

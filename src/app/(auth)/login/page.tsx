@@ -96,7 +96,7 @@ function LoginForm() {
             {features.map(([icon, title, desc]) => (
               <div key={title} className="bg-white/5 border border-white/10 p-6 rounded-xl backdrop-blur-sm hover:bg-white/10 transition-colors cursor-default group">
                 <span aria-hidden="true" className="material-symbols-outlined text-secondary-container mb-3 block group-hover:scale-110 transition-transform">{icon}</span>
-                <h3 className="font-button text-body-md text-white mb-1">{title}</h3>
+                <h2 className="font-button text-body-md text-white mb-1">{title}</h2>
                 <p className="text-on-primary-container text-label-caps font-normal">{desc}</p>
               </div>
             ))}
