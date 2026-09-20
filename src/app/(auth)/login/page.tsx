@@ -81,11 +81,13 @@ function LoginForm() {
           <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-secondary-container font-button text-label-caps mb-8">
             ONLINE PRINTING · PAN-INDIA DELIVERY
           </span>
-          <h2 className="font-display-lg text-display-lg mb-6">
+          {/* The page's top-level heading. It was an h2, which left the login
+              page with no h1 at all and started its outline at level 2. */}
+          <h1 className="font-display-lg text-display-lg mb-6">
             <span className="highlight-bar">Print Smarter.</span>
             <br />
             <span className="highlight-bar">Deliver Faster.</span>
-          </h2>
+          </h1>
           <p className="font-body-lg text-on-primary-container max-w-lg mb-12">
             Businesses across India trust Bhagini Graphics for high-quality CMYK printing, stickers, and packaging.
           </p>

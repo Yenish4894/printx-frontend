@@ -41,7 +41,7 @@ export default function AdminLogin() {
         <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-primary-fixed-dim rounded-full blur-[120px]"></div>
       </div>
 
-      <div className="relative z-10 w-full max-w-[440px]">
+      <div className="relative z-10 w-full max-w-110">
         <div className="flex flex-col items-center mb-10">
           <div className="flex items-center gap-3 mb-2">
             <Link href="/" className="inline-flex" aria-label="Bhagini Graphics — home">
@@ -53,7 +53,7 @@ export default function AdminLogin() {
 
         <div className="bg-surface-container-lowest rounded-lg shadow-2xl p-10 border border-white/10">
           <div className="text-center mb-10">
-            <h2 className="font-headline-md text-headline-md text-on-primary-fixed mb-2">Admin Portal</h2>
+            <h1 className="font-headline-md text-headline-md text-on-primary-fixed mb-2">Admin Portal</h1>
             <p className="text-on-surface-variant font-label-caps uppercase tracking-widest text-[10px]">Authorized Personnel Only</p>
           </div>
           <form className="space-y-6" onSubmit={onSubmit}>

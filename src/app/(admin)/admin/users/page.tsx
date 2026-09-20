@@ -209,14 +209,16 @@ export default function AdminUsers() {
       <div className="bg-primary-container rounded-xl p-4 flex items-center gap-4">
         <div className="bg-secondary/10 p-2 rounded-full"><span className="material-symbols-outlined text-secondary" style={fill1}>security</span></div>
         <div className="flex-1">
-          <h3 className="font-label-caps text-label-caps text-secondary uppercase">{isSuper ? "Super Admin Console" : "Admin View (read-only)"}</h3>
+          {/* A banner label, not a section heading. As an h3 it appeared before
+              the page's h1 and broke the heading outline. */}
+          <p className="font-label-caps text-label-caps text-secondary uppercase">{isSuper ? "Super Admin Console" : "Admin View (read-only)"}</p>
           <p className="font-body-md text-on-primary-container text-sm">{isSuper ? "You can invite admins, change roles, and revoke access." : "Only super-admins can invite or modify admin accounts."}</p>
         </div>
       </div>
 
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h2 className="font-headline-lg text-headline-lg text-primary">Users &amp; Roles</h2>
+          <h1 className="font-headline-lg text-headline-lg text-primary">Users &amp; Roles</h1>
           <p className="font-body-md text-on-surface-variant mt-1">Manage administrative access and audit account activity.</p>
         </div>
         {isSuper && (

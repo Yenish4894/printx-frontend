@@ -219,7 +219,7 @@ export default function AdminCategories() {
             <span className="material-symbols-outlined text-xs">chevron_right</span>
             <span className="text-secondary font-bold">Categories</span>
           </nav>
-          <h2 className="font-headline-lg text-headline-lg text-primary">Categories</h2>
+          <h1 className="font-headline-lg text-headline-lg text-primary">Categories</h1>
         </div>
         <button onClick={() => { setModalOpen(true); setModalError(null); }} className="primary-accent-gradient text-white px-6 py-3 rounded-xl font-button shadow-lg shadow-secondary-container/20 flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-transform">
           <span className="material-symbols-outlined">add</span><span>Add Category</span>

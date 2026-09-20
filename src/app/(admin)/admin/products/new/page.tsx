@@ -127,7 +127,7 @@ export default function NewProduct() {
             <span className="material-symbols-outlined text-[14px]">chevron_right</span>
             <span className="text-on-surface">New Product</span>
           </nav>
-          <h2 className="font-headline-lg text-headline-lg text-on-surface">Create Product</h2>
+          <h1 className="font-headline-lg text-headline-lg text-on-surface">Create Product</h1>
           <p className="text-body-md text-on-surface-variant">Set the primary details, then configure specs and pricing on the next step.</p>
         </div>
       </div>
