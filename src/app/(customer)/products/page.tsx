@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { catalog, ApiError } from "@/lib/api";
+import Button from "@/components/ui/Button";
+import { EmptyState, ErrorState } from "@/components/ui/States";
 import { useSession, inr } from "@/components/SessionProvider";
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
@@ -20,7 +22,7 @@ interface ProductCardData {
 
 function ProductCard({ p }: { p: ProductCardData }) {
   return (
-    <Link href={`/products/${p.slug}`} className="bento-card group flex flex-col bg-surface border border-outline-variant rounded-3xl overflow-hidden shadow-sm hover:shadow-xl">
+    <Link href={`/products/${p.slug}`} className="bento-card group flex flex-col bg-surface border border-outline-variant rounded-2xl overflow-hidden shadow-sm hover:shadow-xl">
       <div className="aspect-[4/3] bg-surface-container relative overflow-hidden flex items-center justify-center">
         {p.image ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -193,30 +195,30 @@ export default function ProductsListing() {
       {/* Grid */}
       <main className="max-w-container-max mx-auto px-gutter py-12">
         {error ? (
-          <div className="py-20 text-center" role="alert">
-            <span className="material-symbols-outlined text-5xl text-error/70 mb-3" aria-hidden="true">error</span>
-            <p className="text-on-surface font-bold mb-1">Couldn&apos;t load the catalogue</p>
-            <p className="text-on-surface-variant text-sm mb-5">{error}</p>
-            <button onClick={load} className="primary-accent-gradient text-white px-6 py-2.5 rounded-lg font-button inline-flex items-center gap-2">
-              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">refresh</span> Try again
-            </button>
-          </div>
+          <ErrorState title="Could not load the catalogue" message={error} onRetry={load} />
         ) : !products ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-gutter" aria-busy="true">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="h-80 rounded-3xl border border-outline-variant bg-surface-container animate-pulse" />
+              <div key={i} className="h-80 rounded-2xl border border-outline-variant bg-surface-container animate-pulse" />
             ))}
           </div>
         ) : products.length === 0 ? (
-          <div className="py-24 text-center text-on-surface-variant">
-            <span className="material-symbols-outlined text-5xl mb-4" aria-hidden="true">inventory_2</span>
-            <p>{category ? "No products in this category yet." : "No products available yet."}</p>
-            {category && (
-              <button onClick={() => setCategory(undefined)} className="mt-4 text-secondary font-button hover:underline">
-                View all products
-              </button>
-            )}
-          </div>
+          <EmptyState
+            icon="inventory_2"
+            title={category ? "Nothing in this category yet" : "No products available yet"}
+            description={
+              category
+                ? "This category has no published products right now."
+                : "The catalogue is being set up. Check back shortly."
+            }
+            action={
+              category ? (
+                <Button variant="secondary" onClick={() => setCategory(undefined)} icon="grid_view">
+                  View all products
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-gutter">
             {products.map((p) => (

@@ -6,6 +6,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { cart as cartApi, addresses as addrApi, orders as ordersApi, ApiError } from "@/lib/api";
 import { useSession, inr } from "@/components/SessionProvider";
 import { useConfirm, useToast } from "@/components/ui/UIProvider";
+import Button, { ButtonLink } from "@/components/ui/Button";
+import { EmptyState, LoadingState } from "@/components/ui/States";
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
@@ -209,19 +211,22 @@ export default function CartCheckout() {
 
   if (!cart) {
     return (
-      <main className="max-w-container-max mx-auto px-margin-desktop py-24 text-center text-on-surface-variant">
-        <span aria-hidden="true" className="material-symbols-outlined animate-spin text-4xl">progress_activity</span>
+      <main className="max-w-container-max mx-auto px-margin-desktop">
+        <LoadingState label="Loading your cart" />
       </main>
     );
   }
 
   if (cart.items.length === 0) {
     return (
-      <main className="max-w-container-max mx-auto px-margin-desktop py-24 text-center">
-        <span aria-hidden="true" className="material-symbols-outlined text-6xl text-on-surface-variant/40 mb-4">shopping_cart</span>
-        <h1 className="font-headline-lg text-headline-lg mb-2">Your cart is empty</h1>
-        <p className="text-on-surface-variant mb-8">Browse the catalog and configure your print job.</p>
-        <Link href="/products" className="primary-accent-gradient text-white px-8 py-3 rounded-lg font-button">Browse Products</Link>
+      <main className="max-w-container-max mx-auto px-margin-desktop">
+        <EmptyState
+          titleAs="h1"
+          icon="shopping_cart"
+          title="Your cart is empty"
+          description="Browse the catalogue, configure a job and see the exact GST-inclusive price before you add it."
+          action={<ButtonLink href="/products" icon="storefront">Browse products</ButtonLink>}
+        />
       </main>
     );
   }
@@ -309,7 +314,7 @@ export default function CartCheckout() {
                           <span>{it.fileName} · Ready for print</span>
                         </div>
                       ) : (
-                        <div className="flex items-center text-on-tertiary-container font-medium text-body-md">
+                        <div className="flex items-center text-on-surface-variant font-medium text-body-md">
                           <span aria-hidden="true" className="material-symbols-outlined mr-2 text-[20px] text-on-secondary-container">warning</span>
                           <span>Design file not uploaded</span>
                         </div>
@@ -321,7 +326,7 @@ export default function CartCheckout() {
                         accept=".pdf,.ai,.psd,.png,.jpg,.jpeg"
                         onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFor(it, f); }}
                       />
-                      <button onClick={() => fileInputs.current[it.id]?.click()} disabled={busyItems.has(it.id)} className={`font-button text-button hover:underline disabled:opacity-50 disabled:no-underline flex items-center gap-1.5 ${ready ? "text-primary" : "text-secondary-container"}`}>
+                      <button onClick={() => fileInputs.current[it.id]?.click()} disabled={busyItems.has(it.id)} className={`font-button text-button hover:underline disabled:opacity-50 disabled:no-underline flex items-center gap-1.5 ${ready ? "text-primary" : "text-secondary"}`}>
                         {busyItems.has(it.id) && <span className="material-symbols-outlined text-[16px] animate-spin" aria-hidden="true">progress_activity</span>}
                         {busyItems.has(it.id) ? "Uploading…" : ready ? "Change" : "Upload Now"}
                       </button>
@@ -368,7 +373,7 @@ export default function CartCheckout() {
                     />
                   ))}
                   <div className="md:col-span-2 flex gap-2">
-                    <button type="submit" disabled={savingAddr} className="primary-accent-gradient text-white px-5 py-2 rounded-lg font-button disabled:opacity-50">{savingAddr ? "Saving…" : "Save Address"}</button>
+                    <Button type="submit" size="sm" loading={savingAddr}>Save address</Button>
                     <button type="button" onClick={() => setShowAddrForm(false)} className="px-5 py-2 rounded-lg border border-outline-variant">Cancel</button>
                   </div>
                 </form>
@@ -486,10 +491,12 @@ export default function CartCheckout() {
           <div className="text-center md:text-left">
             <p className="font-headline-md text-headline-md text-on-surface">Total to Pay {inr(total)}</p>
           </div>
-          <button
+          <Button
             onClick={placeOrder}
-            disabled={placing || !enough || !selectedAddr}
-            className="primary-accent-gradient text-white px-10 py-4 rounded-lg font-button text-button shadow-lg shadow-secondary/30 active:scale-95 transition-all w-full md:w-auto text-center disabled:opacity-50 disabled:pointer-events-none"
+            size="lg"
+            loading={placing}
+            disabled={!enough || !selectedAddr}
+            className="w-full md:w-auto"
           >
             {placing
               ? "Placing order…"
@@ -498,7 +505,7 @@ export default function CartCheckout() {
                 : !enough
                   ? "Insufficient Wallet Balance"
                   : `Place Order & Pay ${inr(total)}`}
-          </button>
+          </Button>
         </div>
       </div>
       <div className="h-40"></div>

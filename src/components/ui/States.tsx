@@ -18,6 +18,7 @@ export function EmptyState({
   description,
   action,
   compact,
+  titleAs: TitleTag = "p",
 }: {
   icon: string;
   title: string;
@@ -25,6 +26,8 @@ export function EmptyState({
   action?: ReactNode;
   /** For table cells and side panels: smaller icon, tighter padding. */
   compact?: boolean;
+  /** When the empty state IS the page, its title is the page heading. */
+  titleAs?: "h1" | "h2" | "p";
 }) {
   return (
     <div className={`flex flex-col items-center justify-center text-center ${compact ? "py-10 px-4" : "py-20 px-6"}`}>
@@ -39,7 +42,7 @@ export function EmptyState({
           {icon}
         </span>
       </span>
-      <p className={`font-headline-md text-on-surface ${compact ? "text-base" : "text-headline-md"}`}>{title}</p>
+      <TitleTag className={`font-headline-md text-on-surface ${compact ? "text-base" : "text-headline-md"}`}>{title}</TitleTag>
       {description && (
         <p className="text-body-md text-on-surface-variant mt-2 max-w-sm">{description}</p>
       )}

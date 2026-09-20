@@ -7,6 +7,8 @@ import { inr } from "@/components/SessionProvider";
 import { statusLabel, statusBadge, statusDot } from "@/lib/orderStatus";
 import { formatDate } from "@/lib/format";
 import Pager from "@/components/ui/Pager";
+import { ButtonLink } from "@/components/ui/Button";
+import { EmptyState, LoadingState, ErrorState } from "@/components/ui/States";
 
 interface OrderSummary {
   id: string;
@@ -135,34 +137,33 @@ export default function MyOrders() {
 
           {/* States */}
           {loading && (
-            <div className="bg-white rounded-xl shadow-sm p-16 flex flex-col items-center justify-center text-center">
-              <span className="material-symbols-outlined text-secondary text-4xl animate-spin mb-3" aria-hidden="true">progress_activity</span>
-              <p className="text-on-surface-variant">Loading your orders…</p>
+            <div className="bg-white rounded-xl shadow-sm">
+              <LoadingState label="Loading your orders" />
             </div>
           )}
 
           {!loading && error && (
-            <div role="alert" className="bg-white rounded-xl shadow-sm p-16 flex flex-col items-center justify-center text-center border-l-4 border-error">
-              <span className="material-symbols-outlined text-error text-4xl mb-3" aria-hidden="true">error</span>
-              <p className="font-bold text-primary mb-1">Could not load orders</p>
-              <p className="text-on-surface-variant mb-6">{error}</p>
-              <button
-                onClick={load}
-                className="px-8 py-3 premium-gradient text-white rounded-lg font-button shadow-md active:scale-[0.98] transition-transform"
-              >
-                Retry
-              </button>
+            <div className="bg-white rounded-xl shadow-sm">
+              <ErrorState title="Could not load orders" message={error} onRetry={load} />
             </div>
           )}
 
           {!loading && !error && filtered.length === 0 && (
-            <div className="bg-white rounded-xl shadow-sm p-16 flex flex-col items-center justify-center text-center">
-              <span className="material-symbols-outlined text-outline text-5xl mb-3" aria-hidden="true">receipt_long</span>
-              <p className="font-headline-md text-primary mb-1">No orders here yet</p>
-              <p className="text-on-surface-variant mb-6">
-                {orders.length === 0 ? "You haven't placed any orders yet." : "No orders match this filter."}
-              </p>
-              <Link href="/products" className="px-8 py-3 premium-gradient text-white rounded-lg font-button shadow-md">Browse Products</Link>
+            <div className="bg-white rounded-xl shadow-sm">
+              <EmptyState
+                icon="receipt_long"
+                title={orders.length === 0 ? "No orders yet" : "Nothing matches this filter"}
+                description={
+                  orders.length === 0
+                    ? "Once you place an order it will appear here with its live production status."
+                    : "Try another tab, or clear the search."
+                }
+                action={
+                  orders.length === 0 ? (
+                    <ButtonLink href="/products" icon="storefront">Browse products</ButtonLink>
+                  ) : undefined
+                }
+              />
             </div>
           )}
 
@@ -204,7 +205,7 @@ export default function MyOrders() {
                       <div className="flex flex-col sm:flex-row gap-3">
                         <Link href={`/orders/${o.id}`} className="flex-1 py-3 border border-outline-variant rounded-lg font-button hover:bg-surface-dim transition-colors text-center">View Details</Link>
                         {!isCancelled && (
-                          <Link href={`/orders/${o.id}`} className="flex-1 py-3 premium-gradient text-white rounded-lg font-button shadow-md active:scale-[0.98] transition-transform text-center">Track Order</Link>
+                          <ButtonLink href={`/orders/${o.id}`} className="flex-1" icon="local_shipping">Track order</ButtonLink>
                         )}
                       </div>
                     </div>

@@ -6,6 +6,8 @@ import { orders as ordersApi, ApiError } from "@/lib/api";
 import { useSession, inr } from "@/components/SessionProvider";
 import { formatDateTime } from "@/lib/format";
 import { statusLabel, statusBadge } from "@/lib/orderStatus";
+import { ButtonLink } from "@/components/ui/Button";
+import { EmptyState, LoadingState, ErrorState } from "@/components/ui/States";
 
 interface OrderRow {
   id: string;
@@ -70,12 +72,18 @@ export default function CustomerDashboard() {
           </div>
         </div>
         <div className="flex gap-4 z-10 w-full md:w-auto">
-          <Link href="/products" className="primary-accent-gradient text-on-primary px-6 py-3 rounded-lg font-button flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 flex-1 md:flex-none">
-            <span aria-hidden="true" className="material-symbols-outlined">add_circle</span> New Print Order
-          </Link>
-          <Link href="/wallet" className="border-2 border-secondary-fixed-dim text-secondary-fixed-dim px-6 py-3 rounded-lg font-button hover:bg-white/5 transition-all active:scale-95 flex-1 md:flex-none text-center">
-            Top Up Wallet
-          </Link>
+          <ButtonLink href="/products" icon="add_circle" className="flex-1 md:flex-none">
+            New print order
+          </ButtonLink>
+          {/* On the dark banner the secondary variant's light border would
+              disappear, so it keeps the banner-specific outline. */}
+          <ButtonLink
+            href="/wallet"
+            variant="ghost"
+            className="flex-1 md:flex-none border border-secondary-fixed-dim text-secondary-fixed-dim hover:bg-white/10"
+          >
+            Top up wallet
+          </ButtonLink>
         </div>
         <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-secondary/10 rounded-full blur-3xl"></div>
       </section>
@@ -150,16 +158,17 @@ export default function CustomerDashboard() {
         </div>
         <div className="bg-white rounded-xl border border-outline-variant/10 divide-y divide-outline-variant/10 overflow-hidden shadow-sm">
           {loading ? (
-            <div className="p-8 text-center text-sm text-on-surface-variant">Loading recent orders…</div>
+            <LoadingState label="Loading recent orders" compact />
           ) : error ? (
-            <div className="p-8 text-center text-sm text-on-surface-variant">Couldn&apos;t load your recent orders.</div>
+            <ErrorState title="Could not load your orders" message={error} onRetry={loadOrders} compact />
           ) : recent.length === 0 ? (
-            <div className="p-10 text-center space-y-3">
-              <span aria-hidden="true" className="material-symbols-outlined text-4xl text-on-surface-variant/40">receipt_long</span>
-              <p className="text-sm font-bold text-on-surface">No orders yet</p>
-              <p className="text-xs text-on-surface-variant">Place your first print order to see it here.</p>
-              <Link href="/products" className="inline-block mt-2 text-secondary font-bold text-xs hover:underline">Browse Products →</Link>
-            </div>
+            <EmptyState
+              compact
+              icon="receipt_long"
+              title="No orders yet"
+              description="Place your first print order and it will appear here."
+              action={<ButtonLink href="/products" size="sm" icon="storefront">Browse products</ButtonLink>}
+            />
           ) : (
             recent.map((o) => (
               <Link

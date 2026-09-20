@@ -5,6 +5,7 @@ import { wallet as walletApi, ApiError } from "@/lib/api";
 import { useSession, inr } from "@/components/SessionProvider";
 import { useToast } from "@/components/ui/UIProvider";
 import { formatDateTime } from "@/lib/format";
+import { EmptyState, LoadingState, ErrorState } from "@/components/ui/States";
 import { isRazorpayEnabled, openRazorpayCheckout } from "@/lib/razorpayCheckout";
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
@@ -267,26 +268,16 @@ export default function WalletManagement() {
             </div>
             <div className="overflow-x-auto">
               {txnLoading ? (
-                <div className="p-10 text-center text-sm text-on-surface-variant">Loading transactions…</div>
+                <LoadingState label="Loading transactions" compact />
               ) : txnError ? (
-                <div className="p-6 text-center">
-                  <div role="alert" className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm font-bold inline-flex flex-col items-center gap-3">
-                    <span>{txnError}</span>
-                    <button
-                      type="button"
-                      onClick={loadTransactions}
-                      className="px-5 py-2 bg-red-600 text-white rounded-lg font-bold uppercase text-xs tracking-wide"
-                    >
-                      Retry
-                    </button>
-                  </div>
-                </div>
+                <ErrorState title="Could not load transactions" message={txnError} onRetry={loadTransactions} compact />
               ) : filtered.length === 0 ? (
-                <div className="p-12 text-center space-y-3">
-                  <span className="material-symbols-outlined text-4xl text-on-surface-variant/40" aria-hidden="true">receipt_long</span>
-                  <p className="text-sm font-bold text-on-surface">No transactions yet</p>
-                  <p className="text-xs text-on-surface-variant">Top up your wallet to get started.</p>
-                </div>
+                <EmptyState
+                  compact
+                  icon="receipt_long"
+                  title="No transactions yet"
+                  description="Top up your wallet and every credit and debit will be listed here."
+                />
               ) : (
                 <table className="w-full">
                   <thead className="bg-surface-container-low">
