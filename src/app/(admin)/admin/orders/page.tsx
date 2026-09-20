@@ -7,6 +7,7 @@ import { inr } from "@/components/SessionProvider";
 import { statusLabel, statusBadge, statusDot } from "@/lib/orderStatus";
 import { formatDateTime } from "@/lib/format";
 import Pager from "@/components/ui/Pager";
+import { EmptyState, LoadingState, ErrorState, TableState } from "@/components/ui/States";
 
 type OrderRow = {
   id: string;
@@ -124,15 +125,22 @@ export default function AdminOrders() {
             </thead>
             <tbody className="divide-y divide-outline-variant/20">
               {loading ? (
-                <tr><td colSpan={7} className="px-6 py-16 text-center text-on-surface-variant"><span className="material-symbols-outlined animate-spin align-middle mr-2" aria-hidden="true">progress_activity</span> Loading orders...</td></tr>
+                <TableState colSpan={7}><LoadingState label="Loading orders" compact /></TableState>
               ) : error ? (
-                <tr><td colSpan={7} className="px-6 py-16 text-center" role="alert">
-                  <span className="material-symbols-outlined align-middle mr-2 text-error" aria-hidden="true">error</span>
-                  <span className="text-error">{error}</span>
-                  <button onClick={load} className="ml-3 underline font-bold text-secondary">Retry</button>
-                </td></tr>
+                <TableState colSpan={7}><ErrorState title="Could not load orders" message={error} onRetry={load} compact /></TableState>
               ) : visible.length === 0 ? (
-                <tr><td colSpan={7} className="px-6 py-16 text-center text-on-surface-variant italic">No orders found.</td></tr>
+                <TableState colSpan={7}>
+                  <EmptyState
+                    compact
+                    icon="receipt_long"
+                    title={activeFilter || term ? "Nothing matches this view" : "No orders yet"}
+                    description={
+                      activeFilter || term
+                        ? "Try a different status, or clear the search."
+                        : "Orders placed by customers will appear here."
+                    }
+                  />
+                </TableState>
               ) : (
                 visible.map((r) => {
                   return (

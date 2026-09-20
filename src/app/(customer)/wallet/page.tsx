@@ -29,8 +29,8 @@ interface Txn {
 }
 
 const txnStyle = {
-  CREDIT: { icon: "add_circle", iconBg: "bg-emerald-100 text-emerald-600", typeBg: "bg-emerald-100 text-emerald-700", label: "Credit", sign: "+", amountColor: "text-emerald-600" },
-  DEBIT: { icon: "shopping_cart", iconBg: "bg-red-100 text-red-600", typeBg: "bg-red-100 text-red-700", label: "Debit", sign: "-", amountColor: "text-red-600" },
+  CREDIT: { icon: "add_circle", iconBg: "bg-emerald-100 text-success", typeBg: "bg-emerald-100 text-emerald-700", label: "Credit", sign: "+", amountColor: "text-success" },
+  DEBIT: { icon: "shopping_cart", iconBg: "bg-red-100 text-error", typeBg: "bg-red-100 text-red-700", label: "Debit", sign: "-", amountColor: "text-error" },
   REFUND: { icon: "replay", iconBg: "bg-blue-100 text-blue-600", typeBg: "bg-blue-100 text-blue-700", label: "Refund", sign: "+", amountColor: "text-blue-600" },
 } as const;
 
@@ -230,7 +230,7 @@ export default function WalletManagement() {
                 {validAmount && (
                   <div className="w-full md:w-1/2 bg-surface-container p-4 rounded-xl border border-dashed border-outline-variant">
                     <p className="text-label-caps text-on-surface-variant uppercase mb-2">After Top-Up Preview</p>
-                    <div className="flex justify-between items-center"><span className="text-body-md text-on-surface-variant">New Balance</span><span className="text-headline-md font-bold text-emerald-600">{inr(previewBalance)}</span></div>
+                    <div className="flex justify-between items-center"><span className="text-body-md text-on-surface-variant">New Balance</span><span className="text-headline-md font-bold text-success">{inr(previewBalance)}</span></div>
                   </div>
                 )}
               </div>

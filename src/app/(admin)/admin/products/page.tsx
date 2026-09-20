@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { admin, ApiError } from "@/lib/api";
+import { ButtonLink } from "@/components/ui/Button";
+import { EmptyState, LoadingState, TableState } from "@/components/ui/States";
 import { useConfirm, useToast } from "@/components/ui/UIProvider";
 
 interface AdminProduct {
@@ -137,18 +139,18 @@ export default function AdminProducts() {
             </thead>
             <tbody className="divide-y divide-surface-container-highest">
               {loading && (
-                <tr><td colSpan={8} className="py-16 text-center text-on-surface-variant font-body-md">Loading products…</td></tr>
+                <TableState colSpan={8}><LoadingState label="Loading products" compact /></TableState>
               )}
               {!loading && products.length === 0 && !error && (
-                <tr>
-                  <td colSpan={8} className="py-16 text-center">
-                    <div className="flex flex-col items-center gap-3 text-on-surface-variant">
-                      <span aria-hidden="true" className="material-symbols-outlined text-[48px] opacity-50">inventory_2</span>
-                      <p className="font-body-md">No products yet.</p>
-                      <Link href="/admin/products/new" className="text-secondary font-button hover:underline">Create your first product</Link>
-                    </div>
-                  </td>
-                </tr>
+                <TableState colSpan={8}>
+                  <EmptyState
+                    compact
+                    icon="inventory_2"
+                    title="No products yet"
+                    description="Create a product, then configure its specs and pricing."
+                    action={<ButtonLink href="/admin/products/new" size="sm" icon="add">Create product</ButtonLink>}
+                  />
+                </TableState>
               )}
               {!loading && products.map((p) => (
                 <tr key={p.id} className="hover:bg-surface-container-low transition-colors group">

@@ -334,7 +334,7 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
                 <div className="flex justify-between text-body-md"><span className="text-on-surface-variant">Subtotal</span><span>{inr(order.subtotal)}</span></div>
                 <div className="flex justify-between text-body-md">
                   <span className="text-on-surface-variant">Shipping</span>
-                  {order.deliveryCharge > 0 ? <span>{inr(order.deliveryCharge)}</span> : <span className="text-green-600 font-bold uppercase text-xs">FREE</span>}
+                  {order.deliveryCharge > 0 ? <span>{inr(order.deliveryCharge)}</span> : <span className="text-success font-bold uppercase text-xs">FREE</span>}
                 </div>
                 <div className="flex justify-between text-body-md"><span className="text-on-surface-variant">GST (18%)</span><span>{inr(order.gstAmount)}</span></div>
               </div>

@@ -196,7 +196,7 @@ function OrderConfirmedInner() {
                 <div className="flex justify-between text-on-surface-variant"><span>Item Subtotal</span><span>{inr(order.subtotal)}</span></div>
                 <div className="flex justify-between text-on-surface-variant">
                   <span>Shipping</span>
-                  {order.deliveryCharge > 0 ? <span>{inr(order.deliveryCharge)}</span> : <span className="text-green-600 font-bold">FREE</span>}
+                  {order.deliveryCharge > 0 ? <span>{inr(order.deliveryCharge)}</span> : <span className="text-success font-bold">FREE</span>}
                 </div>
                 <div className="flex justify-between text-on-surface-variant"><span>GST (18%)</span><span>{inr(order.gstAmount)}</span></div>
                 <div className="pt-4 border-t-2 border-primary flex justify-between items-center">

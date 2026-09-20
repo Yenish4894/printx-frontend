@@ -8,6 +8,7 @@ import Switch from "@/components/ui/Switch";
 import { statusLabel, statusBadge } from "@/lib/orderStatus";
 import { formatDateTime } from "@/lib/format";
 import Pager from "@/components/ui/Pager";
+import { EmptyState, LoadingState, TableState } from "@/components/ui/States";
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
@@ -257,9 +258,16 @@ export default function AdminCustomers() {
             </thead>
             <tbody className="divide-y divide-surface-container">
               {loading ? (
-                <tr><td colSpan={7} className="px-6 py-16 text-center text-on-surface-variant">Loading customers…</td></tr>
+                <TableState colSpan={7}><LoadingState label="Loading customers" compact /></TableState>
               ) : visible.length === 0 ? (
-                <tr><td colSpan={7} className="px-6 py-16 text-center text-on-surface-variant">No customers found.</td></tr>
+                <TableState colSpan={7}>
+                  <EmptyState
+                    compact
+                    icon="group"
+                    title={statusFilter === "All" ? "No customers yet" : `No ${statusFilter.toLowerCase()} customers`}
+                    description={statusFilter === "All" ? "Businesses that register will appear here." : "Try another filter."}
+                  />
+                </TableState>
               ) : (
                 visible.map((c) => (
                   <tr key={c.id} className="hover:bg-surface-container-low transition-colors">
@@ -347,7 +355,7 @@ export default function AdminCustomers() {
                       {detail.gstNumber && <p className="text-xs text-on-surface-variant mt-1">GST: {detail.gstNumber}</p>}
                       <div className="flex items-center gap-2 mt-2">
                         <span className={`w-1.5 h-1.5 rounded-full ${detail.isActive ? "bg-green-500" : "bg-outline-variant"}`}></span>
-                        <span className={`text-xs font-bold ${detail.isActive ? "text-green-600" : "text-on-surface-variant"}`}>{detail.isActive ? "Active" : "Inactive"}</span>
+                        <span className={`text-xs font-bold ${detail.isActive ? "text-success" : "text-on-surface-variant"}`}>{detail.isActive ? "Active" : "Inactive"}</span>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -437,7 +445,7 @@ export default function AdminCustomers() {
                             <p className="text-xs text-on-surface-variant">{t.description ?? ""}</p>
                           </div>
                           <div className="text-right">
-                            <span className={`text-sm font-bold ${t.type === "DEBIT" ? "text-error" : "text-green-600"}`}>{t.type === "DEBIT" ? "-" : "+"}{inr(t.amount)}</span>
+                            <span className={`text-sm font-bold ${t.type === "DEBIT" ? "text-error" : "text-success"}`}>{t.type === "DEBIT" ? "-" : "+"}{inr(t.amount)}</span>
                             <p className="text-[10px] text-on-surface-variant">Bal {inr(t.balanceAfter)}</p>
                           </div>
                         </div>

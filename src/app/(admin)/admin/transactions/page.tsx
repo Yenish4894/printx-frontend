@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { admin, ApiError } from "@/lib/api";
 import { inr } from "@/components/SessionProvider";
 import { formatDateTime } from "@/lib/format";
+import { EmptyState, LoadingState, ErrorState, TableState } from "@/components/ui/States";
 
 interface Txn {
   id: string;
@@ -57,7 +58,7 @@ export default function AdminTransactions() {
   const cards: [string, number, string, string][] = summary
     ? [
         ["Wallet Liability", summary.walletLiability, "Total customer balances", "text-primary"],
-        ["Top-ups", summary.topUps, "All wallet credits", "text-emerald-600"],
+        ["Top-ups", summary.topUps, "All wallet credits", "text-success"],
         ["Order Debits", summary.orderDebits, "Paid from wallet", "text-error"],
         ["Refunds", summary.refunds, "Credited reversals", "text-sky-600"],
       ]
@@ -124,14 +125,18 @@ export default function AdminTransactions() {
             </thead>
             <tbody className="divide-y divide-outline-variant/10">
               {loading ? (
-                <tr><td colSpan={7} className="px-6 py-16 text-center text-on-surface-variant"><span className="material-symbols-outlined animate-spin align-middle mr-2" aria-hidden="true">progress_activity</span> Loading transactions…</td></tr>
+                <TableState colSpan={7}><LoadingState label="Loading transactions" compact /></TableState>
               ) : error ? (
-                <tr><td colSpan={7} className="px-6 py-16 text-center" role="alert">
-                  <span className="text-error">Couldn&apos;t load transactions.</span>
-                  <button onClick={load} className="ml-3 underline font-bold text-secondary">Retry</button>
-                </td></tr>
+                <TableState colSpan={7}><ErrorState title="Could not load transactions" message={error} onRetry={load} compact /></TableState>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={7} className="px-6 py-16 text-center text-on-surface-variant">{txns.length === 0 ? "No transactions yet." : "No transactions match your search."}</td></tr>
+                <TableState colSpan={7}>
+                  <EmptyState
+                    compact
+                    icon="receipt_long"
+                    title={txns.length === 0 ? "No transactions yet" : "Nothing matches your search"}
+                    description={txns.length === 0 ? "Wallet credits, debits and refunds will be listed here." : "Try a different search term."}
+                  />
+                </TableState>
               ) : (
                 filtered.map((t) => (
                   <tr key={t.id} className="hover:bg-surface-container-low transition-colors">
@@ -141,7 +146,7 @@ export default function AdminTransactions() {
                       <p className="text-xs text-on-surface-variant">{t.customerMobile}</p>
                     </td>
                     <td className="px-6 py-4"><span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${typeClass[t.type] ?? "bg-surface-container text-on-surface-variant"}`}>{t.type}</span></td>
-                    <td className="px-6 py-4"><span className={`text-sm font-bold ${t.type === "DEBIT" ? "text-red-600" : "text-emerald-600"}`}>{t.type === "DEBIT" ? "−" : "+"}{inr(t.amount)}</span></td>
+                    <td className="px-6 py-4"><span className={`text-sm font-bold ${t.type === "DEBIT" ? "text-error" : "text-success"}`}>{t.type === "DEBIT" ? "−" : "+"}{inr(t.amount)}</span></td>
                     <td className="px-6 py-4 text-sm font-medium">{inr(t.balanceAfter)}</td>
                     <td className="px-6 py-4 text-sm font-mono text-on-surface-variant">{t.reference ?? "—"}</td>
                     <td className="px-6 py-4 text-sm text-on-surface-variant">{t.description}</td>

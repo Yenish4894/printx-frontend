@@ -7,6 +7,7 @@ import { useConfirm, useToast } from "@/components/ui/UIProvider";
 import { statusLabel, statusBadge, REFUND_STATUS } from "@/lib/orderStatus";
 import { formatDateTime } from "@/lib/format";
 import Pager from "@/components/ui/Pager";
+import { EmptyState, LoadingState, TableState } from "@/components/ui/States";
 
 type Refund = {
   id: string;
@@ -170,9 +171,16 @@ export default function AdminRefunds() {
             </thead>
             <tbody className="divide-y divide-outline-variant">
               {loading ? (
-                <tr><td colSpan={8} className="px-6 py-16 text-center text-on-surface-variant">Loading refunds…</td></tr>
+                <TableState colSpan={8}><LoadingState label="Loading refunds" compact /></TableState>
               ) : visible.length === 0 ? (
-                <tr><td colSpan={8} className="px-6 py-16 text-center text-on-surface-variant">No refunds found.</td></tr>
+                <TableState colSpan={8}>
+                  <EmptyState
+                    compact
+                    icon="currency_exchange"
+                    title={filter === "All" ? "No refunds yet" : `No ${filter.toLowerCase()} refunds`}
+                    description={filter === "All" ? "Refund requests from cancelled orders will appear here." : "Try another tab."}
+                  />
+                </TableState>
               ) : (
                 visible.map((r) => {
                   const actionable = r.status === "PENDING" || r.status === "PROCESSING";
