@@ -128,8 +128,13 @@
 /* ============================================================
    Custom utility classes used across Stitch exports
    ============================================================ */
+/* Was #fc536d -> #ff6b81, which put white button labels at 2.74:1 against
+   the light stop (WCAG AA wants 4.5:1). These are the same stops the other
+   nineteen files already use via .coral-gradient / .primary-accent-gradient,
+   and they measure 4.70:1. #fc536d stays the brand accent elsewhere: as a
+   border, a focus ring and an icon tint it never carries white text. */
 .primary-gradient {
-  background: linear-gradient(135deg, #fc536d 0%, #ff6b81 100%);
+  background: linear-gradient(135deg, #e11d48 0%, #b71d3f 100%);
 }
 .primary-gradient-text {
   background: linear-gradient(135deg, #fc536d 0%, #ff6b81 100%);
