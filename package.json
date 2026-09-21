@@ -1,12 +1,13 @@
 {
   "name": "frontend",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "tsx scripts/test-order-status.ts && tsx scripts/test-pricing.ts && tsx scripts/test-letterhead-pricing.ts && tsx scripts/test-lib-units.ts",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
