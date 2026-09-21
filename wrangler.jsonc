@@ -28,5 +28,5 @@
   // "r2_buckets": [{ "binding": "UPLOADS", "bucket_name": "printx-uploads" }]
   //
   // Secrets are NOT set here — add them with `wrangler secret put NAME`
-  // (DATABASE_URL, JWT_SECRET, and later RAZORPAY_*, S3_*).
+  // (DATABASE_URL, JWT_SECRET). Payments are by bank transfer: no gateway keys.
 }
