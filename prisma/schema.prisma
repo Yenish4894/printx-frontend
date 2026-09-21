@@ -78,7 +78,13 @@ enum RuleLogic {
 }
 
 enum OrderStatus {
+  // Created at checkout. The customer pays by bank transfer and uploads proof;
+  // it leaves this state only when an admin approves that proof.
+  PAYMENT_PENDING
   PLACED
+  // Retired: approval now moves PAYMENT_PENDING straight to PLACED. Kept only so
+  // the previously deployed build (which can still write it) keeps working
+  // until this release is live; remove in a follow-up migration.
   PAYMENT_CONFIRMED
   DESIGN_REVIEW
   PRINTING
@@ -96,6 +102,7 @@ enum FileStatus {
 }
 
 enum PaymentMethod {
+  BANK_TRANSFER // customer transfers to the business account and uploads proof
   WALLET
   UPI
   CARD
@@ -480,7 +487,8 @@ model Order {
   gstAmount      Decimal @default(0) @db.Decimal(10, 2)
   totalAmount    Decimal @db.Decimal(10, 2)
 
-  // Orders are paid from the prepaid wallet only
+  // Paid by bank transfer: see Payment. Created as PAYMENT_PENDING (the DB
+  // default below predates that and is never relied on; code sets it).
   shippingSnapshot Json // address snapshot at order time
   notes            String?
 
@@ -552,9 +560,22 @@ model Payment {
   razorpayPaymentId String?
   orderId           String?        @unique
   order             Order?         @relation(fields: [orderId], references: [id])
-  createdAt         DateTime       @default(now())
+
+  // Bank-transfer proof. Status reads with these: PENDING + no proof = awaiting
+  // upload, PENDING + proof = awaiting admin review, FAILED = proof rejected
+  // (rejectReason says why; the customer re-uploads), SUCCESS = verified.
+  proofUrl        String?   // served via /api/files/[key], owner or admin only
+  proofName       String?
+  proofUploadedAt DateTime?
+  reference       String?   // UTR / transaction reference the customer typed
+  rejectReason    String?
+  reviewedAt      DateTime?
+  reviewedById    String?   // admin who approved or rejected
+
+  createdAt DateTime @default(now())
 
   @@index([userId])
+  @@index([proofUrl]) // /api/files/[key] resolves the owner by URL
 }
 
 model WalletTransaction {
@@ -609,6 +630,13 @@ model PlatformSettings {
   defaultColorProfile     String   @default("CMYK (U.S. Web Coated)")
   standardBleedMm         Decimal  @default(3) @db.Decimal(4, 1)
   businessGstNumber       String?
+  // Shown to a customer on their own PAYMENT_PENDING order. Checkout refuses to
+  // create orders until the account holder, number and IFSC are filled in.
+  bankAccountName         String?
+  bankName                String?
+  bankAccountNumber       String?
+  bankIfsc                String?
+  bankUpiId               String?
   supportPhone            String?
   supportEmail            String?
   socialFacebook          String?
