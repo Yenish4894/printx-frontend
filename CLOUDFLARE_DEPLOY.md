@@ -73,8 +73,10 @@ account. HTTPS is automatic.
 
 ---
 
-## Later: turn on file uploads (Cloudflare R2 — free tier)
-Uploads are off until you create an R2 bucket. When you're ready:
+## Before taking orders: turn on file uploads (Cloudflare R2 — free tier)
+Uploads are off until you create an R2 bucket. Customers upload their payment
+screenshot to R2, so **checkout stays closed on the live Worker until this is
+done** (placing an order returns "payment uploads are unavailable"). To enable:
 ```bash
 npx wrangler r2 bucket create printx-uploads
 ```
@@ -84,15 +86,12 @@ Then in `wrangler.jsonc`, uncomment the R2 binding block:
 ```
 Redeploy (`npm run deploy`). `storage.ts` uses this binding automatically.
 
-## Later: turn on online wallet top-ups (Razorpay)
-Add three more secrets, then redeploy:
-```bash
-npx wrangler secret put RAZORPAY_KEY_ID
-npx wrangler secret put RAZORPAY_KEY_SECRET
-```
-Also set `NEXT_PUBLIC_RAZORPAY_KEY_ID` (a public build-time var — add it in the
-Worker's **Settings → Variables**). Until then, wallet top-up uses manual instant
-credit (dev mode).
+## Before taking orders: add your bank details
+Customers pay each order by bank transfer, upload a screenshot of the payment,
+and an admin approves it on the order page. Log in to the admin panel as a
+**super admin** → **Settings** and fill in the account holder name, account
+number and IFSC (bank name and UPI ID are optional). Until those three are set,
+checkout stays closed. No payment gateway keys or extra secrets are needed.
 
 ---
 
