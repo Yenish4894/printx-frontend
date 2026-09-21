@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { REJECT_REASON_MAX, REJECT_REASON_MIN } from "@/lib/paymentRules";
 
 export const slugify = (s: string) =>
   s
@@ -117,9 +118,9 @@ export const matrixSchema = z.object({
 
 // ── Orders ──
 export const orderStatusSchema = z.object({
+  // Not PLACED: an order reaches it only by approving its payment proof
+  // (paymentReviewSchema). PAYMENT_CONFIRMED is retired.
   status: z.enum([
-    "PLACED",
-    "PAYMENT_CONFIRMED",
     "DESIGN_REVIEW",
     "PRINTING",
     "QUALITY_CHECK",
@@ -129,6 +130,21 @@ export const orderStatusSchema = z.object({
   ]),
   note: z.string().max(300).optional(),
 });
+export const paymentReviewSchema = z
+  .object({
+    action: z.enum(["APPROVE", "REJECT"]),
+    reason: z.string().trim().max(REJECT_REASON_MAX).optional(),
+    // The proof the admin was looking at. If the customer swapped in a new one
+    // meanwhile, the review is refused rather than applied to an unseen file.
+    proofUrl: z.string().max(500).optional(),
+  })
+  // The customer sees this reason and has to act on it, so it is required.
+  .refine((v) => v.action !== "REJECT" || (v.reason && v.reason.length >= REJECT_REASON_MIN), {
+    message: "Tell the customer why the payment proof was rejected",
+    path: ["reason"],
+  });
+export type PaymentReviewInput = z.infer<typeof paymentReviewSchema>;
+
 export const fileReviewSchema = z.object({
   action: z.enum(["APPROVE", "REJECT"]),
   reason: z.string().max(300).optional(),
@@ -137,10 +153,6 @@ export const fileReviewSchema = z.object({
 // ── Customers ──
 export const customerUpdateSchema = z.object({
   isActive: z.boolean().optional(),
-});
-export const walletAdjustSchema = z.object({
-  amount: z.number().refine((n) => n !== 0, "Amount cannot be zero"),
-  note: z.string().max(200).optional(),
 });
 
 // ── Refunds ──
@@ -160,7 +172,6 @@ export type DeliveryInput = z.infer<typeof deliverySchema>;
 export type MatrixInput = z.infer<typeof matrixSchema>;
 export type OrderStatusInput = z.infer<typeof orderStatusSchema>;
 export type FileReviewInput = z.infer<typeof fileReviewSchema>;
-export type WalletAdjustInput = z.infer<typeof walletAdjustSchema>;
 export type RefundProcessInput = z.infer<typeof refundProcessSchema>;
 
 // ── Visibility rules ──

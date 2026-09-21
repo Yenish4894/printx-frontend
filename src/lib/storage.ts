@@ -15,6 +15,7 @@ const ALLOWED = new Set([
   "application/pdf",
   "image/png",
   "image/jpeg",
+  "image/webp", // phone screenshots (payment proof)
   "image/vnd.adobe.photoshop", // .psd
   "application/postscript", // .ai / .eps
   "application/illustrator",
@@ -65,6 +66,15 @@ async function viaDisk<T>(work: () => Promise<T>): Promise<T> {
 }
 
 export const isObjectStorageConfigured = async () => !!(await r2());
+
+/**
+ * Whether an upload can be kept right now: an R2 bucket, or the local-disk
+ * fallback that `next dev` uses. A production Worker has no disk, so there it
+ * means R2. Checkout checks this so a customer is never asked to pay for an
+ * order whose payment screenshot has nowhere to go.
+ */
+export const canStoreUploads = async () =>
+  (await isObjectStorageConfigured()) || process.env.NODE_ENV !== "production";
 
 export interface StoredFile {
   url: string; // served via GET /api/files/[key]

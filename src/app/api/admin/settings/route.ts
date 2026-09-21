@@ -16,9 +16,9 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
     const input = settingsSchema.parse(await req.json());
-    return ok({ settings: await updateSettings(input) });
+    return ok({ settings: await updateSettings(input, admin) });
   } catch (err) {
     return handleError(err);
   }

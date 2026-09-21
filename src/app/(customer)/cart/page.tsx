@@ -55,7 +55,7 @@ const emptyAddr = { label: "Office", name: "", line1: "", line2: "", city: "", s
 
 export default function CartCheckout() {
   const router = useRouter();
-  const { user, refresh } = useSession();
+  const { refresh } = useSession();
   const confirm = useConfirm();
   const toast = useToast();
 
@@ -207,7 +207,6 @@ export default function CartCheckout() {
   }
 
   const total = cart?.total ?? 0;
-  const enough = (user?.walletBalance ?? 0) >= total;
 
   if (!cart) {
     return (
@@ -243,13 +242,9 @@ export default function CartCheckout() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <h1 className="font-headline-lg text-headline-lg text-on-surface">Cart &amp; Checkout</h1>
-              <p className="font-body-md text-body-md text-on-surface-variant mt-1">Review your items and pay securely from your wallet.</p>
+              <p className="font-body-md text-body-md text-on-surface-variant mt-1">Review your items, choose a delivery address and place your order. You&apos;ll pay by bank transfer next.</p>
             </div>
             <div className="flex items-center gap-4">
-              <div className="flex items-center bg-primary-container text-on-primary px-4 py-2 rounded-lg border border-outline-variant shadow-sm">
-                <span aria-hidden="true" className="material-symbols-outlined text-[20px] mr-2">account_balance_wallet</span>
-                <span className="font-button text-button">{inr(user?.walletBalance)}</span>
-              </div>
               <div className="bg-secondary-container text-on-secondary-container px-4 py-2 rounded-lg font-button text-button">Items in Cart: {cart.count}</div>
             </div>
           </div>
@@ -459,26 +454,27 @@ export default function CartCheckout() {
               {/* Payment */}
               <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
                 <h2 className="font-headline-md text-headline-md text-on-surface mb-2">Payment Method</h2>
-                <p className="text-label-caps font-label-caps text-on-surface-variant mb-6">Orders are paid using your prepaid wallet balance.</p>
-                <div className={`border-2 rounded-xl p-4 ${enough ? "border-secondary bg-secondary/5" : "border-error/50 bg-error-container/20"}`}>
-                  <div className="flex justify-between items-center mb-3">
-                    <div className="flex items-center gap-3">
-                      <span aria-hidden="true" className="material-symbols-outlined text-secondary" style={fill1}>wallet</span>
-                      <span className="font-button text-button">Bhagini Wallet</span>
-                    </div>
-                    <span aria-hidden="true" className={`material-symbols-outlined ${enough ? "text-secondary" : "text-error"}`}>{enough ? "check_circle" : "error"}</span>
-                  </div>
-                  <div className="flex items-center justify-between pl-9">
-                    <p className="text-label-caps font-label-caps text-on-surface-variant">Available Balance</p>
-                    <p className="font-price-lg text-body-md text-secondary">{inr(user?.walletBalance)}</p>
+                <div className="border-2 border-secondary bg-secondary/5 rounded-xl p-4">
+                  <div className="flex items-center gap-3">
+                    <span aria-hidden="true" className="material-symbols-outlined text-secondary" style={fill1}>account_balance</span>
+                    <span className="font-button text-button">Bank transfer / UPI</span>
                   </div>
                 </div>
-                {!enough && (
-                  <Link href="/wallet" className="mt-4 p-4 rounded-lg bg-surface-container-low border border-dashed border-outline-variant flex items-center justify-between hover:border-secondary transition-colors">
-                    <span className="text-body-md text-on-surface-variant">Low balance? Top up your wallet</span>
-                    <span className="text-secondary font-bold text-body-md">Recharge</span>
-                  </Link>
-                )}
+                {/* Set expectations before the click: the order is not confirmed
+                    until the transfer is verified. */}
+                <ol className="mt-4 space-y-3 text-body-md text-on-surface-variant">
+                  {[
+                    "Place the order — we'll show our bank details.",
+                    `Transfer ${inr(total)} from your bank or UPI app.`,
+                    "Upload the payment screenshot.",
+                    "We verify it and your order is placed.",
+                  ].map((step, i) => (
+                    <li key={i} className="flex gap-3">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-surface-container text-xs font-bold text-on-surface shrink-0">{i + 1}</span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
               </div>
             </div>
           </div>
@@ -489,22 +485,21 @@ export default function CartCheckout() {
       <div className="fixed bottom-0 left-0 right-0 z-60 bg-surface-container-lowest border-t border-outline-variant shadow-[0_-4px_20px_rgba(0,0,0,0.08)] py-4">
         <div className="max-w-container-max mx-auto px-margin-desktop flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-center md:text-left">
-            <p className="font-headline-md text-headline-md text-on-surface">Total to Pay {inr(total)}</p>
+            <p className="font-headline-md text-headline-md text-on-surface">Total {inr(total)}</p>
+            <p className="text-body-md text-on-surface-variant">Pay by bank transfer after placing the order</p>
           </div>
           <Button
             onClick={placeOrder}
             size="lg"
             loading={placing}
-            disabled={!enough || !selectedAddr}
+            disabled={!selectedAddr}
             className="w-full md:w-auto"
           >
             {placing
               ? "Placing order…"
               : !selectedAddr
                 ? "Select a delivery address"
-                : !enough
-                  ? "Insufficient Wallet Balance"
-                  : `Place Order & Pay ${inr(total)}`}
+                : "Place order"}
           </Button>
         </div>
       </div>

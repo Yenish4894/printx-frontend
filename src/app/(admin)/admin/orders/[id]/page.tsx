@@ -6,7 +6,8 @@ import Link from "next/link";
 import { admin, ApiError } from "@/lib/api";
 import { inr } from "@/components/SessionProvider";
 import { useConfirm, useToast } from "@/components/ui/UIProvider";
-import { statusLabel, statusBadge, nextStatuses, REFUND_STATUS, FILE_STATUS, fileStatusLabel } from "@/lib/orderStatus";
+import { statusLabel, statusBadge, nextStatuses, REFUND_STATUS, FILE_STATUS, fileStatusLabel, paymentStage, PAYMENT_STAGE } from "@/lib/orderStatus";
+import PaymentReviewPanel, { type AdminPayment } from "@/components/admin/PaymentReviewPanel";
 import { formatDateTime, specEntries } from "@/lib/format";
 import { LoadingState } from "@/components/ui/States";
 
@@ -41,8 +42,10 @@ type Order = {
   items: Item[];
   statusHistory: { status: string; note: string | null; at: string }[];
   refunds: { id: string; amount: number; status: string; reason: string | null }[];
-  payment: { method: string; status: string; amount: number } | null;
+  payment: AdminPayment | null;
 };
+
+const METHOD_LABEL: Record<string, string> = { BANK_TRANSFER: "Bank transfer", WALLET: "Wallet" };
 
 export default function AdminOrderDetail() {
   const params = useParams<{ id: string }>();
@@ -88,9 +91,12 @@ export default function AdminOrderDetail() {
     if (!order || newStatus === order.status) return;
     // Guard cancellation (or any non-forward move) with an explicit confirm.
     if (newStatus === "CANCELLED") {
+      const paid = order.payment?.status === "SUCCESS";
       const ok = await confirm({
         title: "Cancel this order?",
-        message: "The customer will be refunded in full.",
+        message: paid
+          ? `A refund of ${inr(order.totalAmount)} will be raised on the Refunds page for you to send by bank transfer.`
+          : "No payment has been verified, so there is nothing to refund.",
         confirmLabel: "Cancel order",
         danger: true,
       });
@@ -243,6 +249,16 @@ export default function AdminOrderDetail() {
       <div className="grid grid-cols-12 gap-5 sm:gap-8 pb-12">
         {/* Left */}
         <div className="col-span-12 lg:col-span-8 space-y-8">
+          {(order.status === "PAYMENT_PENDING" || order.payment?.proofUrl) && (
+            <PaymentReviewPanel
+              orderId={order.id}
+              orderNumber={order.orderNumber}
+              orderTotal={order.totalAmount}
+              payment={order.payment}
+              onReviewed={() => load({ silent: true })}
+            />
+          )}
+
           {/* Status change note + timeline */}
           <section className="bg-surface-container-lowest p-5 sm:p-8 rounded-xl premium-shadow">
             <h3 className="font-headline-md text-lg text-primary mb-6">Status &amp; History</h3>
@@ -376,9 +392,11 @@ export default function AdminOrderDetail() {
               <div className="pt-4 border-t border-outline-variant flex justify-between items-center"><span className="font-bold text-primary">Grand Total</span><span className="font-price-lg text-price-lg text-secondary">{inr(order.totalAmount)}</span></div>
             </div>
             {order.payment && (
-              <div className="text-sm bg-surface-container-low rounded-lg p-3 flex items-center justify-between">
-                <span className="text-on-surface-variant">{order.payment.method} · {statusLabel(order.payment.status)}</span>
-                <span className="font-medium">{inr(order.payment.amount)}</span>
+              <div className="text-sm bg-surface-container-low rounded-lg p-3 flex items-center justify-between gap-3">
+                <span className="text-on-surface-variant min-w-0">
+                  {METHOD_LABEL[order.payment.method] ?? order.payment.method} · {PAYMENT_STAGE[paymentStage(order.payment)].label}
+                </span>
+                <span className="font-medium shrink-0 tabular-nums">{inr(order.payment.amount)}</span>
               </div>
             )}
           </section>
@@ -401,7 +419,7 @@ export default function AdminOrderDetail() {
             </section>
           )}
 
-          <div className="text-xs text-on-surface-variant px-2">Placed on {formatDateTime(order.placedAt)}</div>
+          <div className="text-xs text-on-surface-variant px-2">Ordered on {formatDateTime(order.placedAt)}</div>
         </div>
       </div>
 

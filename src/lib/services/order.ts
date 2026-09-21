@@ -3,16 +3,26 @@ import { HttpError } from "@/lib/http";
 import { computeTotals } from "./pricing";
 import { resolveAndPrice, loadPricingProducts } from "./quote";
 import { getSettings } from "./settings";
+import { bankDetailsComplete, normalizeReference } from "@/lib/paymentRules";
 import { firstPage, pageMeta, type PageParams } from "@/lib/pagination";
-import { CANCELLABLE_STATUSES, ORDER_PIPELINE } from "@/lib/orderStatus";
+import { canStoreUploads } from "@/lib/storage";
+import { nextOrderNumber, orderNumberPrefix } from "@/lib/orderNumber";
+import {
+  ACTIVE_STATUSES,
+  CANCELLABLE_STATUSES,
+  IN_PRODUCTION_STATUSES,
+  UNPAID_OR_VOID_STATUSES,
+} from "@/lib/orderStatus";
 import type { Prisma } from "@/generated/prisma/client";
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 /**
- * Place an order from the user's cart — wallet-only payment.
- * All-or-nothing in a DB transaction: validate balance → create order + items
- * → debit wallet + ledger + payment → clear cart → notify.
+ * Place an order from the user's cart. Payment is by bank transfer: the order is
+ * created as PAYMENT_PENDING with a PENDING bank-transfer Payment, and moves to
+ * PLACED only when an admin approves the customer's proof of transfer.
+ * All-or-nothing in a DB transaction: create order + items + payment → clear
+ * cart → notify. No money moves here.
  */
 export async function placeOrder(
   userId: string,
@@ -54,10 +64,27 @@ async function placeOrderTxn(userId: string, addressId: string, notes?: string) 
   // Re-pricing every line used to cost two Neon round trips per line (the
   // product graph + the GST rate). Both are shared across the whole cart, so
   // they are fetched once here and handed to each call.
-  const [products, { gstRate, freeShippingThreshold }] = await Promise.all([
+  const [products, { gstRate, freeShippingThreshold, bank }] = await Promise.all([
     loadPricingProducts(cart.items.map((i) => i.productId)),
     getSettings(),
   ]);
+
+  // An order the customer cannot pay for is a dead end: refuse it up front
+  // rather than show a payment screen with no account to transfer to.
+  if (!bankDetailsComplete(bank)) {
+    throw new HttpError(
+      503,
+      "We can't take new orders right now because our payment details are being updated. Please try again shortly or contact us.",
+    );
+  }
+  // Same dead end if the payment screenshot has nowhere to go: the customer
+  // would transfer real money and the order could never be approved.
+  if (!(await canStoreUploads())) {
+    throw new HttpError(
+      503,
+      "We can't take new orders right now because payment uploads are unavailable. Please try again shortly or contact us.",
+    );
+  }
 
   const priced = await Promise.all(
     cart.items.map(async (i) => {
@@ -127,36 +154,23 @@ async function placeOrderTxn(userId: string, addressId: string, notes?: string) 
     const consumed = await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
     if (consumed.count === 0) throw new HttpError(422, "Your cart is empty");
 
-    // Atomically debit — the WHERE guard makes the balance impossible to overspend
-    // or double-spend; count === 0 means insufficient funds.
-    const debit = await tx.user.updateMany({
-      where: { id: userId, walletBalance: { gte: total } },
-      data: { walletBalance: { decrement: total } },
-    });
-    if (debit.count === 0) {
-      const u = await tx.user.findUnique({ where: { id: userId }, select: { walletBalance: true } });
-      const short = round2(total - Number(u?.walletBalance ?? 0));
-      throw new HttpError(
-        422,
-        `Insufficient wallet balance. Please top up ₹${short.toFixed(2)} to place this order.`,
-      );
-    }
-    const fresh = await tx.user.findUnique({ where: { id: userId }, select: { walletBalance: true } });
-    const newBalance = Number(fresh!.walletBalance);
-
-    // Sequential-ish human order number (collisions retried by the caller).
+    // Human order number: one past the highest issued this year (see
+    // nextOrderNumber for why it is not count() + 1). A genuine race between
+    // two checkouts still hits the unique index and is retried by the caller.
+    // No invoice number yet: an invoice is issued when payment is verified.
     const year = new Date().getFullYear();
-    const count = await tx.order.count();
-    const seq = String(count + 1).padStart(5, "0");
-    const orderNumber = `BG-${year}-${seq}`;
-    const invoiceNumber = `INV-${year}-${seq}`;
+    const last = await tx.order.findFirst({
+      where: { orderNumber: { startsWith: orderNumberPrefix(year) } },
+      orderBy: { orderNumber: "desc" },
+      select: { orderNumber: true },
+    });
+    const orderNumber = nextOrderNumber(year, last?.orderNumber ?? null);
 
     const order = await tx.order.create({
       data: {
         userId,
         orderNumber,
-        invoiceNumber,
-        status: "PLACED",
+        status: "PAYMENT_PENDING",
         subtotal,
         deliveryCharge,
         gstAmount: gst,
@@ -193,28 +207,19 @@ async function placeOrderTxn(userId: string, addressId: string, notes?: string) 
             fileStatus: i.fileStatus,
           })),
         },
-        statusHistory: { create: { status: "PLACED", note: "Order placed" } },
+        statusHistory: {
+          create: { status: "PAYMENT_PENDING", note: "Order created — awaiting payment" },
+        },
       },
     });
 
-    await tx.walletTransaction.create({
-      data: {
-        userId,
-        type: "DEBIT",
-        amount: total,
-        balanceAfter: newBalance,
-        reference: orderNumber,
-        description: `Payment for order ${orderNumber}`,
-        relatedOrderId: order.id,
-      },
-    });
     await tx.payment.create({
       data: {
         userId,
         purpose: "ORDER",
-        method: "WALLET",
+        method: "BANK_TRANSFER",
         amount: total,
-        status: "SUCCESS",
+        status: "PENDING",
         orderId: order.id,
       },
     });
@@ -223,34 +228,90 @@ async function placeOrderTxn(userId: string, addressId: string, notes?: string) 
       data: {
         userId,
         type: "ORDER",
-        title: `Order ${orderNumber} placed`,
-        body: `Your order of ₹${total.toFixed(2)} is confirmed and now under review.`,
+        title: `Order ${orderNumber} — complete your payment`,
+        body: `Transfer ₹${total.toFixed(2)} to our bank account and upload the payment screenshot to confirm your order.`,
         link: `/orders/${order.id}`,
       },
     });
 
-    return { id: order.id, orderNumber, invoiceNumber, totalAmount: total };
+    return { id: order.id, orderNumber, totalAmount: total, status: "PAYMENT_PENDING" as const };
   });
 }
 
+type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
 /**
- * Cancel an order and refund its total back to the wallet.
- * All-or-nothing: mark CANCELLED + history → credit wallet + REFUND ledger +
- * refund record → notify. The status transition is atomic (updateMany with a
- * status guard) so concurrent cancels refund at most once.
+ * Take the order's row lock for the rest of the transaction. Cancel, proof
+ * upload and payment review each decide from BOTH the order and its payment,
+ * but write only one of them, so under READ COMMITTED an upload and a cancel
+ * could each pass on the other's pre-commit state (write skew): a cancelled
+ * order holding a fresh proof, with no refund. Taking this lock first makes
+ * them queue, and every read after it sees the other side's committed write.
+ */
+export async function lockOrder(tx: Tx, id: string) {
+  await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${id} FOR UPDATE`;
+}
+
+/** What to tell the customer when an unpaid order is cancelled. */
+export const unpaidCancelCopy = (payment: { proofUrl: string | null } | null) =>
+  payment?.proofUrl
+    ? "Your order has been cancelled. If you already transferred money for it, contact us and we'll refund it."
+    : "Your order has been cancelled. No payment was taken.";
+
+/** A payment whose proof is uploaded and not yet reviewed. */
+export const PROOF_IN_REVIEW = { status: "PENDING", proofUrl: { not: null } } satisfies Prisma.PaymentWhereInput;
+
+export const isProofInReview = (o: { status: string; payment: { status: string; proofUrl: string | null } | null }) =>
+  o.status === "PAYMENT_PENDING" && o.payment?.status === "PENDING" && !!o.payment.proofUrl;
+
+/**
+ * If the order's payment was verified, raise a PENDING refund for an admin to
+ * send back by bank transfer, and return its amount; otherwise return 0.
+ * Shared by customer and admin cancellation so the two cannot drift.
+ */
+export async function raiseRefundIfPaid(
+  tx: Tx,
+  order: { id: string; userId: string; totalAmount: unknown; payment: { status: string } | null },
+  reason: string,
+): Promise<number> {
+  if (order.payment?.status !== "SUCCESS") return 0;
+  const amount = round2(Number(order.totalAmount));
+  await tx.refund.create({
+    data: { userId: order.userId, orderId: order.id, amount, status: "PENDING", reason },
+  });
+  return amount;
+}
+
+/**
+ * Cancel an order.
+ *
+ * Unpaid (still PAYMENT_PENDING, payment never verified): nothing to refund.
+ * Paid: a PENDING refund is raised for an admin to send back by bank transfer;
+ * there is no wallet to credit any more. The status transition is atomic
+ * (updateMany with a status guard) so concurrent cancels raise at most one.
  */
 export async function cancelOrder(userId: string, id: string, reason?: string) {
   return prisma.$transaction(async (tx) => {
+    await lockOrder(tx, id);
     // Atomically claim the cancellation — only one concurrent request wins.
+    // Not while a payment proof awaits review: the customer has probably sent
+    // the money, and cancelling would drop it from the review queue with no
+    // refund raised. The team approves or rejects the proof first.
     const claimed = await tx.order.updateMany({
-      where: { id, userId, status: { in: CANCELLABLE_STATUSES } },
+      where: { id, userId, status: { in: CANCELLABLE_STATUSES }, NOT: { payment: { is: PROOF_IN_REVIEW } } },
       data: { status: "CANCELLED" },
     });
     if (claimed.count === 0) {
-      const exists = await tx.order.findFirst({ where: { id, userId } });
+      const exists = await tx.order.findFirst({ where: { id, userId }, include: { payment: true } });
       if (!exists) throw new HttpError(404, "Order not found");
       if (exists.status === "CANCELLED") {
         throw new HttpError(422, "This order is already cancelled");
+      }
+      if (isProofInReview(exists)) {
+        throw new HttpError(
+          422,
+          "We're checking your payment proof, so this order can't be cancelled right now. Contact us if you need to cancel.",
+        );
       }
       throw new HttpError(
         422,
@@ -258,56 +319,30 @@ export async function cancelOrder(userId: string, id: string, reason?: string) {
       );
     }
 
-    const order = (await tx.order.findFirst({ where: { id, userId } }))!;
+    const order = (await tx.order.findFirst({ where: { id, userId }, include: { payment: true } }))!;
     await tx.orderStatusHistory.create({
       data: { orderId: id, status: "CANCELLED", note: reason ?? "Cancelled by customer" },
     });
 
-    const refund = round2(Number(order.totalAmount));
-    const user = await tx.user.update({
-      where: { id: userId },
-      data: { walletBalance: { increment: refund } },
-    });
-    const newBalance = Number(user.walletBalance);
-    await tx.walletTransaction.create({
-      data: {
-        userId,
-        type: "REFUND",
-        amount: refund,
-        balanceAfter: newBalance,
-        reference: order.orderNumber,
-        description: `Refund for cancelled order ${order.orderNumber}`,
-        relatedOrderId: id,
-      },
-    });
-    await tx.refund.create({
-      data: {
-        userId,
-        orderId: id,
-        amount: refund,
-        status: "CREDITED",
-        reason: reason ?? "Order cancelled",
-        processedAt: new Date(),
-      },
-    });
+    const refund = await raiseRefundIfPaid(tx, order, reason ?? "Order cancelled by customer");
     await tx.notification.create({
       data: {
         userId,
         type: "ORDER",
         title: `Order ${order.orderNumber} cancelled`,
-        body: `₹${refund.toFixed(2)} has been refunded to your wallet.`,
+        body: refund
+          ? `A refund of ₹${refund.toFixed(2)} will be sent to your bank account. We'll let you know once it's done.`
+          : unpaidCancelCopy(order.payment),
         link: `/orders/${id}`,
       },
     });
 
-    return { id, status: "CANCELLED", refunded: refund, walletBalance: newBalance };
+    return { id, status: "CANCELLED" as const, refundAmount: refund, refundPending: refund > 0 };
   });
 }
 
 /** The tabs the orders page offers, as server-side status filters. */
 export type OrderBucket = "all" | "active" | "completed" | "cancelled";
-
-const ACTIVE_STATUSES = ORDER_PIPELINE.filter((s) => s !== "DELIVERED");
 
 function bucketFilter(bucket: OrderBucket): Prisma.OrderWhereInput {
   if (bucket === "active") return { status: { in: ACTIVE_STATUSES } };
@@ -352,10 +387,11 @@ export async function listOrders(
     // One groupBy powers every tab badge and the dashboard KPIs; counting them
     // in the browser meant downloading every order the customer ever placed.
     prisma.order.groupBy({ by: ["status"], _count: { _all: true }, where: searched }),
+    // Spend is money actually received: unpaid orders are not spend yet.
     prisma.order.aggregate({
       _sum: { totalAmount: true },
       _count: true,
-      where: { userId, status: { not: "CANCELLED" } },
+      where: { userId, status: { notIn: UNPAID_OR_VOID_STATUSES } },
     }),
   ]);
 
@@ -366,6 +402,9 @@ export async function listOrders(
     allCount += g._count._all;
   }
   const activeCount = ACTIVE_STATUSES.reduce((n, s) => n + (per[s] ?? 0), 0);
+  // Unpaid orders are in the Active tab (the customer still has to pay) but
+  // not "in progress": they have their own awaitingPayment figure.
+  const inProductionCount = IN_PRODUCTION_STATUSES.reduce((n, s) => n + (per[s] ?? 0), 0);
   const buckets = {
     all: allCount,
     active: activeCount,
@@ -387,7 +426,8 @@ export async function listOrders(
     buckets,
     stats: {
       totalOrders: allCount,
-      inProgress: activeCount,
+      inProgress: inProductionCount,
+      awaitingPayment: per.PAYMENT_PENDING ?? 0,
       paidOrderCount: spend._count,
       totalSpent: round2(Number(spend._sum.totalAmount ?? 0)),
     },
@@ -423,9 +463,14 @@ export async function getOrder(userId: string, id: string) {
     include: {
       items: true,
       statusHistory: { orderBy: { createdAt: "asc" } },
+      payment: true,
+      refunds: { orderBy: { createdAt: "desc" } },
     },
   });
   if (!o) throw new HttpError(404, "Order not found");
+  const awaitingPayment = o.status === "PAYMENT_PENDING";
+  // Settings are only needed for the bank details, which only an unpaid order shows.
+  const bankDetails = awaitingPayment ? (await getSettings()).bank : null;
 
   return {
     id: o.id,
@@ -456,5 +501,101 @@ export async function getOrder(userId: string, id: string) {
       note: h.note,
       at: h.createdAt,
     })),
+    payment: o.payment
+      ? {
+          method: o.payment.method,
+          status: o.payment.status,
+          amount: Number(o.payment.amount),
+          proofUrl: o.payment.proofUrl,
+          proofName: o.payment.proofName,
+          proofUploadedAt: o.payment.proofUploadedAt,
+          reference: o.payment.reference,
+          rejectReason: o.payment.rejectReason,
+          reviewedAt: o.payment.reviewedAt,
+        }
+      : null,
+    // Only on the customer's own unpaid order: bank details are not published
+    // anywhere else, and a paid order has no use for them.
+    bankDetails,
+    refunds: o.refunds.map((r) => ({
+      amount: Number(r.amount),
+      status: r.status,
+      reason: r.reason,
+      processedAt: r.processedAt,
+    })),
   };
+}
+
+/**
+ * The order a proof is for, if it can take one: the caller's own order, still
+ * PAYMENT_PENDING. The upload route calls this before storing the file, so a
+ * request that was always going to fail doesn't leave an orphaned object.
+ */
+export async function proofTarget(userId: string, orderId: string) {
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, userId },
+    select: { id: true, status: true, orderNumber: true, payment: { select: { id: true, status: true } } },
+  });
+  if (!order) throw new HttpError(404, "Order not found");
+  if (order.status !== "PAYMENT_PENDING") {
+    throw new HttpError(
+      422,
+      order.status === "CANCELLED"
+        ? "This order was cancelled, so no payment is needed."
+        : "Payment for this order has already been verified.",
+    );
+  }
+  return order;
+}
+
+/**
+ * Attach (or replace, after a rejection) the customer's proof of bank transfer.
+ * Allowed only while the order is PAYMENT_PENDING and the payment is not yet
+ * verified. The guarded updateMany means a proof cannot land on a payment an
+ * admin approved a moment earlier.
+ */
+export async function submitPaymentProof(
+  userId: string,
+  orderId: string,
+  file: { url: string; name: string },
+  reference?: string,
+) {
+  await proofTarget(userId, orderId);
+
+  const ref = normalizeReference(reference);
+  await prisma.$transaction(async (tx) => {
+    await lockOrder(tx, orderId);
+    // Read the payment under the lock: a double-submit must see the row the
+    // first request created, not the pre-lock snapshot.
+    const payment = await tx.payment.findUnique({ where: { orderId }, select: { status: true } });
+    // Orders created before this change may lack a payment row; make one.
+    if (!payment) {
+      const o = await tx.order.findUniqueOrThrow({ where: { id: orderId }, select: { totalAmount: true } });
+      await tx.payment.create({
+        data: { userId, purpose: "ORDER", method: "BANK_TRANSFER", amount: o.totalAmount, status: "PENDING", orderId },
+      });
+    }
+    const updated = await tx.payment.updateMany({
+      where: { orderId, status: { in: ["PENDING", "FAILED"] }, order: { status: "PAYMENT_PENDING" } },
+      data: {
+        method: "BANK_TRANSFER",
+        proofUrl: file.url,
+        proofName: file.name,
+        proofUploadedAt: new Date(),
+        reference: ref,
+        status: "PENDING",
+        rejectReason: null,
+      },
+    });
+    if (updated.count === 0) throw new HttpError(422, "Payment for this order has already been verified.");
+    await tx.orderStatusHistory.create({
+      data: {
+        orderId,
+        status: "PAYMENT_PENDING",
+        note: payment?.status === "FAILED" ? "New payment proof uploaded" : "Payment proof uploaded",
+      },
+    });
+  });
+
+  return getOrder(userId, orderId);
 }

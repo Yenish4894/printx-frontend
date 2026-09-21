@@ -1,8 +1,8 @@
 import prisma from "@/lib/prisma";
 import { HttpError } from "@/lib/http";
 import type { Prisma } from "@/generated/prisma/client";
-import type { WalletAdjustInput } from "@/lib/dto/admin";
 import { firstPage, pageMeta, type PageParams } from "@/lib/pagination";
+import { UNPAID_OR_VOID_STATUSES } from "@/lib/orderStatus";
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -43,7 +43,6 @@ export async function listCustomers(
         mobile: true,
         email: true,
         gstNumber: true,
-        walletBalance: true,
         isActive: true,
         createdAt: true,
         _count: { select: { orders: true } },
@@ -58,7 +57,6 @@ export async function listCustomers(
     mobile: u.mobile,
     email: u.email,
     gstNumber: u.gstNumber,
-    walletBalance: Number(u.walletBalance),
     isActive: u.isActive,
     orderCount: u._count.orders,
     joinedAt: u.createdAt,
@@ -67,8 +65,8 @@ export async function listCustomers(
 }
 
 export async function getCustomer(id: string) {
-  // Orders are capped like walletTransactions already was; total spend comes
-  // from an aggregate rather than from summing every order ever placed in JS.
+  // Orders are capped at the latest 20; total spend comes from an aggregate
+  // rather than from summing every order ever placed in JS.
   const [u, spend] = await Promise.all([
     prisma.user.findUnique({
       where: { id },
@@ -79,12 +77,11 @@ export async function getCustomer(id: string) {
           take: 20,
           select: { id: true, orderNumber: true, status: true, totalAmount: true, placedAt: true },
         },
-        walletTransactions: { orderBy: { createdAt: "desc" }, take: 20 },
       },
     }),
     prisma.order.aggregate({
       _sum: { totalAmount: true },
-      where: { userId: id, status: { not: "CANCELLED" } },
+      where: { userId: id, status: { notIn: UNPAID_OR_VOID_STATUSES } },
     }),
   ]);
   if (!u || u.role !== "CUSTOMER") throw new HttpError(404, "Customer not found");
@@ -98,7 +95,6 @@ export async function getCustomer(id: string) {
     mobile: u.mobile,
     email: u.email,
     gstNumber: u.gstNumber,
-    walletBalance: Number(u.walletBalance),
     isActive: u.isActive,
     joinedAt: u.createdAt,
     totalSpent: round2(spent),
@@ -121,14 +117,6 @@ export async function getCustomer(id: string) {
       totalAmount: Number(o.totalAmount),
       placedAt: o.placedAt,
     })),
-    walletTransactions: u.walletTransactions.map((t) => ({
-      id: t.id,
-      type: t.type,
-      amount: Number(t.amount),
-      balanceAfter: Number(t.balanceAfter),
-      description: t.description,
-      createdAt: t.createdAt,
-    })),
   };
 }
 
@@ -137,41 +125,4 @@ export async function setCustomerActive(id: string, isActive: boolean) {
   if (!u || u.role !== "CUSTOMER") throw new HttpError(404, "Customer not found");
   await prisma.user.update({ where: { id }, data: { isActive } });
   return { id, isActive };
-}
-
-/** Manual wallet correction by admin (credit if +, debit if −). */
-export async function adjustCustomerWallet(id: string, input: WalletAdjustInput) {
-  return prisma.$transaction(async (tx) => {
-    const u = await tx.user.findUnique({ where: { id } });
-    if (!u || u.role !== "CUSTOMER") throw new HttpError(404, "Customer not found");
-    const delta = round2(input.amount);
-
-    // Atomic, guarded update — a debit can never drive the balance negative even
-    // under concurrent adjustments/orders.
-    let updated;
-    if (delta >= 0) {
-      updated = await tx.user.update({
-        where: { id },
-        data: { walletBalance: { increment: delta } },
-      });
-    } else {
-      const res = await tx.user.updateMany({
-        where: { id, walletBalance: { gte: -delta } },
-        data: { walletBalance: { decrement: -delta } },
-      });
-      if (res.count === 0) throw new HttpError(422, "Adjustment would make the balance negative");
-      updated = await tx.user.findUnique({ where: { id } });
-    }
-    const newBalance = Number(updated!.walletBalance);
-    await tx.walletTransaction.create({
-      data: {
-        userId: id,
-        type: delta >= 0 ? "CREDIT" : "DEBIT",
-        amount: Math.abs(delta),
-        balanceAfter: newBalance,
-        description: input.note ?? "Manual adjustment by admin",
-      },
-    });
-    return { id, walletBalance: newBalance };
-  });
 }

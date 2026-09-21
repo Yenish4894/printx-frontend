@@ -45,8 +45,8 @@ export async function listRefunds(status?: string, page: PageParams = firstPage(
 }
 
 /**
- * Process a PENDING refund. APPROVE credits the wallet + marks CREDITED;
- * REJECT marks REJECTED (no wallet change).
+ * Process a PENDING refund. APPROVE means the team has sent the money back by
+ * bank transfer and marks it CREDITED ("Refunded"); REJECT marks REJECTED.
  */
 export async function processRefund(id: string, input: RefundProcessInput) {
   return prisma.$transaction(async (tx) => {
@@ -68,40 +68,30 @@ export async function processRefund(id: string, input: RefundProcessInput) {
       await tx.notification.create({
         data: {
           userId: refund.userId,
-          type: "WALLET",
+          type: "ORDER",
           title: "Refund declined",
           body: input.note ?? "Your refund request was declined.",
+          link: `/orders/${refund.orderId}`,
         },
       });
       return { id, status: "REJECTED" };
     }
 
-    // APPROVE → credit wallet atomically (status already claimed above).
+    // APPROVE records that the team has sent the money back by bank transfer.
+    // There is no wallet any more, so nothing is credited in the app; the
+    // status claim above is what stops a refund being marked paid twice.
     const amount = round2(Number(refund.amount));
-    const user = await tx.user.update({
-      where: { id: refund.userId },
-      data: { walletBalance: { increment: amount } },
-    });
-    const newBalance = Number(user.walletBalance);
-    await tx.walletTransaction.create({
-      data: {
-        userId: refund.userId,
-        type: "REFUND",
-        amount,
-        balanceAfter: newBalance,
-        reference: refund.orderId,
-        description: "Refund approved",
-        relatedOrderId: refund.orderId,
-      },
-    });
     await tx.notification.create({
       data: {
         userId: refund.userId,
-        type: "WALLET",
-        title: "Refund credited",
-        body: `₹${amount.toFixed(2)} has been credited to your wallet.`,
+        type: "ORDER",
+        title: "Refund sent",
+        body: input.note
+          ? `₹${amount.toFixed(2)} has been refunded to your bank account. ${input.note}`
+          : `₹${amount.toFixed(2)} has been refunded to your bank account.`,
+        link: `/orders/${refund.orderId}`,
       },
     });
-    return { id, status: "CREDITED", walletBalance: newBalance };
+    return { id, status: "CREDITED", amount };
   });
 }

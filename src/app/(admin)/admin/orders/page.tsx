@@ -19,12 +19,13 @@ type OrderRow = {
   totalAmount: number;
   itemCount: number;
   placedAt: string;
+  payment: { status: string; hasProof: boolean } | null;
 };
 
 const FILTERS: { label: string; value?: string }[] = [
   { label: "All", value: undefined },
+  { label: "Payment Pending", value: "PAYMENT_PENDING" },
   { label: "Placed", value: "PLACED" },
-  { label: "Payment Confirmed", value: "PAYMENT_CONFIRMED" },
   { label: "Design Review", value: "DESIGN_REVIEW" },
   { label: "Printing", value: "PRINTING" },
   { label: "Quality Check", value: "QUALITY_CHECK" },
@@ -161,6 +162,16 @@ export default function AdminOrders() {
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${statusBadge(r.status)}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${statusDot(r.status)}`}></span>{statusLabel(r.status)}
                         </span>
+                        {r.status === "PAYMENT_PENDING" && (
+                          // Which unpaid orders actually need a person right now.
+                          <p className={`mt-1 text-[11px] font-bold ${r.payment?.hasProof && r.payment.status === "PENDING" ? "text-secondary" : "text-on-surface-variant"}`}>
+                            {r.payment?.status === "FAILED"
+                              ? "Proof rejected · awaiting re-upload"
+                              : r.payment?.hasProof
+                                ? "Proof submitted · verify now"
+                                : "Awaiting customer payment"}
+                          </p>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <Link href={`/admin/orders/${r.id}`} aria-label={`View details for order ${r.orderNumber}`} className="p-1.5 hover:bg-surface-container rounded-lg transition-colors text-on-surface-variant inline-flex" title="View Details"><span className="material-symbols-outlined text-sm" aria-hidden="true">visibility</span></Link>

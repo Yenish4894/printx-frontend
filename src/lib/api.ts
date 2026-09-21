@@ -174,23 +174,6 @@ export const addresses = {
   remove: (id: string) => del<{ success: boolean }>(`/me/addresses/${id}`),
 };
 
-// ───────────────────────── Wallet ─────────────────────────
-export const wallet = {
-  get: () => get<any>("/wallet"),
-  transactions: () => get<{ transactions?: any[] } | any[]>("/wallet/transactions"),
-  // Manual/dev top-up (used only when Razorpay is not configured).
-  topUp: (amount: number) => post<{ wallet: { balance: Money; credited: Money } }>("/wallet/topup", { amount }),
-  // Razorpay online top-up: create an order, then verify after checkout.
-  createTopUpOrder: (amount: number) =>
-    post<{ keyId: string; orderId: string; amount: number; currency: string; paymentId: string }>(
-      "/wallet/topup/order",
-      { amount },
-    ),
-  verifyTopUp: (payload: { razorpayOrderId: string; razorpayPaymentId: string; razorpaySignature: string }) =>
-    post<{ wallet: { balance: Money; credited: Money; alreadyProcessed: boolean } }>("/wallet/topup/verify", payload),
-  updateSettings: (settings: Record<string, unknown>) => patch<any>("/wallet", settings),
-};
-
 // ───────────────────────── Orders ─────────────────────────
 export const orders = {
   list: (opts: PageOpts & { bucket?: string; q?: string } = {}) =>
@@ -198,7 +181,7 @@ export const orders = {
       {
         orders: any[];
         buckets: { all: number; active: number; completed: number; cancelled: number };
-        stats: { totalOrders: number; inProgress: number; paidOrderCount: number; totalSpent: number };
+        stats: { totalOrders: number; inProgress: number; awaitingPayment: number; paidOrderCount: number; totalSpent: number };
       } & PageMeta
     >(`/orders${qs({ ...opts })}`),
   get: (id: string) => get<{ order: any }>(`/orders/${id}`),
@@ -209,6 +192,13 @@ export const orders = {
     const fd = new FormData();
     fd.append("file", file);
     return post<any>(`/orders/${id}/items/${itemId}/file`, fd);
+  },
+  /** Proof of bank transfer: a screenshot or PDF, plus the optional UTR. */
+  uploadPaymentProof: (id: string, file: File, reference?: string) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    if (reference) fd.append("reference", reference);
+    return post<{ order: any }>(`/orders/${id}/payment`, fd);
   },
 };
 
@@ -258,6 +248,8 @@ export const admin = {
     list: (status?: string, opts: PageOpts & { q?: string } = {}) => get<{ orders: any[] } & PageMeta>(`/admin/orders${qs({ status, ...opts })}`),
     get: (id: string) => get<{ order: any }>(`/admin/orders/${id}`),
     setStatus: (id: string, status: string, note?: string) => patch<any>(`/admin/orders/${id}/status`, { status, note }),
+    reviewPayment: (id: string, action: "APPROVE" | "REJECT", proofUrl: string, reason?: string) =>
+      post<{ result: { status: string; payment: string } }>(`/admin/orders/${id}/payment`, { action, reason, proofUrl }),
     reviewFile: (id: string, itemId: string, action: "APPROVE" | "REJECT", reason?: string) =>
       patch<any>(`/admin/orders/${id}/items/${itemId}/review`, { action, reason }),
   },
@@ -266,7 +258,6 @@ export const admin = {
     list: (opts: PageOpts & { q?: string; active?: string } = {}) => get<{ customers: any[] } & PageMeta>(`/admin/customers${qs({ ...opts })}`),
     get: (id: string) => get<{ customer: any }>(`/admin/customers/${id}`),
     setActive: (id: string, isActive: boolean) => patch<any>(`/admin/customers/${id}`, { isActive }),
-    adjustWallet: (id: string, amount: number, note?: string) => post<any>(`/admin/customers/${id}/wallet`, { amount, note }),
   },
 
   refunds: {

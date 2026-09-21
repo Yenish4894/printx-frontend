@@ -26,7 +26,6 @@ const groups: { label: string; items: { icon: string; label: string; href: strin
       { icon: "currency_exchange", label: "Refunds", href: "/admin/refunds" },
     ],
   },
-  { label: "Finance", items: [{ icon: "account_balance", label: "Wallet & Transactions", href: "/admin/transactions" }] },
   {
     label: "System",
     items: [

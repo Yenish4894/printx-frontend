@@ -62,7 +62,7 @@ const QTY_CHIPS = [50, 100, 250, 500, 1000];
 
 export default function ProductConfigurator({ slug }: { slug: string }) {
   const router = useRouter();
-  const { user, refresh } = useSession();
+  const { refresh } = useSession();
   const toast = useToast();
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -209,9 +209,6 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
   }, [slabQty, qty]);
 
   const total = breakdown?.total ?? 0;
-  const hasQuote = !!breakdown;
-  // Only judge wallet sufficiency once we actually have a price.
-  const enough = hasQuote && (user?.walletBalance ?? 0) >= total;
   // Quantity rules come from the product, not from constants — a product with
   // minQuantity 1000 / step 1000 must never be offered 50, and the +/- buttons
   // must move by a step the server will accept.
@@ -633,20 +630,10 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
             </div>
 
             <div className="space-y-3">
-              {hasQuote ? (
-                <div className={`p-3 rounded-lg flex items-center justify-between mb-2 ${enough ? "bg-tertiary-fixed" : "bg-error-container"}`}>
-                  <div className={`flex items-center gap-2 ${enough ? "text-on-tertiary-fixed" : "text-on-error-container"}`}>
-                    <span className="material-symbols-outlined text-[18px]" aria-hidden="true">account_balance_wallet</span>
-                    <span className="font-label-caps font-bold">Wallet: {inr(user?.walletBalance)}</span>
-                  </div>
-                  <span className={`text-[10px] font-black uppercase tracking-wider ${enough ? "text-success" : "text-error"}`}>{enough ? "Enough" : "Top Up"}</span>
-                </div>
-              ) : (
-                <div className="p-3 rounded-lg flex items-center gap-2 mb-2 bg-surface-container text-on-surface-variant">
-                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">account_balance_wallet</span>
-                  <span className="font-label-caps font-bold">Wallet: {inr(user?.walletBalance)}</span>
-                </div>
-              )}
+              <div className="p-3 rounded-lg flex items-center gap-2 mb-2 bg-surface-container text-on-surface-variant">
+                <span className="material-symbols-outlined text-[18px]" aria-hidden="true">account_balance</span>
+                <span className="text-body-md">Pay by bank transfer or UPI after you place the order.</span>
+              </div>
 
               <Button
                 size="lg"
@@ -668,11 +655,6 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
               >
                 Add to cart
               </Button>
-              {hasQuote && !enough && (
-                <Link href="/wallet" className="block text-center text-secondary font-button text-sm hover:underline">
-                  Top up wallet to check out
-                </Link>
-              )}
             </div>
           </div>
         </aside>

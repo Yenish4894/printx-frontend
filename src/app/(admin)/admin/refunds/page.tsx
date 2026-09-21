@@ -65,7 +65,7 @@ export default function AdminRefunds() {
   const approve = async (r: Refund) => {
     const ok = await confirm({
       title: "Approve this refund?",
-      message: `${inr(r.amount)} will be credited to the customer's wallet.`,
+      message: `Mark ${inr(r.amount)} as refunded only after you've sent it to the customer's bank account.`,
       confirmLabel: "Approve refund",
     });
     if (!ok) return;

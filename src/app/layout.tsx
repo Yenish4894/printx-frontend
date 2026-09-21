@@ -11,7 +11,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Bhagini Graphics — Online Printing Platform",
   description:
-    "Professional quality printing with live pricing, prepaid wallet, and real-time order tracking.",
+    "Professional quality printing with live pricing, bank-transfer checkout, and real-time order tracking.",
 };
 
 export default function RootLayout({

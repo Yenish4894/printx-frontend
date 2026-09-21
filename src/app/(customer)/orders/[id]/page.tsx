@@ -16,6 +16,8 @@ import {
 import { formatDateTime, specEntries } from "@/lib/format";
 import Button from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/States";
+import PaymentPanel, { type PaymentInfo, type BankDetails } from "@/components/customer/PaymentPanel";
+import { REFUND_STATUS } from "@/lib/orderStatus";
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
@@ -46,7 +48,7 @@ interface Shipping {
 interface OrderDetail {
   id: string;
   orderNumber: string;
-  invoiceNumber: string;
+  invoiceNumber: string | null; // issued when payment is verified
   status: string;
   subtotal: number;
   deliveryCharge: number;
@@ -57,6 +59,9 @@ interface OrderDetail {
   placedAt: string;
   items: OrderItem[];
   statusHistory: { status: string; note: string | null; at: string }[];
+  payment: (PaymentInfo & { method: string }) | null;
+  bankDetails: BankDetails | null;
+  refunds: { amount: number; status: string; reason: string | null; processedAt: string | null }[];
 }
 
 export default function OrderDetails({ params }: { params: Promise<{ id: string }> }) {
@@ -91,9 +96,13 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
 
   async function handleCancel() {
     if (!order) return;
+    // Money was taken only if the payment was verified; otherwise nothing to refund.
+    const paid = order.payment?.status === "SUCCESS";
     const ok = await confirm({
       title: "Cancel this order?",
-      message: "The full amount will be refunded to your wallet.",
+      message: paid
+        ? `We'll refund ${inr(order.totalAmount)} to your bank account.`
+        : "No payment has been verified for this order, so nothing will be charged.",
       confirmLabel: "Cancel order",
       cancelLabel: "Keep order",
       danger: true,
@@ -102,9 +111,14 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
     setActionError(null);
     setCancelling(true);
     try {
-      await ordersApi.cancel(id);
+      const { order: result } = await ordersApi.cancel(id);
       await load();
-      toast("Order cancelled — amount refunded to your wallet.", "success");
+      // From the server's answer, not the page: the payment may have been
+      // approved after this page loaded.
+      toast(
+        result?.refundPending ? "Order cancelled. Your refund is on its way to your bank account." : "Order cancelled.",
+        "success",
+      );
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : "Failed to cancel order";
       setActionError(msg);
@@ -156,7 +170,12 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
     );
   }
 
-  const canCancel = isCancellable(order.status);
+  // Not while we're checking a proof: the money has probably been sent, so
+  // the team settles the proof first (the server enforces the same rule).
+  const proofInReview = order.status === "PAYMENT_PENDING" && order.payment?.status === "PENDING" && !!order.payment.proofUrl;
+  const canCancel = isCancellable(order.status) && !proofInReview;
+  const awaitingPayment = order.status === "PAYMENT_PENDING";
+  const paid = order.payment?.status === "SUCCESS";
   const s = order.shipping ?? {};
 
   return (
@@ -176,16 +195,20 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
               </span>
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-on-surface-variant text-body-md font-body-md">
-              <span className="flex items-center"><span className="material-symbols-outlined text-[18px] mr-1" aria-hidden="true">calendar_today</span> Placed {formatDateTime(order.placedAt)}</span>
+              <span className="flex items-center"><span className="material-symbols-outlined text-[18px] mr-1" aria-hidden="true">calendar_today</span> Ordered {formatDateTime(order.placedAt)}</span>
               <span className="flex items-center"><span className="material-symbols-outlined text-[18px] mr-1" aria-hidden="true">layers</span> {order.items.length} item{order.items.length === 1 ? "" : "s"}</span>
             </div>
           </div>
           <div className="bg-primary-container text-white p-4 px-6 rounded-xl flex items-center gap-4">
             <div className="text-right">
-              <p className="text-label-caps font-label-caps opacity-70">TOTAL PAID</p>
+              <p className="text-label-caps font-label-caps opacity-70">
+                {awaitingPayment ? "AMOUNT DUE" : order.status === "CANCELLED" ? "ORDER TOTAL" : "TOTAL PAID"}
+              </p>
               <p className="text-headline-md font-headline-md">{inr(order.totalAmount)}</p>
             </div>
-            <span className="material-symbols-outlined text-secondary text-3xl" style={fill1} aria-hidden="true">check_circle</span>
+            <span className="material-symbols-outlined text-secondary text-3xl" style={fill1} aria-hidden="true">
+              {awaitingPayment ? "pending" : order.status === "CANCELLED" ? "cancel" : "check_circle"}
+            </span>
           </div>
         </div>
       </div>
@@ -194,6 +217,19 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
         <div role="alert" className="mb-6 bg-error-container/40 border border-error/20 text-on-error-container rounded-lg p-4 flex items-center gap-3">
           <span className="material-symbols-outlined text-error" aria-hidden="true">error</span>
           <span>{actionError}</span>
+        </div>
+      )}
+
+      {awaitingPayment && (
+        <div className="mb-gutter">
+          <PaymentPanel
+            orderId={order.id}
+            orderNumber={order.orderNumber}
+            amount={order.totalAmount}
+            payment={order.payment}
+            bank={order.bankDetails}
+            onUpdated={(o) => setOrder(o as OrderDetail)}
+          />
         </div>
       )}
 
@@ -212,16 +248,29 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
                 <div className="relative pl-8 space-y-8">
                   <div className="status-timeline-line"></div>
                   {order.statusHistory.map((h, i) => {
-                    const isCancelledStep = h.status === "CANCELLED";
+                    // Payment events share the PAYMENT_PENDING status, so the
+                    // note (written by the server, not the user) says what
+                    // happened. A rejection must not wear a checkmark.
+                    const rejected = h.status === "PAYMENT_PENDING" && !!h.note?.startsWith("Payment proof rejected");
+                    const uploaded = h.status === "PAYMENT_PENDING" && !!h.note?.match(/proof uploaded$/i);
+                    const icon =
+                      h.status === "CANCELLED" || rejected ? "close"
+                        : uploaded ? "upload"
+                        : h.status === "PAYMENT_PENDING" ? "schedule"
+                        : "check";
                     return (
                       <div key={i} className="relative">
-                        <div className={`absolute -left-[29px] top-0 ${statusDot(h.status)} text-white rounded-full h-6 w-6 flex items-center justify-center z-10 shadow-sm`}>
-                          <span className="material-symbols-outlined text-[16px]" aria-hidden="true">{isCancelledStep ? "close" : "check"}</span>
+                        <div className={`absolute -left-[29px] top-0 ${rejected ? "bg-red-500" : statusDot(h.status)} text-white rounded-full h-6 w-6 flex items-center justify-center z-10 shadow-sm`}>
+                          <span className="material-symbols-outlined text-[16px]" aria-hidden="true">{icon}</span>
                         </div>
                         <div className="flex justify-between items-start gap-4">
                           <div>
-                            <h4 className="font-bold text-body-lg">{statusLabel(h.status)}</h4>
-                            {h.note && <p className="text-on-surface-variant text-body-md">{h.note}</p>}
+                            <h3 className="font-bold text-body-lg">{rejected ? "Payment proof rejected" : statusLabel(h.status)}</h3>
+                            {h.note && (
+                              <p className="text-on-surface-variant text-body-md">
+                                {rejected ? h.note.replace(/^Payment proof rejected:\s*/, "") : h.note}
+                              </p>
+                            )}
                           </div>
                           <span className="text-label-caps font-label-caps text-on-surface-variant whitespace-nowrap">{formatDateTime(h.at)}</span>
                         </div>
@@ -298,7 +347,7 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
                           >
                             {uploadingItem === it.id ? "Uploading…" : rejected ? "Re-upload file" : "Upload file"}
                           </Button>
-                          <p className="text-label-caps font-label-caps text-outline mt-2 uppercase">PDF, AI, PSD, PNG or JPG</p>
+                          <p className="text-label-caps font-label-caps text-on-surface-variant mt-2 uppercase">PDF, AI, PSD, PNG or JPG</p>
                         </div>
                       )}
                     </div>
@@ -317,7 +366,12 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
               <h2 className="text-body-lg font-bold">Invoice &amp; Payment</h2>
             </div>
             <div className="p-6">
-              <div className="flex justify-between mb-6"><span className="text-on-surface-variant text-body-md">Invoice Number</span><span className="font-bold text-body-md">#{order.invoiceNumber}</span></div>
+              <div className="flex justify-between mb-6">
+                <span className="text-on-surface-variant text-body-md">Invoice Number</span>
+                <span className="font-bold text-body-md">
+                  {order.invoiceNumber ? `#${order.invoiceNumber}` : <span className="font-normal text-on-surface-variant">Issued after payment</span>}
+                </span>
+              </div>
               <div className="space-y-3 mb-6">
                 {order.items.map((it) => (
                   <div key={it.id} className="flex justify-between text-body-md"><span className="text-on-surface-variant">{it.quantity} × {it.productName}</span><span>{inr(it.lineSubtotal)}</span></div>
@@ -332,13 +386,42 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
                 <div className="flex justify-between text-body-md"><span className="text-on-surface-variant">GST (18%)</span><span>{inr(order.gstAmount)}</span></div>
               </div>
               <div className="flex justify-between items-center mb-6">
-                <span className="font-bold text-body-lg">Total Paid</span>
+                <span className="font-bold text-body-lg">{paid ? "Total Paid" : "Total"}</span>
                 <span className="text-headline-md font-headline-md text-primary">{inr(order.totalAmount)}</span>
               </div>
               <div className="bg-surface-container rounded-lg p-3 flex items-center gap-3">
-                <span className="material-symbols-outlined text-secondary" style={fill1} aria-hidden="true">account_balance_wallet</span>
-                <span className="text-label-caps font-label-caps text-on-surface-variant">PAID VIA PRINTX WALLET</span>
+                <span className="material-symbols-outlined text-secondary" style={fill1} aria-hidden="true">account_balance</span>
+                <span className="text-label-caps font-label-caps text-on-surface-variant">
+                  {paid
+                    ? order.payment?.method === "WALLET"
+                      ? "PAID VIA WALLET"
+                      : "PAID BY BANK TRANSFER"
+                    : awaitingPayment
+                      ? "AWAITING BANK TRANSFER"
+                      : "NO PAYMENT TAKEN"}
+                </span>
               </div>
+              {order.refunds.length > 0 && (
+                <ul className="mt-3 space-y-2">
+                  {order.refunds.map((r, i) => (
+                    <li key={i} className="flex items-center justify-between gap-3 rounded-lg border border-outline-variant/40 p-3">
+                      <span className="text-body-md">
+                        Refund {inr(r.amount)}
+                        <span className="block text-xs text-on-surface-variant">
+                          {r.status === "CREDITED"
+                            ? `Sent to your bank account${r.processedAt ? ` · ${formatDateTime(r.processedAt)}` : ""}`
+                            : r.status === "REJECTED"
+                              ? r.reason ?? "Declined"
+                              : "We'll transfer it to your bank account"}
+                        </span>
+                      </span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${REFUND_STATUS[r.status]?.badge ?? ""}`}>
+                        {statusLabel(r.status, REFUND_STATUS)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </section>
 
@@ -378,7 +461,9 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
                 className="w-full flex flex-col items-center justify-center p-4 rounded-lg border border-error/20 text-error hover:bg-error/5 transition-colors disabled:opacity-60"
               >
                 <span className="font-bold text-body-md">{cancelling ? "Cancelling…" : "Cancel Order"}</span>
-                <span className="text-[10px] uppercase font-bold tracking-tighter opacity-70 mt-1">Full wallet refund if cancelled now</span>
+                <span className="text-[10px] uppercase font-bold tracking-tighter opacity-70 mt-1">
+                  {paid ? "Full refund to your bank account" : "No charge — payment not yet verified"}
+                </span>
               </button>
             </section>
           )}

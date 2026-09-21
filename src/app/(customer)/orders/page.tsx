@@ -188,12 +188,18 @@ export default function MyOrders() {
                               <span className="font-headline-md text-primary">#{o.orderNumber}</span>
                               <span className={`px-3 py-1 rounded-full font-label-caps ${statusBadge(o.status)}`}>{statusLabel(o.status)}</span>
                             </div>
-                            <p className="text-on-surface-variant text-sm">Placed: {formatDate(o.placedAt)}</p>
+                            <p className="text-on-surface-variant text-sm">Ordered: {formatDate(o.placedAt)}</p>
                           </div>
                         </div>
                         <div className="text-right">
                           <p className={`font-price-lg text-primary ${isCancelled ? "line-through text-on-surface-variant" : ""}`}>{inr(o.totalAmount)}</p>
-                          <p className="text-on-surface-variant text-sm">Paid via Wallet</p>
+                          <p className={`text-sm ${o.status === "PAYMENT_PENDING" ? "font-bold text-secondary" : "text-on-surface-variant"}`}>
+                            {o.status === "PAYMENT_PENDING"
+                              ? "Payment pending"
+                              : isCancelled
+                                ? "Cancelled"
+                                : "Paid by bank transfer"}
+                          </p>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 mb-6">
@@ -204,9 +210,12 @@ export default function MyOrders() {
                       </div>
                       <div className="flex flex-col sm:flex-row gap-3">
                         <Link href={`/orders/${o.id}`} className="flex-1 py-3 border border-outline-variant rounded-lg font-button hover:bg-surface-dim transition-colors text-center">View Details</Link>
-                        {!isCancelled && (
+                        {o.status === "PAYMENT_PENDING" ? (
+                          // The customer's next step is paying, not tracking.
+                          <ButtonLink href={`/orders/${o.id}`} className="flex-1" icon="account_balance">Complete payment</ButtonLink>
+                        ) : !isCancelled ? (
                           <ButtonLink href={`/orders/${o.id}`} className="flex-1" icon="local_shipping">Track order</ButtonLink>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </div>

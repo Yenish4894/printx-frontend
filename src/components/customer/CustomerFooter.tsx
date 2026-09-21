@@ -15,7 +15,7 @@ export default function CustomerFooter() {
             </Link>
           </div>
           <p className="text-sm leading-relaxed max-w-xs">
-            Online printing for businesses across India — instant pricing, prepaid wallet checkout,
+            Online printing for businesses across India — instant pricing, bank-transfer checkout,
             and order tracking.
           </p>
         </div>
@@ -25,7 +25,6 @@ export default function CustomerFooter() {
             <li><Link className="hover:text-white transition-colors" href="/dashboard">Dashboard</Link></li>
             <li><Link className="hover:text-white transition-colors" href="/products">Products</Link></li>
             <li><Link className="hover:text-white transition-colors" href="/orders">My Orders</Link></li>
-            <li><Link className="hover:text-white transition-colors" href="/wallet">Wallet</Link></li>
           </ul>
         </div>
         <div>

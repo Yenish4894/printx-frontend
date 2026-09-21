@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { admin, ApiError } from "@/lib/api";
+import { useSession } from "@/components/SessionProvider";
 import { useToast } from "@/components/ui/UIProvider";
 import Switch from "@/components/ui/Switch";
 import Button from "@/components/ui/Button";
@@ -35,7 +36,33 @@ interface Settings {
   socialInstagram: string | null;
   socialTwitter: string | null;
   socialLinkedin: string | null;
+  // Bank account customers pay into. Flattened from the API's `bank` object so
+  // the form can bind to them and save sends the keys settingsSchema expects.
+  bankAccountName: string;
+  bankName: string;
+  bankAccountNumber: string;
+  bankIfsc: string;
+  bankUpiId: string;
 }
+
+type ApiSettings = Omit<Settings, "bankAccountName" | "bankName" | "bankAccountNumber" | "bankIfsc" | "bankUpiId"> & {
+  bank?: { accountName: string | null; bankName: string | null; accountNumber: string | null; ifsc: string | null; upiId: string | null };
+};
+
+function fromApi(r: ApiSettings): Settings {
+  const { bank, ...rest } = r;
+  return {
+    ...rest,
+    bankAccountName: bank?.accountName ?? "",
+    bankName: bank?.bankName ?? "",
+    bankAccountNumber: bank?.accountNumber ?? "",
+    bankIfsc: bank?.ifsc ?? "",
+    bankUpiId: bank?.upiId ?? "",
+  };
+}
+
+const bankComplete = (s: Settings) =>
+  !!(s.bankAccountName.trim() && s.bankAccountNumber.trim() && s.bankIfsc.trim());
 
 function CardHead({ icon, title, fill = false }: { icon: string; title: string; fill?: boolean }) {
   return (
@@ -54,16 +81,23 @@ function validate(s: Settings): Record<string, string> {
   if (!Number.isFinite(s.gstPercent) || s.gstPercent < 0 || s.gstPercent > 100)
     e.gstPercent = "GST must be between 0 and 100.";
   if (!nonNeg(s.freeShippingThreshold)) e.freeShippingThreshold = "Must be 0 or more.";
-  if (!nonNeg(s.minTopUp)) e.minTopUp = "Must be 0 or more.";
-  if (!nonNeg(s.maxTopUp)) e.maxTopUp = "Must be 0 or more.";
-  if (nonNeg(s.minTopUp) && nonNeg(s.maxTopUp) && s.minTopUp > s.maxTopUp)
-    e.maxTopUp = "Max top-up must be greater than or equal to min.";
+  // Same rules the server enforces, shown inline before save. A typo here sends
+  // a customer's money to the wrong account, so these are worth being strict about.
+  const acct = s.bankAccountNumber.trim();
+  if (acct && !/^\d{9,18}$/.test(acct)) e.bankAccountNumber = "Digits only, 9 to 18 long.";
+  const ifsc = s.bankIfsc.trim().toUpperCase();
+  if (ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) e.bankIfsc = "Should look like HDFC0001234.";
+  const upi = s.bankUpiId.trim();
+  if (upi && !/^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test(upi)) e.bankUpiId = "Should look like name@bank.";
   if (!nonNeg(s.cancellationWindowHours)) e.cancellationWindowHours = "Must be 0 or more.";
   if (!nonNeg(s.standardBleedMm)) e.standardBleedMm = "Must be 0 or more.";
   return e;
 }
 
 export default function AdminSettings() {
+  const { user } = useSession();
+  // The server enforces this too; the page just doesn't offer what would be refused.
+  const canEditBank = user?.role === "SUPER_ADMIN";
   const toast = useToast();
   const [s, setS] = useState<Settings | null>(null);
   const [initial, setInitial] = useState<Settings | null>(null);
@@ -74,8 +108,9 @@ export default function AdminSettings() {
     admin.settings
       .get()
       .then((r) => {
-        setS(r.settings as Settings);
-        setInitial(r.settings as Settings);
+        const f = fromApi(r.settings as ApiSettings);
+        setS(f);
+        setInitial(f);
       })
       .catch((e) => setError(e instanceof ApiError ? e.message : "Failed to load settings"));
   }, []);
@@ -100,8 +135,9 @@ export default function AdminSettings() {
     setError(null);
     try {
       const r = await admin.settings.update(s as unknown as Record<string, unknown>);
-      setS(r.settings as Settings);
-      setInitial(r.settings as Settings);
+      const f = fromApi(r.settings as ApiSettings);
+      setS(f);
+      setInitial(f);
       toast("Settings saved", "success");
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : "Could not save settings";
@@ -159,15 +195,34 @@ export default function AdminSettings() {
           </div>
         </section>
 
-        {/* Wallet */}
+        {/* Bank details */}
         <section className="col-span-12 lg:col-span-6 bg-surface-container-lowest rounded-xl premium-shadow p-6 border border-outline-variant/10">
-          <CardHead icon="account_balance_wallet" title="Wallet Settings" fill />
+          <CardHead icon="account_balance" title="Bank Details for Payments" fill />
           <div className="space-y-4">
-            <p className="text-sm text-on-surface-variant">Orders are paid from the customer&apos;s prepaid wallet. Top-ups are enforced within this range.</p>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5"><label htmlFor="minTopUp" className="font-label-caps text-on-surface-variant uppercase tracking-wider text-[10px]">Min Top-up</label><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-on-surface-variant text-sm" aria-hidden="true">₹</span><input id="minTopUp" className="w-full pl-7 pr-3 py-2.5 rounded-lg border border-outline-variant font-medium text-sm" type="number" value={numVal(s.minTopUp)} onChange={numSet("minTopUp")} /></div>{err("minTopUp")}</div>
-              <div className="flex flex-col gap-1.5"><label htmlFor="maxTopUp" className="font-label-caps text-on-surface-variant uppercase tracking-wider text-[10px]">Max Top-up</label><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-on-surface-variant text-sm" aria-hidden="true">₹</span><input id="maxTopUp" className="w-full pl-7 pr-3 py-2.5 rounded-lg border border-outline-variant font-medium text-sm" type="number" value={numVal(s.maxTopUp)} onChange={numSet("maxTopUp")} /></div>{err("maxTopUp")}</div>
-            </div>
+            <p className="text-sm text-on-surface-variant">
+              Customers transfer to this account after placing an order, then upload a screenshot for you to verify.
+              Shown only to a customer on their own unpaid order.
+            </p>
+            {!bankComplete(s) && (
+              <p role="alert" className="flex items-start gap-2 rounded-lg bg-error-container px-3 py-2.5 text-sm font-bold text-on-error-container">
+                <span aria-hidden="true" className="material-symbols-outlined text-[18px]">warning</span>
+                Checkout is blocked until account holder, account number and IFSC are filled in and saved.
+              </p>
+            )}
+            {!canEditBank && (
+              <p className="flex items-start gap-2 rounded-lg bg-surface-container px-3 py-2.5 text-sm text-on-surface-variant">
+                <span aria-hidden="true" className="material-symbols-outlined text-[18px]">lock</span>
+                Only a super admin can change the account customers pay into.
+              </p>
+            )}
+            <fieldset disabled={!canEditBank} className="grid grid-cols-1 sm:grid-cols-2 gap-4 disabled:opacity-70">
+              <legend className="sr-only">Bank account</legend>
+              <div className="flex flex-col gap-1.5"><label htmlFor="bankAccountName" className="font-label-caps text-on-surface-variant uppercase tracking-wider text-[10px]">Account Holder Name</label><input id="bankAccountName" className="w-full px-4 py-2.5 rounded-lg border border-outline-variant font-medium text-sm" type="text" value={s.bankAccountName} onChange={strSet("bankAccountName")} placeholder="Bhagini Graphics" aria-invalid={errors.bankAccountName ? true : undefined} />{err("bankAccountName")}</div>
+              <div className="flex flex-col gap-1.5"><label htmlFor="bankName" className="font-label-caps text-on-surface-variant uppercase tracking-wider text-[10px]">Bank Name</label><input id="bankName" className="w-full px-4 py-2.5 rounded-lg border border-outline-variant font-medium text-sm" type="text" value={s.bankName} onChange={strSet("bankName")} placeholder="HDFC Bank" aria-invalid={errors.bankName ? true : undefined} />{err("bankName")}</div>
+              <div className="flex flex-col gap-1.5"><label htmlFor="bankAccountNumber" className="font-label-caps text-on-surface-variant uppercase tracking-wider text-[10px]">Account Number</label><input id="bankAccountNumber" className="w-full px-4 py-2.5 rounded-lg border border-outline-variant font-medium text-sm font-mono tracking-wider" type="text" value={s.bankAccountNumber} onChange={strSet("bankAccountNumber")} placeholder="50100123456789" aria-invalid={errors.bankAccountNumber ? true : undefined} />{err("bankAccountNumber")}</div>
+              <div className="flex flex-col gap-1.5"><label htmlFor="bankIfsc" className="font-label-caps text-on-surface-variant uppercase tracking-wider text-[10px]">IFSC</label><input id="bankIfsc" className="w-full px-4 py-2.5 rounded-lg border border-outline-variant font-medium text-sm font-mono tracking-wider uppercase" type="text" value={s.bankIfsc} onChange={strSet("bankIfsc")} placeholder="HDFC0001234" aria-invalid={errors.bankIfsc ? true : undefined} />{err("bankIfsc")}</div>
+              <div className="flex flex-col gap-1.5"><label htmlFor="bankUpiId" className="font-label-caps text-on-surface-variant uppercase tracking-wider text-[10px]">UPI ID (optional)</label><input id="bankUpiId" className="w-full px-4 py-2.5 rounded-lg border border-outline-variant font-medium text-sm" type="text" value={s.bankUpiId} onChange={strSet("bankUpiId")} placeholder="bhagini@hdfcbank" aria-invalid={errors.bankUpiId ? true : undefined} />{err("bankUpiId")}</div>
+            </fieldset>
           </div>
         </section>
 

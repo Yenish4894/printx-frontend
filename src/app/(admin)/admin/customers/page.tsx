@@ -9,9 +9,7 @@ import { statusLabel, statusBadge } from "@/lib/orderStatus";
 import { formatDateTime } from "@/lib/format";
 import Pager from "@/components/ui/Pager";
 import { EmptyState, LoadingState, TableState } from "@/components/ui/States";
-import Button from "@/components/ui/Button";
 
-const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
 type Customer = {
   id: string;
@@ -20,7 +18,6 @@ type Customer = {
   mobile: string;
   email: string;
   gstNumber: string | null;
-  walletBalance: number;
   isActive: boolean;
   orderCount: number;
   joinedAt: string;
@@ -33,7 +30,6 @@ type CustomerDetail = {
   mobile: string;
   email: string;
   gstNumber: string | null;
-  walletBalance: number;
   isActive: boolean;
   joinedAt: string;
   totalSpent: number;
@@ -42,9 +38,6 @@ type CustomerDetail = {
     city: string; state: string; pincode: string; phone: string | null; isDefault: boolean;
   }[];
   orders: { id: string; orderNumber: string; status: string; totalAmount: number; placedAt: string }[];
-  walletTransactions: {
-    id: string; type: string; amount: number; balanceAfter: number; description: string | null; createdAt: string;
-  }[];
 };
 
 export default function AdminCustomers() {
@@ -64,12 +57,6 @@ export default function AdminCustomers() {
   const [drawerError, setDrawerError] = useState<string | null>(null);
   const drawerCloseRef = useRef<HTMLButtonElement>(null);
 
-  // wallet adjust form
-  const [adjAmount, setAdjAmount] = useState("");
-  const [adjType, setAdjType] = useState<"credit" | "debit">("credit");
-  const [adjNote, setAdjNote] = useState("");
-  const [adjBusy, setAdjBusy] = useState(false);
-  const [adjError, setAdjError] = useState<string | null>(null);
 
   const [toggleBusyId, setToggleBusyId] = useState<string | null>(null);
 
@@ -111,16 +98,12 @@ export default function AdminCustomers() {
   };
 
   const openDetail = async (id: string) => {
-    setAdjAmount("");
-    setAdjNote("");
-    setAdjType("credit");
-    setAdjError(null);
     setDrawerError(null);
     await fetchDetail(id);
   };
 
   const closeDrawer = () => {
-    if (adjBusy || toggleBusyId) return; // don't dismiss mid-save
+    if (toggleBusyId) return; // don't dismiss mid-save
     setDetail(null);
     setDetailError(null);
     setDrawerError(null);
@@ -155,50 +138,6 @@ export default function AdminCustomers() {
     }
   };
 
-  const adjNum = Number(adjAmount);
-  const adjValid = Number.isFinite(adjNum) && adjNum > 0;
-  const resultingBalance = detail
-    ? detail.walletBalance + (adjType === "credit" ? (adjValid ? adjNum : 0) : -(adjValid ? adjNum : 0))
-    : 0;
-
-  const applyAdjustment = async () => {
-    if (!detail) return;
-    if (!adjValid) {
-      setAdjError("Enter a positive amount");
-      return;
-    }
-    if (adjType === "debit" && adjNum > detail.walletBalance) {
-      setAdjError(`Debit exceeds the wallet balance of ${inr(detail.walletBalance)}.`);
-      return;
-    }
-    if (adjType === "debit") {
-      const ok = await confirm({
-        title: "Remove money from wallet?",
-        message: `${inr(adjNum)} will be debited. Resulting balance: ${inr(resultingBalance)}.`,
-        confirmLabel: "Debit wallet",
-        danger: true,
-      });
-      if (!ok) return;
-    }
-    const signed = adjType === "credit" ? adjNum : -adjNum;
-    setAdjBusy(true);
-    setAdjError(null);
-    try {
-      await admin.customers.adjustWallet(detail.id, signed, adjNote || undefined);
-      setAdjAmount("");
-      setAdjNote("");
-      await fetchDetail(detail.id, { silent: true });
-      await load({ silent: true });
-      toast(adjType === "credit" ? "Wallet credited" : "Wallet debited", "success");
-    } catch (e) {
-      const msg = e instanceof ApiError ? e.message : "Adjustment failed";
-      setAdjError(msg);
-      toast(msg, "error");
-    } finally {
-      setAdjBusy(false);
-    }
-  };
-
   const drawerOpen = detailLoading || !!detail || !!detailError;
   useEffect(() => {
     if (!drawerOpen) return;
@@ -209,7 +148,7 @@ export default function AdminCustomers() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drawerOpen, adjBusy, toggleBusyId]);
+  }, [drawerOpen, toggleBusyId]);
 
   // Filtering happens in the DB now, so the page shows exactly what came back.
   const visible = customers;
@@ -252,16 +191,16 @@ export default function AdminCustomers() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-surface-container-low border-b border-surface-container">
-                {["Customer", "Contact Details", "Wallet Balance", "Orders", "GST", "Status", ""].map((h, i) => (
+                {["Customer", "Contact Details", "Orders", "GST", "Status", ""].map((h, i) => (
                   <th key={i} scope="col" className={`px-6 py-4 font-label-caps text-on-surface-variant ${h === "Status" ? "text-center" : ""}`}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-container">
               {loading ? (
-                <TableState colSpan={7}><LoadingState label="Loading customers" compact /></TableState>
+                <TableState colSpan={6}><LoadingState label="Loading customers" compact /></TableState>
               ) : visible.length === 0 ? (
-                <TableState colSpan={7}>
+                <TableState colSpan={6}>
                   <EmptyState
                     compact
                     icon="group"
@@ -279,7 +218,6 @@ export default function AdminCustomers() {
                       </div>
                     </td>
                     <td className="px-6 py-4"><div className="text-sm"><p className="text-on-surface">{c.email}</p><p className="text-on-surface-variant">{c.mobile}</p></div></td>
-                    <td className="px-6 py-4 font-bold text-on-surface">{inr(c.walletBalance)}</td>
                     <td className="px-6 py-4 text-on-surface">{c.orderCount}</td>
                     <td className="px-6 py-4 text-sm text-on-surface-variant">{c.gstNumber ?? "—"}</td>
                     <td className="px-6 py-4">
@@ -382,41 +320,6 @@ export default function AdminCustomers() {
                 </div>
 
                 <div className="p-6 border-b border-surface-container">
-                  <div className="header-deep-gradient p-5 rounded-xl text-white shadow-xl mb-6 flex justify-between items-center">
-                    <div><p className="text-xs font-label-caps opacity-70">Current Wallet Balance</p><p className="text-display-lg font-price-lg mt-1">{inr(detail.walletBalance)}</p></div>
-                    <span className="material-symbols-outlined text-4xl opacity-20" style={fill1} aria-hidden="true">account_balance_wallet</span>
-                  </div>
-                  <div className="bg-surface-container-low p-4 rounded-xl border border-surface-container">
-                    <h5 className="font-label-caps text-on-surface-variant mb-4 flex items-center gap-2"><span className="material-symbols-outlined text-sm" aria-hidden="true">edit_note</span> Manual Adjustment</h5>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div className="flex flex-col gap-1">
-                        <label htmlFor="adj-amount" className="text-[10px] font-bold uppercase text-on-surface-variant ml-1">Amount (₹)</label>
-                        <input id="adj-amount" className="border border-surface-container bg-white rounded-lg p-2 focus:ring-secondary/20" type="number" min="0" value={adjAmount} onChange={(e) => setAdjAmount(e.target.value)} placeholder="0.00" />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[10px] font-bold uppercase text-on-surface-variant ml-1">Type</span>
-                        <div className="flex p-1 bg-white border border-surface-container rounded-lg h-full" role="group" aria-label="Adjustment type">
-                          <button type="button" aria-pressed={adjType === "credit"} onClick={() => setAdjType("credit")} className={`flex-1 text-[10px] font-bold uppercase rounded py-1 ${adjType === "credit" ? "bg-secondary text-white" : "text-on-surface-variant"}`}>Credit</button>
-                          <button type="button" aria-pressed={adjType === "debit"} onClick={() => setAdjType("debit")} className={`flex-1 text-[10px] font-bold uppercase rounded py-1 ${adjType === "debit" ? "bg-secondary text-white" : "text-on-surface-variant"}`}>Debit</button>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-1 mb-4">
-                      <label htmlFor="adj-note" className="text-[10px] font-bold uppercase text-on-surface-variant ml-1">Reason / Note</label>
-                      <input id="adj-note" className="border border-surface-container bg-white rounded-lg p-2 text-sm" type="text" value={adjNote} onChange={(e) => setAdjNote(e.target.value)} placeholder="Manual adjustment by admin" />
-                    </div>
-                    {adjValid && (
-                      <p className="text-xs mb-3 text-on-surface-variant">
-                        Resulting balance:{" "}
-                        <span className={`font-bold ${resultingBalance < 0 ? "text-error" : "text-on-surface"}`}>{inr(resultingBalance)}</span>
-                      </p>
-                    )}
-                    {adjError && <p className="text-error text-xs mb-3" role="alert">{adjError}</p>}
-                    <Button onClick={applyAdjustment} disabled={!adjValid} loading={adjBusy} size="sm" fullWidth>{adjBusy ? "Applying…" : "Apply adjustment"}</Button>
-                  </div>
-                </div>
-
-                <div className="p-6 border-b border-surface-container">
                   <h5 className="font-label-caps text-on-surface-variant mb-4">Recent Orders</h5>
                   {detail.orders.length === 0 ? (
                     <p className="text-sm text-on-surface-variant">No orders yet.</p>
@@ -427,28 +330,6 @@ export default function AdminCustomers() {
                           <span className="font-bold text-sm text-secondary">{o.orderNumber}</span>
                           <span className="text-sm">{inr(o.totalAmount)}</span>
                           <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold ${statusBadge(o.status)}`}>{statusLabel(o.status)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-6 border-b border-surface-container">
-                  <h5 className="font-label-caps text-on-surface-variant mb-4">Wallet Transactions</h5>
-                  {detail.walletTransactions.length === 0 ? (
-                    <p className="text-sm text-on-surface-variant">No transactions yet.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {detail.walletTransactions.map((t) => (
-                        <div key={t.id} className="flex items-center justify-between p-3 bg-surface-container-low rounded-lg">
-                          <div>
-                            <span className="text-[10px] uppercase font-bold text-on-surface-variant">{t.type}</span>
-                            <p className="text-xs text-on-surface-variant">{t.description ?? ""}</p>
-                          </div>
-                          <div className="text-right">
-                            <span className={`text-sm font-bold ${t.type === "DEBIT" ? "text-error" : "text-success"}`}>{t.type === "DEBIT" ? "-" : "+"}{inr(t.amount)}</span>
-                            <p className="text-[10px] text-on-surface-variant">Bal {inr(t.balanceAfter)}</p>
-                          </div>
                         </div>
                       ))}
                     </div>

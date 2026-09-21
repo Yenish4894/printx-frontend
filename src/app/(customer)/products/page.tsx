@@ -5,9 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { catalog, ApiError } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import { EmptyState, ErrorState } from "@/components/ui/States";
-import { useSession, inr } from "@/components/SessionProvider";
+import { inr } from "@/components/SessionProvider";
 
-const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
 interface ProductCardData {
   id: string;
@@ -57,7 +56,6 @@ function ProductCard({ p }: { p: ProductCardData }) {
 }
 
 export default function ProductsListing() {
-  const { user } = useSession();
   const [allProducts, setAllProducts] = useState<ProductCardData[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Two-level browse: pick a top category, then optionally narrow to one of its
@@ -130,15 +128,6 @@ export default function ProductsListing() {
               </nav>
               <h1 className="font-display-lg text-display-lg font-extrabold mb-2 leading-none">The Print Studio</h1>
               <p className="text-on-primary-container font-body-lg">Premium materials. Industrial precision. Live pricing.</p>
-            </div>
-            <div className="flex items-center gap-4 bg-primary-container/40 p-4 rounded-xl border border-white/10 backdrop-blur-md">
-              <div className="flex flex-col text-right">
-                <span className="font-label-caps text-on-primary-container opacity-80">ACCOUNT BALANCE</span>
-                <span className="font-price-lg text-price-lg text-secondary-container">{inr(user?.walletBalance)}</span>
-              </div>
-              <div className="bg-secondary-container/20 p-2 rounded-lg">
-                <span aria-hidden="true" className="material-symbols-outlined text-secondary-container" style={fill1}>account_balance_wallet</span>
-              </div>
             </div>
           </div>
         </div>

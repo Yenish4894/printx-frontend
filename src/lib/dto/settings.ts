@@ -1,5 +1,15 @@
 import { z } from "zod";
 
+/** Optional text setting: trimmed, and "" means clear it (null). */
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .transform((v) => (v === "" ? null : v))
+    .nullable()
+    .optional();
+
 export const settingsSchema = z.object({
   gstPercent: z.number().int().min(0).max(100).optional(),
   freeShippingThreshold: z.number().nonnegative().optional(),
@@ -18,6 +28,26 @@ export const settingsSchema = z.object({
   socialInstagram: z.string().max(200).nullable().optional(),
   socialTwitter: z.string().max(200).nullable().optional(),
   socialLinkedin: z.string().max(200).nullable().optional(),
+
+  // Bank account customers transfer to. Empty string clears a field. Formats are
+  // checked because a typo here sends real money to the wrong place.
+  bankAccountName: optionalText(100),
+  bankName: optionalText(100),
+  bankAccountNumber: optionalText(18).refine(
+    (v) => v == null || /^\d{9,18}$/.test(v),
+    "Account number must be 9 to 18 digits",
+  ),
+  bankIfsc: z
+    .string()
+    .trim()
+    .transform((v) => (v === "" ? null : v.toUpperCase()))
+    .nullable()
+    .optional()
+    .refine((v) => v == null || /^[A-Z]{4}0[A-Z0-9]{6}$/.test(v), "IFSC must look like HDFC0001234"),
+  bankUpiId: optionalText(80).refine(
+    (v) => v == null || /^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test(v),
+    "UPI ID must look like name@bank",
+  ),
 });
 
 export type SettingsInput = z.infer<typeof settingsSchema>;

@@ -25,6 +25,8 @@ type Stats = {
   products: number;
   revenue: number;
   pendingRefunds: number;
+  awaitingPayment: number;
+  paymentsToVerify: number;
   ordersByStatus: Record<string, number>;
   recentOrders: RecentOrder[];
 };
@@ -97,7 +99,7 @@ export default function AdminDashboard() {
             </div>
             <div className="mt-6 flex items-center gap-2 text-white/70 text-sm relative z-10">
               <span aria-hidden="true" className="material-symbols-outlined text-secondary-container text-[20px]">payments</span>
-              Revenue excludes cancelled orders
+              Revenue counts verified payments only
             </div>
             <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-secondary/20 rounded-full blur-3xl"></div>
           </div>
@@ -168,17 +170,38 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Pending refunds */}
-          <Link href="/admin/refunds" className="col-span-4 lg:col-span-1 p-8 rounded-xl bg-white shadow-sm border border-outline-variant flex flex-col justify-between hover:shadow-lg transition-all hover:-translate-y-1">
-            <div>
-              <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center mb-4"><span aria-hidden="true" className="material-symbols-outlined text-secondary">currency_exchange</span></div>
-              <span className="text-label-caps text-on-surface-variant uppercase">Pending Refunds</span>
-              <p className="font-headline-md text-headline-md mt-1">{stats.pendingRefunds.toLocaleString("en-IN")}</p>
-            </div>
-            <p className="text-xs text-on-surface-variant mt-4">
-              {stats.pendingRefunds > 0 ? "Awaiting your review →" : "Nothing to review"}
-            </p>
-          </Link>
+          {/* Money waiting on the team: payments to verify, refunds to send. */}
+          <div className="col-span-4 lg:col-span-1 flex flex-col gap-5">
+            <Link
+              href="/admin/orders"
+              className={`flex-1 p-6 rounded-xl shadow-sm border flex flex-col justify-between hover:shadow-lg transition-all hover:-translate-y-1 ${
+                stats.paymentsToVerify > 0 ? "bg-secondary/5 border-secondary/40" : "bg-white border-outline-variant"
+              }`}
+            >
+              <div>
+                <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center mb-3"><span aria-hidden="true" className="material-symbols-outlined text-secondary">account_balance</span></div>
+                <span className="text-label-caps text-on-surface-variant uppercase">Payments to Verify</span>
+                <p className="font-headline-md text-headline-md mt-1">{stats.paymentsToVerify.toLocaleString("en-IN")}</p>
+              </div>
+              <p className="text-xs text-on-surface-variant mt-3">
+                {stats.paymentsToVerify > 0
+                  ? "Filter orders by Payment Pending →"
+                  : stats.awaitingPayment > 0
+                    ? `${stats.awaitingPayment} awaiting customer payment`
+                    : "Nothing to verify"}
+              </p>
+            </Link>
+            <Link href="/admin/refunds" className="flex-1 p-6 rounded-xl bg-white shadow-sm border border-outline-variant flex flex-col justify-between hover:shadow-lg transition-all hover:-translate-y-1">
+              <div>
+                <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center mb-3"><span aria-hidden="true" className="material-symbols-outlined text-secondary">currency_exchange</span></div>
+                <span className="text-label-caps text-on-surface-variant uppercase">Refunds to Send</span>
+                <p className="font-headline-md text-headline-md mt-1">{stats.pendingRefunds.toLocaleString("en-IN")}</p>
+              </div>
+              <p className="text-xs text-on-surface-variant mt-3">
+                {stats.pendingRefunds > 0 ? "Send by bank transfer, then mark refunded →" : "Nothing to send"}
+              </p>
+            </Link>
+          </div>
         </div>
       )}
     </>

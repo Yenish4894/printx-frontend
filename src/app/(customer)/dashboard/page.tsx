@@ -25,7 +25,7 @@ export default function CustomerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [stats, setStats] = useState({ totalOrders: 0, inProgress: 0, paidOrderCount: 0, totalSpent: 0 });
+  const [stats, setStats] = useState({ totalOrders: 0, inProgress: 0, awaitingPayment: 0, paidOrderCount: 0, totalSpent: 0 });
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
@@ -47,11 +47,10 @@ export default function CustomerDashboard() {
     loadOrders();
   }, [loadOrders]);
 
-  const { totalOrders, inProgress, paidOrderCount, totalSpent } = stats;
+  const { totalOrders, inProgress, awaitingPayment, paidOrderCount, totalSpent } = stats;
   const recent = orders ?? [];
 
   const greetingName = user?.ownerName ?? user?.businessName ?? "there";
-  const walletBalance = user?.walletBalance ?? 0;
 
   return (
     <main className="max-w-container-max mx-auto px-gutter py-10 space-y-8">
@@ -78,24 +77,24 @@ export default function CustomerDashboard() {
           {/* On the dark banner the secondary variant's light border would
               disappear, so it keeps the banner-specific outline. */}
           <ButtonLink
-            href="/wallet"
+            href="/orders"
             variant="ghost"
             className="flex-1 md:flex-none border border-secondary-fixed-dim text-secondary-fixed-dim hover:bg-white/10"
           >
-            Top up wallet
+            My orders
           </ButtonLink>
         </div>
         <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-secondary/10 rounded-full blur-3xl"></div>
       </section>
 
       {error && (
-        <div role="alert" className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm font-bold flex items-center justify-between gap-4">
+        <div role="alert" className="bg-error-container border border-error/20 text-on-error-container rounded-xl p-4 text-sm font-bold flex items-center justify-between gap-4">
           <span>{error}</span>
           <button
             type="button"
             onClick={loadOrders}
             disabled={loading}
-            className="shrink-0 px-4 py-2 rounded-lg bg-red-600 text-white text-xs uppercase tracking-wide hover:bg-red-700 transition-colors disabled:opacity-60 disabled:pointer-events-none"
+            className="shrink-0 px-4 py-2 rounded-lg bg-error text-on-error text-xs uppercase tracking-wide hover:brightness-110 transition-colors disabled:opacity-60 disabled:pointer-events-none"
           >
             {loading ? "Retrying…" : "Retry"}
           </button>
@@ -106,18 +105,22 @@ export default function CustomerDashboard() {
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="bg-surface-container-lowest p-6 rounded-xl custom-shadow border border-outline-variant/10 hover:-translate-y-1 transition-transform">
           <div className="flex justify-between items-start mb-4">
-            <span className="text-label-caps font-label-caps text-on-surface-variant">Wallet Balance</span>
-            <span aria-hidden="true" className="material-symbols-outlined text-secondary">account_balance_wallet</span>
+            <span className="text-label-caps font-label-caps text-on-surface-variant">Awaiting Payment</span>
+            <span aria-hidden="true" className="material-symbols-outlined text-secondary">account_balance</span>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="font-price-lg text-headline-lg text-on-surface">
-              {sessionLoading ? "…" : inr(walletBalance)}
+              {loading ? "…" : awaitingPayment}
             </span>
           </div>
           <div className="mt-4 space-y-1">
-            <Link href="/wallet" className="text-secondary font-bold text-xs hover:underline">
-              Manage wallet →
-            </Link>
+            {awaitingPayment > 0 ? (
+              <Link href="/orders" className="text-secondary font-bold text-xs hover:underline">
+                Complete your payment →
+              </Link>
+            ) : (
+              <p className="text-xs text-on-surface-variant">Nothing to pay right now</p>
+            )}
           </div>
         </div>
         <div className="bg-surface-container-lowest p-6 rounded-xl custom-shadow border border-outline-variant/10 hover:-translate-y-1 transition-transform">

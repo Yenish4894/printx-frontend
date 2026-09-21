@@ -7,6 +7,7 @@ import { orders as ordersApi, ApiError } from "@/lib/api";
 import { inr } from "@/components/SessionProvider";
 import { ButtonLink } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/States";
+import PaymentPanel, { type PaymentInfo, type BankDetails } from "@/components/customer/PaymentPanel";
 
 const fill1 = { fontVariationSettings: "'FILL' 1" } as const;
 
@@ -31,6 +32,9 @@ interface Shipping {
 interface OrderDetail {
   id: string;
   orderNumber: string;
+  status: string;
+  payment: PaymentInfo | null;
+  bankDetails: BankDetails | null;
   subtotal: number;
   deliveryCharge: number;
   gstAmount: number;
@@ -47,10 +51,12 @@ function GenericSuccess() {
         <div className="relative max-w-container-max mx-auto px-margin-desktop text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-6 py-2 rounded-full border border-white/20 mb-8">
             <span className="material-symbols-outlined text-secondary-container" style={fill1} aria-hidden="true">check_circle</span>
-            <span className="font-label-caps text-label-caps text-white">Order Placed Successfully</span>
+            <span className="font-label-caps text-label-caps text-white">Order Received</span>
           </div>
-          <h1 className="font-display-lg text-display-lg text-white mb-4">Thank you! 🎉</h1>
-          <p className="font-body-lg text-body-lg text-on-primary-container mb-8">Your order has been placed successfully.</p>
+          <h1 className="font-display-lg text-display-lg text-white mb-4">Thank you!</h1>
+          <p className="font-body-lg text-body-lg text-on-primary-container mb-8">
+            Open the order from My Orders to complete your bank transfer and upload the payment screenshot.
+          </p>
           <Link href="/orders" className="inline-flex items-center gap-3 bg-white text-primary py-3 px-8 rounded-xl font-button shadow-lg">
             <span aria-hidden="true" className="material-symbols-outlined">receipt_long</span> View My Orders
           </Link>
@@ -107,7 +113,7 @@ function OrderConfirmedInner() {
     return (
       <StateCard>
         <span className="material-symbols-outlined text-secondary text-4xl animate-spin mb-3" aria-hidden="true">progress_activity</span>
-        <p className="text-on-surface-variant">Confirming your order…</p>
+        <p className="text-on-surface-variant">Loading your order…</p>
       </StateCard>
     );
   }
@@ -125,22 +131,45 @@ function OrderConfirmedInner() {
   }
 
   const s = order.shipping ?? {};
+  // Straight after checkout the order is created but NOT placed: it is placed
+  // when we verify the transfer. Celebrating here would tell the customer the
+  // job is done when the most important step is still theirs.
+  const awaitingPayment = order.status === "PAYMENT_PENDING";
 
   return (
     <main className="min-h-screen">
       {/* Hero */}
       <section className="relative deep-navy-gradient py-20 overflow-hidden">
-        <div className="absolute inset-0 confetti-pattern"></div>
+        {!awaitingPayment && <div className="absolute inset-0 confetti-pattern"></div>}
         <div className="relative max-w-container-max mx-auto px-margin-desktop text-center">
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-6 py-2 rounded-full border border-white/20 mb-8 motion-safe:animate-bounce">
-            <span className="material-symbols-outlined text-secondary-container" style={fill1} aria-hidden="true">check_circle</span>
-            <span className="font-label-caps text-label-caps text-white">Order Placed Successfully</span>
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-6 py-2 rounded-full border border-white/20 mb-8">
+            <span className="material-symbols-outlined text-secondary-container" style={fill1} aria-hidden="true">
+              {awaitingPayment ? "schedule" : "check_circle"}
+            </span>
+            <span className="font-label-caps text-label-caps text-white">
+              {awaitingPayment ? "Order created · Payment pending" : "Order placed successfully"}
+            </span>
           </div>
-          <h1 className="font-display-lg text-display-lg text-white mb-4">Thank you! 🎉</h1>
-          <p className="font-body-lg text-body-lg text-on-primary-container mb-8">Order Number <span className="font-bold text-secondary-container">#{order.orderNumber}</span></p>
-          <div className="inline-block bg-white/10 backdrop-blur-md text-white font-button px-8 py-3 rounded-xl shadow-xl border border-white/20">
-            Paid via Wallet <span className="font-black text-secondary-container">{inr(order.totalAmount)}</span>
-          </div>
+          <h1 className="font-display-lg text-display-lg text-white mb-4">
+            {awaitingPayment ? "One last step" : "Thank you!"}
+          </h1>
+          <p className="font-body-lg text-body-lg text-on-primary-container mb-8">
+            {awaitingPayment ? (
+              <>
+                Transfer <span className="font-bold text-white">{inr(order.totalAmount)}</span> and upload the screenshot
+                to confirm order <span className="font-bold text-secondary-container">#{order.orderNumber}</span>.
+              </>
+            ) : (
+              <>
+                Order Number <span className="font-bold text-secondary-container">#{order.orderNumber}</span>
+              </>
+            )}
+          </p>
+          {!awaitingPayment && (
+            <div className="inline-block bg-white/10 backdrop-blur-md text-white font-button px-8 py-3 rounded-xl shadow-xl border border-white/20">
+              Paid by bank transfer <span className="font-black text-secondary-container">{inr(order.totalAmount)}</span>
+            </div>
+          )}
         </div>
       </section>
 
@@ -148,6 +177,17 @@ function OrderConfirmedInner() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
           {/* Left */}
           <div className="lg:col-span-8 space-y-gutter">
+            {awaitingPayment && (
+              <PaymentPanel
+                orderId={order.id}
+                orderNumber={order.orderNumber}
+                amount={order.totalAmount}
+                payment={order.payment}
+                bank={order.bankDetails}
+                onUpdated={(o) => setOrder(o as OrderDetail)}
+              />
+            )}
+
             {/* Items */}
             <div className="space-y-4">
               <h3 className="font-headline-md text-headline-md px-2">Order Items ({order.items.length})</h3>
@@ -203,7 +243,7 @@ function OrderConfirmedInner() {
                 </div>
                 <div className="flex justify-between text-on-surface-variant"><span>GST (18%)</span><span>{inr(order.gstAmount)}</span></div>
                 <div className="pt-4 border-t-2 border-primary flex justify-between items-center">
-                  <span className="font-black text-lg text-primary">Total Paid</span>
+                  <span className="font-black text-lg text-primary">{awaitingPayment ? "Amount Due" : "Total Paid"}</span>
                   <span className="font-price-lg text-price-lg text-primary">{inr(order.totalAmount)}</span>
                 </div>
               </div>
@@ -211,7 +251,7 @@ function OrderConfirmedInner() {
 
             <div className="space-y-3">
               <Link href={`/orders/${order.id}`} className="w-full bg-primary text-white py-4 rounded-xl font-button flex items-center justify-center gap-3 hover:bg-on-surface transition-colors shadow-lg">
-                <span aria-hidden="true" className="material-symbols-outlined text-xl">map</span> Track My Order
+                <span aria-hidden="true" className="material-symbols-outlined text-xl">map</span> {awaitingPayment ? "View Order" : "Track My Order"}
               </Link>
               <div className="grid grid-cols-2 gap-3">
                 <Link href="/orders" className="bg-surface-container-high py-3 rounded-xl text-sm font-bold flex flex-col items-center gap-1 hover:bg-surface-container-highest transition-colors">

@@ -4,14 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import BrandLogo from "@/components/BrandLogo";
-import { useSession, inr } from "@/components/SessionProvider";
+import { useSession } from "@/components/SessionProvider";
 
 const links = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/products", label: "Products" },
   { href: "/cart", label: "Cart" },
   { href: "/orders", label: "My Orders" },
-  { href: "/wallet", label: "Wallet" },
 ];
 
 export default function CustomerNav() {
@@ -64,10 +63,6 @@ export default function CustomerNav() {
 
         {/* Right side */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <Link href="/wallet" aria-label="Wallet balance" className="bg-secondary-container text-on-secondary-container font-bold px-3 py-1.5 rounded-full hidden min-[380px]:flex items-center gap-1.5 shadow-sm active:scale-90 transition-transform text-sm">
-            <span className="material-symbols-outlined text-sm" aria-hidden="true">account_balance_wallet</span>
-            <span className="font-price-lg hidden sm:inline">{inr(user?.walletBalance)}</span>
-          </Link>
           <button
             onClick={logout}
             title="Sign out"

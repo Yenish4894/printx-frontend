@@ -15,15 +15,16 @@ const TYPES: Record<string, string> = {
   ".png": "image/png",
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
   ".psd": "image/vnd.adobe.photoshop",
   ".ai": "application/postscript",
   ".eps": "application/postscript",
 };
 
 /**
- * Uploaded artwork is private customer property. Being logged in is NOT enough:
- * the key must belong to a cart or order line owned by the caller. Admins may
- * read any file (they review artwork for production).
+ * Uploaded files are private customer property. Being logged in is NOT enough:
+ * the key must belong to a cart line, an order line or a payment proof owned by
+ * the caller. Admins may read any file (they review artwork and payments).
  *
  * Returns 404 rather than 403 for someone else's file so the endpoint cannot be
  * used to probe which keys exist.
@@ -31,7 +32,7 @@ const TYPES: Record<string, string> = {
 async function canRead(userId: string, isAdmin: boolean, key: string) {
   if (isAdmin) return true;
   const url = `/api/files/${key}`;
-  const [cartItem, orderItem] = await Promise.all([
+  const [cartItem, orderItem, payment] = await Promise.all([
     prisma.cartItem.findFirst({
       where: { fileUrl: url, cart: { userId } },
       select: { id: true },
@@ -40,8 +41,13 @@ async function canRead(userId: string, isAdmin: boolean, key: string) {
       where: { fileUrl: url, order: { userId } },
       select: { id: true },
     }),
+    // Payment screenshots show bank details and amounts: owner or admin only.
+    prisma.payment.findFirst({
+      where: { proofUrl: url, userId },
+      select: { id: true },
+    }),
   ]);
-  return !!(cartItem || orderItem);
+  return !!(cartItem || orderItem || payment);
 }
 
 export async function GET(
