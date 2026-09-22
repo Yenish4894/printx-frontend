@@ -287,10 +287,6 @@ export const admin = {
     process: (id: string, action: "APPROVE" | "REJECT", note?: string) => patch<any>(`/admin/refunds/${id}`, { action, note }),
   },
 
-  transactions: {
-    list: () => get<{ summary: any; transactions: any[] }>("/admin/transactions"),
-  },
-
   settings: {
     get: () => get<{ settings: any }>("/admin/settings"),
     update: (input: Record<string, unknown>) => put<{ settings: any }>("/admin/settings", input),
