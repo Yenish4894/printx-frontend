@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { catalog, ApiError } from "@/lib/api";
 import Button from "@/components/ui/Button";
+import ScrollRow from "@/components/ui/ScrollRow";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { inr } from "@/components/SessionProvider";
 
@@ -126,7 +127,10 @@ export default function ProductsListing() {
                 <span aria-hidden="true" className="material-symbols-outlined text-[14px]">chevron_right</span>
                 <span className="text-white">PRINT CATALOG</span>
               </nav>
-              <h1 className="font-display-lg text-display-lg font-extrabold mb-2 leading-none">The Print Studio</h1>
+              {/* Was "The Print Studio" — a made-up name unconnected to the
+                  actual business, while every other page ties back to
+                  Bhagini Graphics (the logo in the nav above, for one). */}
+              <h1 className="font-display-lg text-display-lg font-extrabold mb-2 leading-none">Our Print Catalog</h1>
               <p className="text-on-primary-container font-body-lg">Premium materials. Industrial precision. Live pricing.</p>
             </div>
           </div>
@@ -135,7 +139,7 @@ export default function ProductsListing() {
 
       {/* Category filters */}
       <div className="max-w-container-max mx-auto px-gutter -mt-8 relative z-10">
-        <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+        <ScrollRow className="gap-4 pb-4" ariaLabel="Categories">
           <button
             onClick={() => { setCategory(undefined); setSubCategory(undefined); }}
             aria-pressed={!category}
@@ -155,11 +159,11 @@ export default function ProductsListing() {
               <span className="font-button text-button">{name}</span>
             </button>
           ))}
-        </div>
+        </ScrollRow>
 
         {/* Second level — only when the chosen category actually has children. */}
         {subCategories.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar" aria-label="Sub-categories">
+          <ScrollRow className="gap-2 pb-4" ariaLabel="Sub-categories">
             <button
               onClick={() => setSubCategory(undefined)}
               aria-pressed={!subCategory}
@@ -177,7 +181,7 @@ export default function ProductsListing() {
                 {name}
               </button>
             ))}
-          </div>
+          </ScrollRow>
         )}
       </div>
 
