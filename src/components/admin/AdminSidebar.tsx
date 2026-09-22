@@ -100,7 +100,7 @@ export default function AdminSidebar() {
             <span className="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
-        <nav className="flex-1 space-y-5 px-0 overflow-y-auto">
+        <nav className="flex-1 space-y-5 px-0">
           {groups.map((g) => (
             <div key={g.label}>
               <p className="px-6 text-[10px] font-black text-white/60 tracking-[0.2em] mb-2 uppercase">{g.label}</p>
