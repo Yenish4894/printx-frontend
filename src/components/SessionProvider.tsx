@@ -40,6 +40,12 @@ export function SessionProvider({
       if (requireRole === "ADMIN" && user && user.role === "CUSTOMER") {
         router.replace("/admin-login");
       }
+      // A staff account viewing the customer app: send them to the tool
+      // they actually work in instead of a dashboard that will only ever
+      // show their own (empty) order history.
+      if (requireRole === "CUSTOMER" && user && user.role !== "CUSTOMER") {
+        router.replace("/admin");
+      }
     } catch {
       setUser(null);
     } finally {

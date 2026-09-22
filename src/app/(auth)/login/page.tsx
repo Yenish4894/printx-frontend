@@ -41,9 +41,13 @@ function LoginForm() {
     setError(null);
     setBusy(true);
     try {
+      let role: string | undefined;
       if (authTab === "signin") {
-        await auth.login(f.mobile.trim(), f.password);
+        const { user } = await auth.login(f.mobile.trim(), f.password);
+        role = user.role;
       } else {
+        // Self-registration always creates a CUSTOMER account; staff are
+        // added by a super admin, never through this form.
         await auth.register({
           businessName: f.businessName.trim(),
           ownerName: f.ownerName.trim(),
@@ -53,7 +57,12 @@ function LoginForm() {
           password: f.password,
         });
       }
-      router.push("/dashboard");
+      // This is the only login page most people find (/admin-login is a
+      // fallback SessionProvider redirects to, not linked from the UI), so a
+      // staff account signing in here must land on /admin, not the customer
+      // dashboard — which otherwise renders for them too since it never
+      // checks the account's role.
+      router.push(role === "ADMIN" || role === "SUPER_ADMIN" ? "/admin" : "/dashboard");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
       setBusy(false);
