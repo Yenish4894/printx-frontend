@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import BrandLogo from "@/components/BrandLogo";
 import { auth, ApiError } from "@/lib/api";
 import Button from "@/components/ui/Button";
+import { LoadingState } from "@/components/ui/States";
 
 
 export default function AdminLogin() {
@@ -15,6 +16,20 @@ export default function AdminLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // An admin who is already signed in has no reason to see this form again.
+  const [checkingSession, setCheckingSession] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    auth.me()
+      .then(({ user }) => {
+        if (cancelled) return;
+        if (user && user.role !== "CUSTOMER") router.replace("/admin");
+        else setCheckingSession(false);
+      })
+      .catch(() => { if (!cancelled) setCheckingSession(false); });
+    return () => { cancelled = true; };
+  }, [router]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,6 +48,18 @@ export default function AdminLogin() {
       setError(err instanceof ApiError ? err.message : "Sign-in failed. Please try again.");
       setBusy(false);
     }
+  }
+
+  if (checkingSession) {
+    return (
+      <main className="font-body-md text-on-surface bg-primary-container min-h-screen flex items-center justify-center p-6">
+        {/* LoadingState's text is tuned for a light surface, not this page's
+            dark background, so it gets the same card the form below sits in. */}
+        <div className="bg-surface-container-lowest rounded-lg shadow-2xl px-10">
+          <LoadingState label="Checking your session" />
+        </div>
+      </main>
+    );
   }
 
   return (

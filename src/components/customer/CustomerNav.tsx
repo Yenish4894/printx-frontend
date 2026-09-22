@@ -36,7 +36,9 @@ export default function CustomerNav() {
       <div className="flex justify-between items-center w-full px-gutter py-4 max-w-container-max mx-auto">
         {/* Logo */}
         <div className="flex items-center gap-3 lg:gap-8 min-w-0">
-          <Link className="flex items-center shrink-0" href="/" aria-label="Bhagini Graphics — home">
+          {/* A signed-in customer clicking the logo wants their dashboard, not
+              the public marketing site they're no longer really a visitor of. */}
+          <Link className="flex items-center shrink-0" href="/dashboard" aria-label="Bhagini Graphics — dashboard">
             <BrandLogo textClass="text-lg sm:text-headline-md font-black" iconSize={28} />
           </Link>
           {/* Desktop nav */}

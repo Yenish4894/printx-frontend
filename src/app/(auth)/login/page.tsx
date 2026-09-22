@@ -1,11 +1,15 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import BrandLogo from "@/components/BrandLogo";
 import { auth, ApiError } from "@/lib/api";
 import Button from "@/components/ui/Button";
+import { LoadingState } from "@/components/ui/States";
+
+/** Where a signed-in account's own app lives. */
+const homeFor = (role: string) => (role === "ADMIN" || role === "SUPER_ADMIN" ? "/admin" : "/dashboard");
 
 const features = [
   ["currency_rupee", "Instant Live Pricing", "Get quotes in seconds, no waiting."],
@@ -36,6 +40,22 @@ function LoginForm() {
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setF((prev) => ({ ...prev, [k]: e.target.value }));
 
+  // Someone already signed in has no reason to see this form again — send
+  // them straight to their own app instead of making them look at a login
+  // screen they'd otherwise have to click through.
+  const [checkingSession, setCheckingSession] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    auth.me()
+      .then(({ user }) => {
+        if (cancelled) return;
+        if (user) router.replace(homeFor(user.role));
+        else setCheckingSession(false);
+      })
+      .catch(() => { if (!cancelled) setCheckingSession(false); });
+    return () => { cancelled = true; };
+  }, [router]);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -62,11 +82,21 @@ function LoginForm() {
       // staff account signing in here must land on /admin, not the customer
       // dashboard — which otherwise renders for them too since it never
       // checks the account's role.
-      router.push(role === "ADMIN" || role === "SUPER_ADMIN" ? "/admin" : "/dashboard");
+      router.push(role ? homeFor(role) : "/dashboard");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
       setBusy(false);
     }
+  }
+
+  // Nothing to show until we know whether there's already a session — a
+  // signed-in visitor never sees the form at all, just a brief check.
+  if (checkingSession) {
+    return (
+      <main className="flex min-h-screen items-center justify-center font-body-md text-on-surface">
+        <LoadingState label="Checking your session" />
+      </main>
+    );
   }
 
   return (

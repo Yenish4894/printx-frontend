@@ -86,7 +86,8 @@ export default function AdminSidebar() {
       >
         <div className="px-6 mb-8 flex items-center justify-between">
           <div>
-            <Link href="/" onClick={close} className="inline-flex" aria-label="Bhagini Graphics — home">
+            {/* An admin clicking the logo wants the admin console, not the public site. */}
+            <Link href="/admin" onClick={close} className="inline-flex" aria-label="Bhagini Graphics — admin dashboard">
               <BrandLogo textClass="text-headline-md font-extrabold" iconSize={26} />
             </Link>
             <p className="text-white/65 text-xs tracking-widest uppercase mt-1">Admin Console</p>
