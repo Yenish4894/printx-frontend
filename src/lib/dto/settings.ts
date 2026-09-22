@@ -14,8 +14,6 @@ export const settingsSchema = z.object({
   gstPercent: z.number().int().min(0).max(100).optional(),
   freeShippingThreshold: z.number().nonnegative().optional(),
   autoRoundPrices: z.boolean().optional(),
-  minTopUp: z.number().nonnegative().optional(),
-  maxTopUp: z.number().positive().optional(),
   cancellationWindowHours: z.number().int().min(0).optional(),
   fileGracePeriod: z.boolean().optional(),
   defaultDpi: z.string().max(40).optional(),

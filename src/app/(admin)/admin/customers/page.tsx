@@ -33,6 +33,7 @@ type CustomerDetail = {
   isActive: boolean;
   joinedAt: string;
   totalSpent: number;
+  orderCount: number;
   addresses: {
     id: string; label: string | null; name: string; line1: string; line2: string | null;
     city: string; state: string; pincode: string; phone: string | null; isDefault: boolean;
@@ -314,13 +315,15 @@ export default function AdminCustomers() {
                     </div>
                     <div className="bg-surface-container-low p-3 rounded-lg">
                       <p className="text-[10px] font-label-caps text-on-surface-variant">Orders</p>
-                      <p className="font-bold text-on-surface">{detail.orders.length}</p>
+                      <p className="font-bold text-on-surface">{detail.orderCount}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="p-6 border-b border-surface-container">
-                  <h5 className="font-label-caps text-on-surface-variant mb-4">Recent Orders</h5>
+                  <h5 className="font-label-caps text-on-surface-variant mb-4">
+                    Recent Orders{detail.orderCount > 20 ? ` (latest 20 of ${detail.orderCount})` : ""}
+                  </h5>
                   {detail.orders.length === 0 ? (
                     <p className="text-sm text-on-surface-variant">No orders yet.</p>
                   ) : (

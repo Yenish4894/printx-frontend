@@ -393,8 +393,11 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
                 <span className="material-symbols-outlined text-secondary" style={fill1} aria-hidden="true">account_balance</span>
                 <span className="text-label-caps font-label-caps text-on-surface-variant">
                   {paid
-                    ? order.payment?.method === "WALLET"
-                      ? "PAID VIA WALLET"
+                    ? // WALLET is not a live payment method (bank transfer only, no
+                      // wallet in the product); this only ever renders for orders
+                      // placed before that change (e.g. BG-2026-00004).
+                      order.payment?.method === "WALLET"
+                      ? "PAID VIA WALLET (LEGACY)"
                       : "PAID BY BANK TRANSFER"
                     : awaitingPayment
                       ? "AWAITING BANK TRANSFER"

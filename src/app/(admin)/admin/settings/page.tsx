@@ -22,8 +22,6 @@ interface Settings {
   gstPercent: number;
   freeShippingThreshold: number;
   autoRoundPrices: boolean;
-  minTopUp: number;
-  maxTopUp: number;
   cancellationWindowHours: number;
   fileGracePeriod: boolean;
   defaultDpi: string;

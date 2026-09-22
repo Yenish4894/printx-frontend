@@ -9,6 +9,7 @@ import { formatDateTime } from "@/lib/format";
 import Pager from "@/components/ui/Pager";
 import { EmptyState, LoadingState, ErrorState, TableState } from "@/components/ui/States";
 import PageHeader from "@/components/ui/PageHeader";
+import ScrollRow from "@/components/ui/ScrollRow";
 
 type OrderRow = {
   id: string;
@@ -101,18 +102,16 @@ export default function AdminOrders() {
             <input value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-outline-variant focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all text-body-md bg-surface" placeholder="Search Order #, customer, phone..." type="text" />
           </div>
         </div>
-        <div className="overflow-x-auto no-scrollbar -mx-2 px-2">
-          <div className="flex items-center gap-2 min-w-max pb-1">
-            {FILTERS.map((f) => {
-              const active = f.value === activeFilter;
-              return (
-                <button key={f.label} onClick={() => { setActiveFilter(f.value); setPage(1); }} className={`px-4 py-2 rounded-full font-label-caps text-label-caps flex items-center gap-2 transition-all ${active ? "bg-primary-container text-on-primary-container" : "hover:bg-surface-container-high text-on-surface-variant"}`}>
-                  {f.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <ScrollRow className="gap-2 items-center pb-1 -mx-2 px-2" ariaLabel="Order status filters">
+          {FILTERS.map((f) => {
+            const active = f.value === activeFilter;
+            return (
+              <button key={f.label} onClick={() => { setActiveFilter(f.value); setPage(1); }} className={`flex-none px-4 py-2 rounded-full font-label-caps text-label-caps flex items-center gap-2 transition-all ${active ? "bg-primary-container text-on-primary-container" : "hover:bg-surface-container-high text-on-surface-variant"}`}>
+                {f.label}
+              </button>
+            );
+          })}
+        </ScrollRow>
       </div>
 
       {/* Table */}

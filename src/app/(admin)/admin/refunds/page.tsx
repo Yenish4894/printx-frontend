@@ -9,6 +9,7 @@ import { formatDateTime } from "@/lib/format";
 import Pager from "@/components/ui/Pager";
 import { EmptyState, LoadingState, TableState } from "@/components/ui/States";
 import PageHeader from "@/components/ui/PageHeader";
+import ScrollRow from "@/components/ui/ScrollRow";
 
 type Refund = {
   id: string;
@@ -138,21 +139,21 @@ export default function AdminRefunds() {
         className="mb-0"
       />
 
-      <div className="flex items-center gap-2 border-b border-outline-variant overflow-x-auto no-scrollbar">
+      <ScrollRow className="gap-2 items-center border-b border-outline-variant" ariaLabel="Refund status filters">
         {STATUS_TABS.map((label) => {
           const active = filter === label;
           return (
             <button
               key={label}
               onClick={() => { setFilter(label); setPage(1); }}
-              className={`px-6 py-3 whitespace-nowrap font-button text-sm flex items-center gap-2 border-b-2 transition-colors capitalize ${active ? "border-secondary text-secondary font-bold" : "border-transparent text-on-surface-variant hover:text-secondary"}`}
+              className={`flex-none px-6 py-3 whitespace-nowrap font-button text-sm flex items-center gap-2 border-b-2 transition-colors capitalize ${active ? "border-secondary text-secondary font-bold" : "border-transparent text-on-surface-variant hover:text-secondary"}`}
             >
               {label.toLowerCase()}{" "}
               <span className={`px-2 rounded-full text-xs ${active ? "bg-secondary/10" : "bg-surface-variant/50"}`}>{counts[label]}</span>
             </button>
           );
         })}
-      </div>
+      </ScrollRow>
 
       {error && (
         <div className="p-4 rounded-lg bg-error/10 text-error text-sm font-medium flex items-center justify-between">

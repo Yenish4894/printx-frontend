@@ -77,6 +77,7 @@ export async function getCustomer(id: string) {
           take: 20,
           select: { id: true, orderNumber: true, status: true, totalAmount: true, placedAt: true },
         },
+        _count: { select: { orders: true } },
       },
     }),
     prisma.order.aggregate({
@@ -98,6 +99,10 @@ export async function getCustomer(id: string) {
     isActive: u.isActive,
     joinedAt: u.createdAt,
     totalSpent: round2(spent),
+    // The real lifetime count, not the length of the capped "recent orders"
+    // list below — those two used to be conflated, silently under-reporting
+    // the order count for any customer past their most recent 20.
+    orderCount: u._count.orders,
     addresses: u.addresses.map((a) => ({
       id: a.id,
       label: a.label,

@@ -9,6 +9,7 @@ import { formatDate } from "@/lib/format";
 import Pager from "@/components/ui/Pager";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState, LoadingState, ErrorState } from "@/components/ui/States";
+import ScrollRow from "@/components/ui/ScrollRow";
 
 interface OrderSummary {
   id: string;
@@ -121,19 +122,19 @@ export default function MyOrders() {
           </div>
 
           {/* Tabs */}
-          <div className="flex items-center gap-1 border-b border-outline-variant mb-6 overflow-x-auto no-scrollbar">
+          <ScrollRow className="gap-1 items-center border-b border-outline-variant mb-6" ariaLabel="Order status tabs">
             {tabs.map((t) => (
               <button
                 key={t.key}
                 onClick={() => { setTab(t.key); setPage(1); }}
                 className={t.key === tab
-                  ? "px-6 py-4 border-b-2 border-secondary text-secondary font-bold whitespace-nowrap"
-                  : "px-6 py-4 border-b-2 border-transparent text-on-surface-variant hover:text-secondary font-medium whitespace-nowrap transition-colors"}
+                  ? "flex-none px-6 py-4 border-b-2 border-secondary text-secondary font-bold whitespace-nowrap"
+                  : "flex-none px-6 py-4 border-b-2 border-transparent text-on-surface-variant hover:text-secondary font-medium whitespace-nowrap transition-colors"}
               >
                 {t.label}{loading ? "" : ` (${t.count})`}
               </button>
             ))}
-          </div>
+          </ScrollRow>
 
           {/* States */}
           {loading && (

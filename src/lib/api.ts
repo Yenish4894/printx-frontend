@@ -34,6 +34,21 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * A 401 from any protected endpoint means the session died server-side
+ * (deactivated, demoted, expired) since the page loaded. requireUser()
+ * re-checks the live DB row on every request, so that could happen at any
+ * moment, but nothing was listening for it client-side: the nav, the data
+ * on screen and every cached bit of UI stayed exactly as they were until
+ * the next manual reload. SessionProvider listens for this event and logs
+ * the viewer out the moment it happens instead.
+ *
+ * /auth/login is exempt: a wrong-password attempt is an expected, inline
+ * error for that form, not a sign the session died.
+ */
+const SESSION_EXEMPT_PATHS = ["/auth/login", "/auth/register", "/auth/logout", "/auth/me"];
+export const SESSION_EXPIRED_EVENT = "session-expired";
+
 async function req<T = unknown>(
   method: string,
   path: string,
@@ -55,6 +70,13 @@ async function req<T = unknown>(
     json = text;
   }
   if (!res.ok) {
+    if (
+      res.status === 401 &&
+      typeof window !== "undefined" &&
+      !SESSION_EXEMPT_PATHS.some((p) => path.startsWith(p))
+    ) {
+      window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+    }
     const body = json as {
       error?: string;
       issues?: { fieldErrors?: Record<string, string[]>; formErrors?: string[] };

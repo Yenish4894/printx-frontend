@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { auth, type SessionUser } from "@/lib/api";
+import { auth, SESSION_EXPIRED_EVENT, type SessionUser } from "@/lib/api";
 
 interface SessionCtx {
   user: SessionUser | null;
@@ -65,6 +65,14 @@ export function SessionProvider({
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  // Every API call that gets a 401 fires this (see src/lib/api.ts). Without
+  // it, a deactivated or demoted account kept browsing on whatever was
+  // already rendered — stale nav, stale data — until they manually reloaded.
+  useEffect(() => {
+    window.addEventListener(SESSION_EXPIRED_EVENT, logout);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, logout);
+  }, [logout]);
 
   return (
     <Ctx.Provider value={{ user, loading, refresh, logout }}>{children}</Ctx.Provider>

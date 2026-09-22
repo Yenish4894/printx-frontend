@@ -394,12 +394,12 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
                 <p className="font-headline-md text-headline-md text-white mb-1">{product.name}</p>
-                <p className="text-on-tertiary-container font-body-md">{selectedSummary}</p>
+                <p className="text-on-primary-container font-body-md">{selectedSummary}</p>
               </div>
               <div className="text-right">
                 <div className="flex items-end gap-2 justify-end">
                   <span className="text-4xl font-black text-secondary-container">{breakdown ? inr(total) : "—"}</span>
-                  <span className="text-on-tertiary-container font-label-caps text-sm mb-1 pb-1">/ {qty.toLocaleString("en-IN")}</span>
+                  <span className="text-on-primary-container font-label-caps text-sm mb-1 pb-1">/ {qty.toLocaleString("en-IN")}</span>
                 </div>
               </div>
             </div>

@@ -10,7 +10,10 @@ export default function CustomerFooter() {
       <div className="max-w-container-max mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
         <div>
           <div className="mb-4">
-            <Link href="/" className="inline-flex" aria-label="Bhagini Graphics — home">
+            {/* Same fix as CustomerNav: this footer only renders inside the
+                signed-in customer layout, so "home" is the dashboard, not
+                the public marketing site. */}
+            <Link href="/dashboard" className="inline-flex" aria-label="Bhagini Graphics — dashboard">
               <BrandLogo textClass="text-headline-md font-black" iconSize={28} />
             </Link>
           </div>

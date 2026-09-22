@@ -45,7 +45,9 @@ type Order = {
   payment: AdminPayment | null;
 };
 
-const METHOD_LABEL: Record<string, string> = { BANK_TRANSFER: "Bank transfer", WALLET: "Wallet" };
+// WALLET is not a live payment method (bank transfer only now); it only shows
+// up on orders placed before that change (e.g. BG-2026-00004).
+const METHOD_LABEL: Record<string, string> = { BANK_TRANSFER: "Bank transfer", WALLET: "Wallet (legacy)" };
 
 export default function AdminOrderDetail() {
   const params = useParams<{ id: string }>();

@@ -10,8 +10,6 @@ export interface PlatformSettings {
   gstRate: number; // gstPercent / 100
   freeShippingThreshold: number;
   autoRoundPrices: boolean;
-  minTopUp: number;
-  maxTopUp: number;
   cancellationWindowHours: number;
   fileGracePeriod: boolean;
   defaultDpi: string;
@@ -43,8 +41,6 @@ export async function getSettings(): Promise<PlatformSettings> {
     gstRate: s.gstPercent / 100,
     freeShippingThreshold: num(s.freeShippingThreshold),
     autoRoundPrices: s.autoRoundPrices,
-    minTopUp: num(s.minTopUp),
-    maxTopUp: num(s.maxTopUp),
     cancellationWindowHours: s.cancellationWindowHours,
     fileGracePeriod: s.fileGracePeriod,
     defaultDpi: s.defaultDpi,
@@ -106,11 +102,6 @@ export async function updateSettings(
   // before a super admin's bank change quietly put the old account back.
   for (const k of Object.keys(BANK_FIELDS) as (keyof typeof BANK_FIELDS)[]) {
     if (!bankChanged.includes(k)) delete input[k];
-  }
-  const minTopUp = input.minTopUp ?? current.minTopUp;
-  const maxTopUp = input.maxTopUp ?? current.maxTopUp;
-  if (minTopUp > maxTopUp) {
-    throw new HttpError(422, "Minimum top-up cannot exceed the maximum top-up");
   }
   await prisma.$transaction(async (tx) => {
     await tx.platformSettings.upsert({
