@@ -62,7 +62,6 @@ export async function getSettings(): Promise<PlatformSettings> {
       bankName: s.bankName,
       accountNumber: s.bankAccountNumber,
       ifsc: s.bankIfsc,
-      upiId: s.bankUpiId,
     },
   };
 }
@@ -79,7 +78,6 @@ const BANK_FIELDS = {
   bankName: "bankName",
   bankAccountNumber: "accountNumber",
   bankIfsc: "ifsc",
-  bankUpiId: "upiId",
 } as const satisfies Record<string, keyof BankDetails>;
 
 const mask = (v: string | null | undefined) => (v ? `••${v.slice(-4)}` : "none");

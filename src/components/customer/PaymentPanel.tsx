@@ -115,7 +115,6 @@ export default function PaymentPanel({
         ["Account number", bank.accountNumber],
         ["IFSC", bank.ifsc],
         ["Bank", bank.bankName],
-        ["UPI ID", bank.upiId],
       ]
     : [];
 

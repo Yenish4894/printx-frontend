@@ -632,7 +632,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
             <div className="space-y-3">
               <div className="p-3 rounded-lg flex items-center gap-2 mb-2 bg-surface-container text-on-surface-variant">
                 <span className="material-symbols-outlined text-[18px]" aria-hidden="true">account_balance</span>
-                <span className="text-body-md">Pay by bank transfer or UPI after you place the order.</span>
+                <span className="text-body-md">Pay by bank transfer after you place the order.</span>
               </div>
 
               <Button

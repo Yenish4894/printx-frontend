@@ -9,7 +9,7 @@ import Button from "@/components/ui/Button";
 
 const features = [
   ["currency_rupee", "Instant Live Pricing", "Get quotes in seconds, no waiting."],
-  ["account_balance", "Bank Transfer & UPI", "Pay directly to our account and upload the screenshot."],
+  ["account_balance", "Bank Transfer", "Pay directly to our account and upload the screenshot."],
   ["local_shipping", "Express Delivery", "Pan-India shipping within 48h."],
 ];
 

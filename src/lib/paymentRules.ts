@@ -8,7 +8,6 @@ export interface BankDetails {
   bankName: string | null;
   accountNumber: string | null;
   ifsc: string | null;
-  upiId: string | null;
 }
 
 /** Enough to actually receive a transfer: who, which account, which branch. */

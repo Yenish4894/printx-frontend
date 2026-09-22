@@ -62,22 +62,15 @@ eq("too long rejected", okParse(settingsSchema, { bankIfsc: "HDFC00012345" }), f
 eq("digits in bank code rejected", okParse(settingsSchema, { bankIfsc: "HD1C0001234" }), false);
 eq("empty string clears (null)", parsed<Settings>(settingsSchema, { bankIfsc: "" })?.bankIfsc, null);
 
-console.log("── settings: UPI ──");
-eq("name@bank ok", okParse(settingsSchema, { bankUpiId: "bhagini@hdfcbank" }), true);
-eq("dots/dashes/digits in handle ok", okParse(settingsSchema, { bankUpiId: "bhagini.graphics-01@okicici" }), true);
-eq("missing @ rejected", okParse(settingsSchema, { bankUpiId: "bhaginihdfcbank" }), false);
-eq("digits in provider rejected", okParse(settingsSchema, { bankUpiId: "bhagini@hdfc1" }), false);
-eq("1-char handle rejected", okParse(settingsSchema, { bankUpiId: "b@hdfc" }), false);
-eq("empty string clears (null)", parsed<Settings>(settingsSchema, { bankUpiId: "" })?.bankUpiId, null);
-
 console.log("── settings: names ──");
 eq("account name trimmed", parsed<Settings>(settingsSchema, { bankAccountName: "  Bhagini Graphics " })?.bankAccountName, "Bhagini Graphics");
 eq("bank name empty clears", parsed<Settings>(settingsSchema, { bankName: "" })?.bankName, null);
 eq("account name > 100 rejected", okParse(settingsSchema, { bankAccountName: "x".repeat(101) }), false);
 eq("full valid bank block ok", okParse(settingsSchema, {
   bankAccountName: "Bhagini Graphics", bankName: "HDFC Bank", bankAccountNumber: "50100123456789",
-  bankIfsc: "hdfc0001234", bankUpiId: "bhagini@hdfcbank",
+  bankIfsc: "hdfc0001234",
 }), true);
+eq("UPI is no longer a settings field (silently ignored, not validated)", okParse(settingsSchema, { bankUpiId: "not-an-upi-handle" }), true);
 
 // ── admin DTOs ──
 console.log("── paymentReviewSchema ──");
@@ -157,9 +150,9 @@ eq("needsArtwork: REJECTED", needsArtwork("REJECTED"), true);
 eq("needsArtwork: APPROVED", needsArtwork("APPROVED"), false);
 
 console.log("── payment rules (checkout gate + proof file) ──");
-const full = { accountName: "Bhagini Graphics", bankName: null, accountNumber: "123456789012", ifsc: "HDFC0001234", upiId: null };
+const full = { accountName: "Bhagini Graphics", bankName: null, accountNumber: "123456789012", ifsc: "HDFC0001234" };
 eq("bank details complete with holder, number, IFSC", bankDetailsComplete(full), true);
-eq("bank name and UPI are optional", bankDetailsComplete({ ...full, bankName: null, upiId: null }), true);
+eq("bank name is optional", bankDetailsComplete({ ...full, bankName: null }), true);
 eq("missing holder blocks checkout", bankDetailsComplete({ ...full, accountName: null }), false);
 eq("missing account number blocks checkout", bankDetailsComplete({ ...full, accountNumber: null }), false);
 eq("missing IFSC blocks checkout", bankDetailsComplete({ ...full, ifsc: null }), false);

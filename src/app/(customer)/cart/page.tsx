@@ -457,7 +457,7 @@ export default function CartCheckout() {
                 <div className="border-2 border-secondary bg-secondary/5 rounded-xl p-4">
                   <div className="flex items-center gap-3">
                     <span aria-hidden="true" className="material-symbols-outlined text-secondary" style={fill1}>account_balance</span>
-                    <span className="font-button text-button">Bank transfer / UPI</span>
+                    <span className="font-button text-button">Bank transfer</span>
                   </div>
                 </div>
                 {/* Set expectations before the click: the order is not confirmed
@@ -465,7 +465,7 @@ export default function CartCheckout() {
                 <ol className="mt-4 space-y-3 text-body-md text-on-surface-variant">
                   {[
                     "Place the order — we'll show our bank details.",
-                    `Transfer ${inr(total)} from your bank or UPI app.`,
+                    `Transfer ${inr(total)} from your bank.`,
                     "Upload the payment screenshot.",
                     "We verify it and your order is placed.",
                   ].map((step, i) => (

@@ -44,10 +44,6 @@ export const settingsSchema = z.object({
     .nullable()
     .optional()
     .refine((v) => v == null || /^[A-Z]{4}0[A-Z0-9]{6}$/.test(v), "IFSC must look like HDFC0001234"),
-  bankUpiId: optionalText(80).refine(
-    (v) => v == null || /^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test(v),
-    "UPI ID must look like name@bank",
-  ),
 });
 
 export type SettingsInput = z.infer<typeof settingsSchema>;

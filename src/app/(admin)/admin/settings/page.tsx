@@ -42,11 +42,10 @@ interface Settings {
   bankName: string;
   bankAccountNumber: string;
   bankIfsc: string;
-  bankUpiId: string;
 }
 
-type ApiSettings = Omit<Settings, "bankAccountName" | "bankName" | "bankAccountNumber" | "bankIfsc" | "bankUpiId"> & {
-  bank?: { accountName: string | null; bankName: string | null; accountNumber: string | null; ifsc: string | null; upiId: string | null };
+type ApiSettings = Omit<Settings, "bankAccountName" | "bankName" | "bankAccountNumber" | "bankIfsc"> & {
+  bank?: { accountName: string | null; bankName: string | null; accountNumber: string | null; ifsc: string | null };
 };
 
 function fromApi(r: ApiSettings): Settings {
@@ -57,7 +56,6 @@ function fromApi(r: ApiSettings): Settings {
     bankName: bank?.bankName ?? "",
     bankAccountNumber: bank?.accountNumber ?? "",
     bankIfsc: bank?.ifsc ?? "",
-    bankUpiId: bank?.upiId ?? "",
   };
 }
 
@@ -87,8 +85,6 @@ function validate(s: Settings): Record<string, string> {
   if (acct && !/^\d{9,18}$/.test(acct)) e.bankAccountNumber = "Digits only, 9 to 18 long.";
   const ifsc = s.bankIfsc.trim().toUpperCase();
   if (ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) e.bankIfsc = "Should look like HDFC0001234.";
-  const upi = s.bankUpiId.trim();
-  if (upi && !/^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test(upi)) e.bankUpiId = "Should look like name@bank.";
   if (!nonNeg(s.cancellationWindowHours)) e.cancellationWindowHours = "Must be 0 or more.";
   if (!nonNeg(s.standardBleedMm)) e.standardBleedMm = "Must be 0 or more.";
   return e;
@@ -221,7 +217,6 @@ export default function AdminSettings() {
               <div className="flex flex-col gap-1.5"><label htmlFor="bankName" className="font-label-caps text-on-surface-variant uppercase tracking-wider text-[10px]">Bank Name</label><input id="bankName" className="w-full px-4 py-2.5 rounded-lg border border-outline-variant font-medium text-sm" type="text" value={s.bankName} onChange={strSet("bankName")} placeholder="HDFC Bank" aria-invalid={errors.bankName ? true : undefined} />{err("bankName")}</div>
               <div className="flex flex-col gap-1.5"><label htmlFor="bankAccountNumber" className="font-label-caps text-on-surface-variant uppercase tracking-wider text-[10px]">Account Number</label><input id="bankAccountNumber" className="w-full px-4 py-2.5 rounded-lg border border-outline-variant font-medium text-sm font-mono tracking-wider" type="text" value={s.bankAccountNumber} onChange={strSet("bankAccountNumber")} placeholder="50100123456789" aria-invalid={errors.bankAccountNumber ? true : undefined} />{err("bankAccountNumber")}</div>
               <div className="flex flex-col gap-1.5"><label htmlFor="bankIfsc" className="font-label-caps text-on-surface-variant uppercase tracking-wider text-[10px]">IFSC</label><input id="bankIfsc" className="w-full px-4 py-2.5 rounded-lg border border-outline-variant font-medium text-sm font-mono tracking-wider uppercase" type="text" value={s.bankIfsc} onChange={strSet("bankIfsc")} placeholder="HDFC0001234" aria-invalid={errors.bankIfsc ? true : undefined} />{err("bankIfsc")}</div>
-              <div className="flex flex-col gap-1.5"><label htmlFor="bankUpiId" className="font-label-caps text-on-surface-variant uppercase tracking-wider text-[10px]">UPI ID (optional)</label><input id="bankUpiId" className="w-full px-4 py-2.5 rounded-lg border border-outline-variant font-medium text-sm" type="text" value={s.bankUpiId} onChange={strSet("bankUpiId")} placeholder="bhagini@hdfcbank" aria-invalid={errors.bankUpiId ? true : undefined} />{err("bankUpiId")}</div>
             </fieldset>
           </div>
         </section>

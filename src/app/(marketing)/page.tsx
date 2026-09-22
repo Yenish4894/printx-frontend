@@ -45,8 +45,8 @@ export default function LandingPage() {
               Deliver Faster.
             </h1>
             <p className="font-body-lg text-body-lg text-on-primary-container mb-10 max-w-lg">
-              Configure any job, see the exact GST-inclusive price instantly, pay by bank transfer or
-              UPI, and track it to delivery — all in one place.
+              Configure any job, see the exact GST-inclusive price instantly, pay by bank transfer,
+              and track it to delivery — all in one place.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               {/* "Get Started" named no outcome. Step 01 of this page's own
@@ -103,7 +103,7 @@ export default function LandingPage() {
           <div className="flex justify-between items-center gap-12 min-w-max">
             {[
               ["calculate", "INSTANT GST-INCLUSIVE QUOTES"],
-              ["account_balance", "BANK TRANSFER & UPI"],
+              ["account_balance", "BANK TRANSFER"],
               ["local_shipping", "PAN-INDIA DELIVERY"],
               ["orders", "ORDER TRACKING"],
             ].map(([icon, label]) => (
@@ -145,7 +145,7 @@ export default function LandingPage() {
             {[
               ["01", "Create your account", "Sign up with your business details and access your dashboard."],
               ["02", "Configure & price", "Pick your specifications and see the exact GST-inclusive price instantly."],
-              ["03", "Pay by bank transfer", "Transfer to our account or UPI and upload the screenshot. We confirm your order once it's verified."],
+              ["03", "Pay by bank transfer", "Transfer to our account and upload the screenshot. We confirm your order once it's verified."],
               ["04", "Track & receive", "Follow each order's status right through to delivery."],
             ].map(([num, title, desc]) => (
               <div className="flex flex-col items-center text-center" key={num}>
