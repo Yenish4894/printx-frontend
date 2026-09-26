@@ -48,25 +48,32 @@ export default function NotificationBell({ tone }: { tone: "dark" | "light" }) {
   }, []);
 
   // Load once, then poll while the tab is visible (cheap: one small query).
+  // Both run from timer callbacks, never synchronously in the effect body.
   useEffect(() => {
     alive.current = true;
-    refresh();
+    const first = setTimeout(refresh, 0);
     const t = setInterval(() => {
       if (document.visibilityState === "visible") refresh();
     }, POLL_MS);
     return () => {
       alive.current = false;
+      clearTimeout(first);
       clearInterval(t);
     };
   }, [refresh]);
 
   useEffect(() => {
     if (!open) return;
-    refresh();
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, refresh]);
+  }, [open]);
+
+  // Opening the panel shows fresh data rather than what the last poll saw.
+  const toggle = () => {
+    if (!open) refresh();
+    setOpen((v) => !v);
+  };
 
   const openItem = (n: NotificationItem) => {
     setOpen(false);
@@ -92,7 +99,7 @@ export default function NotificationBell({ tone }: { tone: "dark" | "light" }) {
     <div className="relative">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"}
         aria-expanded={open}
         aria-haspopup="dialog"
