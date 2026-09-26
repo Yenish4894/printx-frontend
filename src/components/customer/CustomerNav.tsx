@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import BrandLogo from "@/components/BrandLogo";
 import { useSession } from "@/components/SessionProvider";
+import NotificationBell from "@/components/NotificationBell";
 
 const links = [
   { href: "/dashboard", label: "Dashboard" },
@@ -65,6 +66,7 @@ export default function CustomerNav() {
 
         {/* Right side */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <NotificationBell tone="dark" />
           <button
             onClick={logout}
             title="Sign out"

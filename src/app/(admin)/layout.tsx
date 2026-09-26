@@ -1,5 +1,6 @@
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminUserChip from "@/components/admin/AdminUserChip";
+import NotificationBell from "@/components/NotificationBell";
 import { SessionProvider } from "@/components/SessionProvider";
 import UIProvider from "@/components/ui/UIProvider";
 
@@ -11,7 +12,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <AdminSidebar />
       <main className="md:ml-64 min-h-screen">
         {/* Top App Bar */}
-        <header className="sticky top-0 z-40 flex justify-end items-center px-4 md:px-margin-desktop py-4 bg-surface border-b border-outline-variant">
+        <header className="sticky top-0 z-40 flex justify-end items-center gap-3 px-4 md:px-margin-desktop py-4 bg-surface border-b border-outline-variant">
+          <NotificationBell tone="light" />
           <AdminUserChip />
         </header>
         <div className="p-margin-desktop">

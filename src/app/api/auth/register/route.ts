@@ -45,6 +45,28 @@ export async function POST(req: Request) {
       throw e;
     }
 
+    // Tell staff there is someone to approve. Best effort: the applicant's signup
+    // has already succeeded and must not fail because an alert could not be written.
+    try {
+      const staff = await prisma.user.findMany({
+        where: { role: { in: ["ADMIN", "SUPER_ADMIN"] }, isActive: true },
+        select: { id: true },
+      });
+      if (staff.length) {
+        await prisma.notification.createMany({
+          data: staff.map((u) => ({
+            userId: u.id,
+            type: "SYSTEM" as const,
+            title: "New signup awaiting approval",
+            body: `${data.businessName} (${data.ownerName}, ${data.mobile}) applied for an account.`,
+            link: "/admin/customers?filter=pending",
+          })),
+        });
+      }
+    } catch {
+      // ignored on purpose, see above
+    }
+
     // No session: an applicant has nothing to sign in to until they're approved.
     return ok({ pending: true, message: applicationReceived() }, 201);
   } catch (err) {

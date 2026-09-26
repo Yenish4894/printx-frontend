@@ -10,6 +10,8 @@ Versions use `MAJOR.MINOR.PATCH.MICRO`.
 - Admin approval for new customers. A new signup can no longer sign in until an admin approves it: they see an "Application received" notice, and trying to sign in shows that the account is awaiting approval. Admins get a "Pending" tab (with a count) on Customers, a "Signups to Approve" tile on the dashboard, and Approve / Reject (with a reason the applicant sees) in the customer profile. Every account that existed before, and every staff account, is unaffected.
 - Product catalogue category filters and the order/refund status tabs now show edge fades and scroll arrows when there are more options than fit, instead of silently running off-screen.
 
+- Notification bell for customers and admins. It shows an unread count and the latest updates (payment approved or rejected, order status changes, artwork reviews, refunds; for admins, new signups awaiting approval and bank-detail changes). Clicking one opens the related page.
+
 ### Changed
 - There is one login page for everyone. Opening the admin console while logged out, logging out as an admin, or visiting the old /admin-login address all go to /login, which sends admins to the console and customers to their dashboard. A customer who opens the admin console is sent back to their own dashboard.
 - Payment is by direct bank transfer only. UPI is gone from the bank details, the customer payment screen and all marketing copy.
@@ -19,7 +21,9 @@ Versions use `MAJOR.MINOR.PATCH.MICRO`.
 - The catalogue page heading is now "Our Print Catalog".
 
 ### Removed
-- The old "Wallet & Transactions" admin page and the unused wallet top-up limits in Settings.
+- The wallet, completely. The wallet ledger, per-customer wallet balances and settings, saved payment methods, the top-up limits and the UPI ID setting are deleted from the database, along with the old Razorpay columns and the retired UPI / card / net-banking / wallet payment types. The old /wallet address is gone. One cancelled test order that had been "paid via wallet" now reads "paid by bank transfer".
+- The retired "Payment Confirmed" order status.
+- Two admin endpoints nothing called: editing a product's quantity tiers and its delivery speeds after creation.
 
 ## [0.2.0.0] - 2026-09-22
 

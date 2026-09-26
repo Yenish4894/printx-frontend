@@ -101,7 +101,6 @@ async function main() {
 
   // ── Clean (dev only) — FK-safe order so the seed is re-runnable ──
   await prisma.notification.deleteMany();
-  await prisma.walletTransaction.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.refund.deleteMany();
   await prisma.orderStatusHistory.deleteMany();
@@ -112,8 +111,6 @@ async function main() {
   await prisma.priceMatrix.deleteMany();
   await prisma.product.deleteMany();
   await prisma.category.deleteMany();
-  await prisma.walletSettings.deleteMany();
-  await prisma.savedPaymentMethod.deleteMany();
   await prisma.address.deleteMany();
   await prisma.user.deleteMany();
 

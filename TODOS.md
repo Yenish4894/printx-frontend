@@ -14,18 +14,6 @@
 **Priority:** P2
 **Depends on:** Business decision on the deadline
 
-### Drop the retired PAYMENT_CONFIRMED status
-
-**What:** After 0.2.0.0 is deployed, migrate any `PAYMENT_CONFIRMED` orders to `PLACED` and remove the value from the `OrderStatus` enum.
-
-**Why:** It is kept only because the previously deployed build can still write it. The code treats it as an alias of `PLACED` (`nextStatuses`, `CANCELLABLE_STATUSES`, `IN_PRODUCTION_STATUSES`).
-
-**Context:** Postgres cannot drop an enum value in place. Create a new type without it, cast the column, drop the old type. Only do this once no old build is live. Removing it also lets the alias code in `src/lib/orderStatus.ts` go.
-
-**Effort:** S
-**Priority:** P3
-**Depends on:** 0.2.0.0 deployed
-
 ## Auth
 
 ### Automated tests for the signup-approval wiring

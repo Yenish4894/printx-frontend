@@ -5,7 +5,6 @@
 export type OrderStatus =
   | "PAYMENT_PENDING"
   | "PLACED"
-  | "PAYMENT_CONFIRMED" // retired; only still rendered for old history rows
   | "DESIGN_REVIEW"
   | "PRINTING"
   | "QUALITY_CHECK"
@@ -22,8 +21,6 @@ interface StatusMeta {
 export const ORDER_STATUS: Record<string, StatusMeta> = {
   PAYMENT_PENDING: { label: "Payment Pending", badge: "bg-amber-100 text-amber-800", dot: "bg-amber-500" },
   PLACED: { label: "Placed", badge: "bg-blue-100 text-blue-700", dot: "bg-blue-500" },
-  // Retired from the pipeline; kept so history written before the change reads well.
-  PAYMENT_CONFIRMED: { label: "Payment Confirmed", badge: "bg-indigo-100 text-indigo-700", dot: "bg-indigo-500" },
   DESIGN_REVIEW: { label: "Design Review", badge: "bg-amber-100 text-amber-800", dot: "bg-amber-500" },
   PRINTING: { label: "Printing", badge: "bg-violet-100 text-violet-700", dot: "bg-violet-500" },
   QUALITY_CHECK: { label: "Quality Check", badge: "bg-cyan-100 text-cyan-700", dot: "bg-cyan-500" },
@@ -97,7 +94,6 @@ const TERMINAL = new Set<OrderStatus>(["DELIVERED", "CANCELLED"]);
 export const CANCELLABLE_STATUSES: OrderStatus[] = [
   "PAYMENT_PENDING",
   "PLACED",
-  "PAYMENT_CONFIRMED", // legacy alias of PLACED, see nextStatuses
   "DESIGN_REVIEW",
 ];
 const CANCELLABLE = new Set<OrderStatus>(CANCELLABLE_STATUSES);
@@ -112,10 +108,6 @@ export function nextStatuses(current: string): OrderStatus[] {
   // the proof. Offering PLACED here would let production start on money that
   // was never verified.
   if (current === "PAYMENT_PENDING") return ["CANCELLED"];
-  // Retired status the previously deployed build can still write until this
-  // release is live. It means "paid, not yet in production" — exactly PLACED —
-  // so it moves on like PLACED instead of being stranded as a dead end.
-  if (current === "PAYMENT_CONFIRMED") current = "PLACED";
   const idx = ORDER_PIPELINE.indexOf(current as OrderStatus);
   const forward = idx >= 0 && idx < ORDER_PIPELINE.length - 1 ? [ORDER_PIPELINE[idx + 1]] : [];
   const cancel: OrderStatus[] = CANCELLABLE.has(current as OrderStatus) ? ["CANCELLED"] : [];
@@ -136,14 +128,11 @@ export const isPaidStatus = (status: string) =>
   !UNPAID_OR_VOID_STATUSES.includes(status as OrderStatus);
 
 /**
- * Paid and not yet delivered: the work the press owes. Includes the retired
- * PAYMENT_CONFIRMED (an alias of PLACED) so rows the previous build wrote are
- * not dropped from the counts. Unpaid orders are waiting on the customer and
- * are counted separately.
+ * Paid and not yet delivered: the work the press owes. Unpaid orders are
+ * waiting on the customer and are counted separately.
  */
 export const IN_PRODUCTION_STATUSES: OrderStatus[] = [
   "PLACED",
-  "PAYMENT_CONFIRMED",
   "DESIGN_REVIEW",
   "PRINTING",
   "QUALITY_CHECK",

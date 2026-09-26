@@ -281,8 +281,6 @@ try { nextInvoiceNumber(sep26, "INV-2026-00004"); } catch { threw = true; }
 eq("an old-format number is not mistaken for this series", threw, true);
 
 console.log("── status sets ──");
-eq("legacy PAYMENT_CONFIRMED counts as in production", IN_PRODUCTION_STATUSES.includes("PAYMENT_CONFIRMED"), true);
-eq("legacy PAYMENT_CONFIRMED is in the Active tab", ACTIVE_STATUSES.includes("PAYMENT_CONFIRMED"), true);
 eq("unpaid orders are in the Active tab", ACTIVE_STATUSES.includes("PAYMENT_PENDING"), true);
 eq("unpaid orders are not in production", IN_PRODUCTION_STATUSES.includes("PAYMENT_PENDING"), false);
 eq("delivered is not active", ACTIVE_STATUSES.includes("DELIVERED"), false);

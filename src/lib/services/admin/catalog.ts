@@ -9,8 +9,6 @@ import type {
   UpdateProductInput,
   SpecGroupInput,
   SpecOptionInput,
-  TiersInput,
-  DeliveryInput,
   MatrixInput,
 } from "@/lib/dto/admin";
 import { productImageKey } from "@/lib/productImages";
@@ -498,41 +496,6 @@ export async function updateSpecOption(id: string, input: SpecOptionInput) {
 export async function deleteSpecOption(id: string) {
   await prisma.specOption.delete({ where: { id } });
   return { id };
-}
-
-// ───────────────────── Tiers / delivery ─────────────────────
-
-export async function setQuantityTiers(productId: string, input: TiersInput) {
-  await prisma.$transaction([
-    prisma.quantityTier.deleteMany({ where: { productId } }),
-    prisma.quantityTier.createMany({
-      data: input.tiers.map((t, i) => ({
-        productId,
-        quantity: t.quantity,
-        basePrice: t.basePrice,
-        label: t.label ?? null,
-        displayOrder: i,
-      })),
-    }),
-  ]);
-  return { count: input.tiers.length };
-}
-
-export async function setDeliverySpeeds(productId: string, input: DeliveryInput) {
-  await prisma.$transaction([
-    prisma.deliverySpeed.deleteMany({ where: { productId } }),
-    prisma.deliverySpeed.createMany({
-      data: input.speeds.map((s, i) => ({
-        productId,
-        name: s.name,
-        fee: s.fee,
-        etaMinDays: s.etaMinDays,
-        etaMaxDays: s.etaMaxDays,
-        displayOrder: i,
-      })),
-    }),
-  ]);
-  return { count: input.speeds.length };
 }
 
 // ─────────────────────── Price matrix ───────────────────────

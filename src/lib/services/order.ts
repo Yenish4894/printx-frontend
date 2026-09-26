@@ -287,7 +287,7 @@ export async function raiseRefundIfPaid(
  *
  * Unpaid (still PAYMENT_PENDING, payment never verified): nothing to refund.
  * Paid: a PENDING refund is raised for an admin to send back by bank transfer;
- * there is no wallet to credit any more. The status transition is atomic
+ * nothing is credited in the app. The status transition is atomic
  * (updateMany with a status guard) so concurrent cancels raise at most one.
  */
 export async function cancelOrder(userId: string, id: string, reason?: string) {

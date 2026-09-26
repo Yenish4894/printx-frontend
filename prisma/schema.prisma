@@ -1,6 +1,6 @@
 // Bhagini Graphics — Prisma schema
 // Models mirror FINALIZED_FLOW.md. Money stored as Decimal(10,2).
-// Auth = mobile + password. Orders = wallet-only. No offers/loyalty/ratings.
+// Auth = mobile + password. Orders = prepaid by bank transfer. No offers/loyalty/ratings.
 // The configurator (Product → SpecGroup → SpecOption + QuantityTier + DeliverySpeed
 // + VisibilityRule) is fully dynamic: admin defines everything, no hardcoded specs.
 
@@ -90,10 +90,6 @@ enum OrderStatus {
   // it leaves this state only when an admin approves that proof.
   PAYMENT_PENDING
   PLACED
-  // Retired: approval now moves PAYMENT_PENDING straight to PLACED. Kept only so
-  // the previously deployed build (which can still write it) keeps working
-  // until this release is live; remove in a follow-up migration.
-  PAYMENT_CONFIRMED
   DESIGN_REVIEW
   PRINTING
   QUALITY_CHECK
@@ -111,14 +107,9 @@ enum FileStatus {
 
 enum PaymentMethod {
   BANK_TRANSFER // customer transfers to the business account and uploads proof
-  WALLET
-  UPI
-  CARD
-  NET_BANKING
 }
 
 enum PaymentPurpose {
-  WALLET_TOPUP
   ORDER
 }
 
@@ -126,12 +117,6 @@ enum PaymentStatus {
   PENDING
   SUCCESS
   FAILED
-}
-
-enum WalletTxnType {
-  CREDIT
-  DEBIT
-  REFUND
 }
 
 enum RefundStatus {
@@ -143,7 +128,6 @@ enum RefundStatus {
 
 enum NotificationType {
   ORDER
-  WALLET
   SYSTEM
 }
 
@@ -158,7 +142,6 @@ model User {
   gstNumber     String?
   passwordHash  String
   role          Role      @default(CUSTOMER)
-  walletBalance Decimal   @default(0) @db.Decimal(10, 2)
   isActive      Boolean   @default(true)
   // Defaults to APPROVED so every account that already exists, and every staff
   // account a super admin creates, is unaffected. Only the public signup route
@@ -173,11 +156,8 @@ model User {
 
   addresses           Address[]
   orders              Order[]
-  walletTransactions  WalletTransaction[]
   cart                Cart?
   notifications       Notification[]
-  savedPaymentMethods SavedPaymentMethod[]
-  walletSettings      WalletSettings?
   refunds             Refund[]
   payments            Payment[]
 
@@ -202,35 +182,6 @@ model Address {
   createdAt DateTime @default(now())
 
   @@index([userId])
-}
-
-model SavedPaymentMethod {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type         String // UPI / CARD / NET_BANKING
-  label        String // "priya.mehta@okicici" / "HDFC Debit ••8823"
-  detailMasked String?
-  provider     String?
-  expiry       String?
-  isPrimary    Boolean  @default(false)
-  createdAt    DateTime @default(now())
-
-  @@index([userId])
-}
-
-model WalletSettings {
-  id                   String   @id @default(cuid())
-  userId               String   @unique
-  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  autoTopUp            Boolean  @default(false)
-  autoTopUpThreshold   Decimal  @default(200) @db.Decimal(10, 2)
-  autoTopUpAmount      Decimal  @default(1000) @db.Decimal(10, 2)
-  transactionAlerts    Boolean  @default(true)
-  lowBalanceAlert      Boolean  @default(false)
-  lowBalanceThreshold  Decimal  @default(500) @db.Decimal(10, 2)
-  monthlySpendingLimit Decimal? @db.Decimal(10, 2)
-  updatedAt            DateTime @updatedAt
 }
 
 // ───────────────────────── Catalog ─────────────────────────
@@ -572,8 +523,6 @@ model Payment {
   method            PaymentMethod
   amount            Decimal        @db.Decimal(10, 2)
   status            PaymentStatus  @default(PENDING)
-  razorpayOrderId   String?
-  razorpayPaymentId String?
   orderId           String?        @unique
   order             Order?         @relation(fields: [orderId], references: [id])
 
@@ -592,24 +541,6 @@ model Payment {
 
   @@index([userId])
   @@index([proofUrl]) // /api/files/[key] resolves the owner by URL
-}
-
-model WalletTransaction {
-  id             String        @id @default(cuid())
-  userId         String
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type           WalletTxnType
-  amount         Decimal       @db.Decimal(10, 2)
-  balanceAfter   Decimal       @db.Decimal(10, 2)
-  reference      String? // order number / razorpay txn id
-  description    String?
-  relatedOrderId String?
-  createdAt      DateTime      @default(now())
-
-  @@index([userId])
-  @@index([userId, createdAt]) // "my ledger, newest first"
-  @@index([createdAt]) // admin finance sorts the WHOLE table newest-first
-  @@index([type]) // CREDIT / DEBIT / REFUND aggregates
 }
 
 model Refund {
@@ -631,15 +562,13 @@ model Refund {
 
 // ───────────────────────── Platform ─────────────────────────
 
-// Single-row global configuration. Drives GST, wallet top-up limits, policies,
+// Single-row global configuration. Drives GST, policies,
 // and the public business identity shown across the app.
 model PlatformSettings {
   id                      String   @id @default("singleton")
   gstPercent              Int      @default(18)
   freeShippingThreshold   Decimal  @default(0) @db.Decimal(10, 2)
   autoRoundPrices         Boolean  @default(false)
-  minTopUp                Decimal  @default(200) @db.Decimal(10, 2)
-  maxTopUp                Decimal  @default(100000) @db.Decimal(10, 2)
   cancellationWindowHours Int      @default(2)
   fileGracePeriod         Boolean  @default(true)
   defaultDpi              String   @default("300 DPI")
@@ -652,7 +581,6 @@ model PlatformSettings {
   bankName                String?
   bankAccountNumber       String?
   bankIfsc                String?
-  bankUpiId               String?
   supportPhone            String?
   supportEmail            String?
   socialFacebook          String?
@@ -675,5 +603,5 @@ model Notification {
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
 
-  @@index([userId])
+  @@index([userId, createdAt]) // the bell: my notifications, newest first
 }

@@ -232,6 +232,24 @@ export const orders = {
   },
 };
 
+// ───────────────────────── Notifications ─────────────────────────
+export interface NotificationItem {
+  id: string;
+  type: "ORDER" | "SYSTEM";
+  title: string;
+  body: string | null;
+  link: string | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export const notifications = {
+  list: (opts: PageOpts = {}) =>
+    get<{ notifications: NotificationItem[]; unread: number } & PageMeta>(`/notifications${qs({ ...opts })}`),
+  /** Mark one read, or every unread one when no id is given. */
+  markRead: (id?: string) => post<{ updated: number }>("/notifications/read", id ? { id } : {}),
+};
+
 // ───────────────────────── Admin ─────────────────────────
 export const admin = {
   stats: () => get<{ stats: any }>("/admin/stats"),
@@ -263,8 +281,6 @@ export const admin = {
       remove: (id: string, imageId: string) => del<{ id: string }>(`/admin/products/${id}/images/${imageId}`),
     },
     addSpecGroup: (id: string, input: Record<string, unknown>) => post<any>(`/admin/products/${id}/spec-groups`, input),
-    setTiers: (id: string, tiers: unknown[]) => put<any>(`/admin/products/${id}/tiers`, { tiers }),
-    setDelivery: (id: string, speeds: unknown[]) => put<any>(`/admin/products/${id}/delivery`, { speeds }),
     getMatrix: (id: string) => get<{ matrix: any }>(`/admin/products/${id}/matrix`),
     setMatrix: (id: string, rows: unknown[]) => put<any>(`/admin/products/${id}/matrix`, { rows }),
   },

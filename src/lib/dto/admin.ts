@@ -79,27 +79,6 @@ export const specOptionSchema = z.object({
   code: z.string().max(40).nullable().optional(),
 });
 
-// ── Tiers / delivery (replace-all) ──
-export const tiersSchema = z.object({
-  tiers: z.array(
-    z.object({
-      quantity: z.number().int().positive(),
-      basePrice: z.number().nonnegative(),
-      label: z.string().max(60).nullable().optional(),
-    }),
-  ),
-});
-export const deliverySchema = z.object({
-  speeds: z.array(
-    z.object({
-      name: z.string().min(1).max(60),
-      fee: z.number().nonnegative(),
-      etaMinDays: z.number().int().min(0),
-      etaMaxDays: z.number().int().min(0),
-    }),
-  ),
-});
-
 // ── Price matrix (replace-all) ──
 // A row prices its combination EITHER per sheet OR as a flat total for the
 // whole run — never both, never neither (mirrors the DB CHECK constraint).
@@ -121,7 +100,7 @@ export const matrixSchema = z.object({
 // ── Orders ──
 export const orderStatusSchema = z.object({
   // Not PLACED: an order reaches it only by approving its payment proof
-  // (paymentReviewSchema). PAYMENT_CONFIRMED is retired.
+  // (paymentReviewSchema).
   status: z.enum([
     "DESIGN_REVIEW",
     "PRINTING",
@@ -193,8 +172,6 @@ export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 export type SpecGroupInput = z.infer<typeof specGroupSchema>;
 export type SpecOptionInput = z.infer<typeof specOptionSchema>;
-export type TiersInput = z.infer<typeof tiersSchema>;
-export type DeliveryInput = z.infer<typeof deliverySchema>;
 export type MatrixInput = z.infer<typeof matrixSchema>;
 export type OrderStatusInput = z.infer<typeof orderStatusSchema>;
 export type FileReviewInput = z.infer<typeof fileReviewSchema>;

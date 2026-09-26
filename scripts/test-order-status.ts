@@ -26,13 +26,12 @@ eq("OUT_FOR_DELIVERY -> DELIVERED", nextStatuses("OUT_FOR_DELIVERY"), ["DELIVERE
 eq("DELIVERED is terminal", nextStatuses("DELIVERED"), []);
 eq("CANCELLED is terminal", nextStatuses("CANCELLED"), []);
 
-console.log("── legacy PAYMENT_CONFIRMED (written by the old build) ──");
-eq("legacy status advances like PLACED", nextStatuses("PAYMENT_CONFIRMED"), ["DESIGN_REVIEW", "CANCELLED"]);
-eq("legacy status is cancellable", isCancellable("PAYMENT_CONFIRMED"), true);
-eq("legacy status counts as paid", isPaidStatus("PAYMENT_CONFIRMED"), true);
+console.log("── retired PAYMENT_CONFIRMED is gone ──");
+eq("unknown legacy status has no moves into production", nextStatuses("PAYMENT_CONFIRMED"), []);
+eq("unknown legacy status is not cancellable", isCancellable("PAYMENT_CONFIRMED"), false);
 
 console.log("── cancellation ──");
-eq("cancellable set", CANCELLABLE_STATUSES, ["PAYMENT_PENDING", "PLACED", "PAYMENT_CONFIRMED", "DESIGN_REVIEW"]);
+eq("cancellable set", CANCELLABLE_STATUSES, ["PAYMENT_PENDING", "PLACED", "DESIGN_REVIEW"]);
 eq("unpaid order is cancellable", isCancellable("PAYMENT_PENDING"), true);
 eq("printing order is not", isCancellable("PRINTING"), false);
 
