@@ -189,6 +189,15 @@ export const cart = {
   },
 };
 
+/** One photo on a product, as the admin image manager sees it. */
+export interface ProductImage {
+  id: string;
+  url: string;
+  alt: string | null;
+  isPrimary: boolean;
+  displayOrder: number;
+}
+
 // ───────────────────────── Addresses ─────────────────────────
 export const addresses = {
   list: () => get<{ addresses: any[] }>("/me/addresses"),
@@ -241,6 +250,19 @@ export const admin = {
     create: (input: Record<string, unknown>) => post<{ product: { id: string; slug: string } }>("/admin/products", input),
     update: (id: string, input: Record<string, unknown>) => patch<any>(`/admin/products/${id}`, input),
     remove: (id: string) => del<any>(`/admin/products/${id}`),
+    images: {
+      list: (id: string) => get<{ images: ProductImage[] }>(`/admin/products/${id}/images`),
+      addLink: (id: string, url: string, alt?: string) =>
+        post<{ image: ProductImage }>(`/admin/products/${id}/images`, { url, alt }),
+      upload: (id: string, file: File) => {
+        const form = new FormData();
+        form.append("file", file);
+        return post<{ image: ProductImage }>(`/admin/products/${id}/images`, form);
+      },
+      makePrimary: (id: string, imageId: string) =>
+        patch<{ images: ProductImage[] }>(`/admin/products/${id}/images/${imageId}`, { primary: true }),
+      remove: (id: string, imageId: string) => del<{ id: string }>(`/admin/products/${id}/images/${imageId}`),
+    },
     addSpecGroup: (id: string, input: Record<string, unknown>) => post<any>(`/admin/products/${id}/spec-groups`, input),
     setTiers: (id: string, tiers: unknown[]) => put<any>(`/admin/products/${id}/tiers`, { tiers }),
     setDelivery: (id: string, speeds: unknown[]) => put<any>(`/admin/products/${id}/delivery`, { speeds }),

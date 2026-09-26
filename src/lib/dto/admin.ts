@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { REJECT_REASON_MAX, REJECT_REASON_MIN } from "@/lib/paymentRules";
 import { APPROVAL_REASON_MAX, APPROVAL_REASON_MIN } from "@/lib/approval";
+import { externalImageProblem } from "@/lib/productImages";
 
 export const slugify = (s: string) =>
   s
@@ -149,6 +150,18 @@ export type PaymentReviewInput = z.infer<typeof paymentReviewSchema>;
 export const fileReviewSchema = z.object({
   action: z.enum(["APPROVE", "REJECT"]),
   reason: z.string().max(300).optional(),
+});
+
+// A product photo added by pasting a link (uploads go through multipart instead).
+export const productImageLinkSchema = z.object({
+  url: z
+    .string()
+    .trim()
+    .superRefine((v, ctx) => {
+      const problem = externalImageProblem(v);
+      if (problem) ctx.addIssue({ code: "custom", message: problem });
+    }),
+  alt: z.string().trim().max(120).optional(),
 });
 
 // ── Customers ──

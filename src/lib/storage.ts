@@ -28,6 +28,7 @@ const MAX_BYTES = 50 * 1024 * 1024; // 50 MB
 interface R2Like {
   put(key: string, value: Uint8Array, opts?: { httpMetadata?: { contentType?: string } }): Promise<unknown>;
   get(key: string): Promise<{ arrayBuffer(): Promise<ArrayBuffer> } | null>;
+  delete(key: string): Promise<void>;
 }
 
 /** The bound R2 bucket, or undefined when there is none. */
@@ -106,6 +107,20 @@ export async function saveUpload(file: File): Promise<StoredFile> {
   }
 
   return { url: `/api/files/${key}`, name: file.name, key, size: file.size, contentType };
+}
+
+/** Remove a stored file. Callers treat this as best effort: a leftover file is harmless. */
+export async function deleteUpload(key: string): Promise<void> {
+  const safeKey = path.basename(key); // guard against path traversal
+  const bucket = await r2();
+  if (bucket) {
+    await bucket.delete(safeKey);
+    return;
+  }
+  await viaDisk(async () => {
+    const { unlink } = await import("node:fs/promises");
+    await unlink(path.join(UPLOAD_DIR, safeKey)).catch(() => {});
+  });
 }
 
 export async function readUpload(key: string): Promise<Uint8Array> {

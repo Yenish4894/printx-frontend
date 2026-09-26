@@ -46,7 +46,7 @@ export default function MarketingCatalog() {
           href={`/products/${p.slug}`}
           className="group bg-white rounded-xl overflow-hidden border border-outline-variant hover:border-secondary/40 hover:shadow-lg transition-all flex flex-col"
         >
-          <div className="h-44 bg-surface-container flex items-center justify-center overflow-hidden">
+          <div className="aspect-[4/3] bg-surface-container flex items-center justify-center overflow-hidden">
             {p.image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={p.name} src={p.image} />

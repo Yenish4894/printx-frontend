@@ -6,6 +6,7 @@ Versions use `MAJOR.MINOR.PATCH.MICRO`.
 ## [Unreleased]
 
 ### Added
+- Product photos. In admin Products, click a product's thumbnail (or the photos icon) to upload PNG, JPG or WebP images (up to 5 MB, 8 per product) or paste an https link, choose which photo is the primary one, and remove the rest. The primary photo shows on the catalogue, the homepage and the cart; the product page gets a gallery with thumbnails. Uploading needs the R2 storage bucket; pasted links work without it.
 - Admin approval for new customers. A new signup can no longer sign in until an admin approves it: they see an "Application received" notice, and trying to sign in shows that the account is awaiting approval. Admins get a "Pending" tab (with a count) on Customers, a "Signups to Approve" tile on the dashboard, and Approve / Reject (with a reason the applicant sees) in the customer profile. Every account that existed before, and every staff account, is unaffected.
 - Product catalogue category filters and the order/refund status tabs now show edge fades and scroll arrows when there are more options than fit, instead of silently running off-screen.
 

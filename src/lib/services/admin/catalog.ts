@@ -13,6 +13,8 @@ import type {
   DeliveryInput,
   MatrixInput,
 } from "@/lib/dto/admin";
+import { productImageKey } from "@/lib/productImages";
+import { deleteUpload } from "@/lib/storage";
 
 const num = (d: unknown) => (d == null ? null : Number(d));
 
@@ -110,7 +112,8 @@ export async function listAdminProducts() {
     orderBy: { createdAt: "desc" },
     include: {
       category: { select: { name: true, slug: true } },
-      _count: { select: { specGroups: true, priceMatrix: true, orderItems: true } },
+      _count: { select: { specGroups: true, priceMatrix: true, orderItems: true, images: true } },
+      images: { orderBy: { displayOrder: "asc" }, take: 1, select: { url: true } },
     },
   });
   return products.map((p) => ({
@@ -123,6 +126,8 @@ export async function listAdminProducts() {
     specGroups: p._count.specGroups,
     matrixRows: p._count.priceMatrix,
     orderCount: p._count.orderItems,
+    image: p.images[0]?.url ?? null,
+    imageCount: p._count.images,
   }));
 }
 
@@ -269,7 +274,13 @@ export async function deleteProduct(id: string) {
     await prisma.product.update({ where: { id }, data: { isActive: false } });
     return { id, softDeleted: true };
   }
+  const images = await prisma.productImage.findMany({ where: { productId: id }, select: { url: true } });
   await prisma.product.delete({ where: { id } });
+  // The rows went with the product; clear the files we stored for them (best effort).
+  for (const i of images) {
+    const key = productImageKey(i.url);
+    if (key) await deleteUpload(key).catch(() => {});
+  }
   return { id, softDeleted: false };
 }
 

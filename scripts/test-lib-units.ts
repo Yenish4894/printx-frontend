@@ -21,6 +21,11 @@ import {
 } from "../src/lib/paymentRules";
 import { nextOrderNumber, nextInvoiceNumber, financialYear } from "../src/lib/orderNumber";
 import {
+  productImageFileProblem, externalImageProblem, productImageKey, productImageUrlForKey,
+  PRODUCT_IMAGE_MAX_BYTES, PRODUCT_IMAGE_LINK_MAX, MAX_PRODUCT_IMAGES,
+} from "../src/lib/productImages";
+import { productImageLinkSchema } from "../src/lib/dto/admin";
+import {
   ACTIVE_STATUSES,
   IN_PRODUCTION_STATUSES,
   UNPAID_OR_VOID_STATUSES,
@@ -210,6 +215,45 @@ eq("reject reason is trimmed before the length check", okParse(signupReviewSchem
 eq("reject with a real reason ok", okParse(signupReviewSchema, { action: "REJECT", reason: "Could not verify the business" }), true);
 eq("reject reason over the max refused", okParse(signupReviewSchema, { action: "REJECT", reason: "r".repeat(APPROVAL_REASON_MAX + 1) }), false);
 eq("unknown action refused", okParse(signupReviewSchema, { action: "MAYBE" }), false);
+
+console.log("── product images ──");
+const img = (o: Partial<{ size: number; type: string; name: string }> = {}) => ({ size: 1000, type: "image/png", name: "photo.png", ...o });
+eq("PNG accepted", productImageFileProblem(img()), null);
+eq("JPG accepted", productImageFileProblem(img({ type: "image/jpeg", name: "a.JPG" })), null);
+eq("JPEG accepted", productImageFileProblem(img({ type: "image/jpeg", name: "a.jpeg" })), null);
+eq("WebP accepted", productImageFileProblem(img({ type: "image/webp", name: "a.webp" })), null);
+eq("exactly the size limit accepted", productImageFileProblem(img({ size: PRODUCT_IMAGE_MAX_BYTES })), null);
+eq("empty file refused", /empty/.test(productImageFileProblem(img({ size: 0 })) ?? ""), true);
+eq("over the size limit refused", /too large/.test(productImageFileProblem(img({ size: PRODUCT_IMAGE_MAX_BYTES + 1 })) ?? ""), true);
+eq("SVG refused (can carry scripts)", productImageFileProblem(img({ type: "image/svg+xml", name: "a.svg" })) !== null, true);
+eq("PDF refused", productImageFileProblem(img({ type: "application/pdf", name: "a.pdf" })) !== null, true);
+eq("a name that doesn't match the type is refused (image/png named .html)", productImageFileProblem(img({ name: "a.html" })) !== null, true);
+eq("no extension refused", productImageFileProblem(img({ name: "photo" })) !== null, true);
+eq("a double extension can't smuggle a script through", productImageFileProblem(img({ name: "a.png.html" })) !== null, true);
+
+eq("https link accepted", externalImageProblem("https://cdn.example.com/a/b.jpg?w=800"), null);
+eq("plain http refused", /https/.test(externalImageProblem("http://cdn.example.com/a.jpg") ?? ""), true);
+eq("not a link refused", externalImageProblem("just some words") !== null, true);
+eq("javascript: refused", externalImageProblem("javascript:alert(1)") !== null, true);
+eq("data: refused", externalImageProblem("data:image/png;base64,AAAA") !== null, true);
+eq("ftp refused", externalImageProblem("ftp://example.com/a.png") !== null, true);
+// Built in code rather than written out, so no literal user:password@ URL sits in the source.
+const withCreds = new URL("https://example.com/a.png");
+withCreds.username = "someone";
+withCreds.password = "placeholder";
+eq("embedded credentials refused", externalImageProblem(withCreds.toString()) !== null, true);
+eq("over-long link refused", externalImageProblem("https://example.com/" + "a".repeat(PRODUCT_IMAGE_LINK_MAX)) !== null, true);
+eq("the link schema trims and accepts a good link", parsed<{ url: string }>(productImageLinkSchema, { url: "  https://cdn.example.com/a.png  " })?.url, "https://cdn.example.com/a.png");
+const badLink = productImageLinkSchema.safeParse({ url: "http://x.com/a.png" });
+eq("the link schema refuses a bad one with the helpful message", !badLink.success && /https/.test(JSON.stringify(badLink.error.issues)), true);
+
+eq("an uploaded photo's url round-trips to its key", productImageKey(productImageUrlForKey("abc-123.png")), "abc-123.png");
+eq("an external link has no key", productImageKey("https://cdn.example.com/a.png"), null);
+eq("path traversal is not a key", productImageKey("/api/product-images/../secret.png"), null);
+eq("a nested path is not a key", productImageKey("/api/product-images/a/b.png"), null);
+eq("an empty key is not a key", productImageKey("/api/product-images/"), null);
+eq("another route's url is not a key", productImageKey("/api/files/abc.png"), null);
+eq("a product can hold 8 images", MAX_PRODUCT_IMAGES, 8);
 
 console.log("── order and invoice numbers ──");
 eq("first order of the year", nextOrderNumber(2026, null), "BG-2026-00001");

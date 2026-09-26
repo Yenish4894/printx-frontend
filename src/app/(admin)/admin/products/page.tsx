@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { admin, ApiError } from "@/lib/api";
+import ProductImagesPanel from "@/components/admin/ProductImagesPanel";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState, LoadingState, TableState } from "@/components/ui/States";
 import { useConfirm, useToast } from "@/components/ui/UIProvider";
@@ -17,6 +18,8 @@ interface AdminProduct {
   specGroups: number;
   matrixRows: number;
   orderCount: number;
+  image: string | null;
+  imageCount: number;
 }
 
 const pricingLabel: Record<string, string> = {
@@ -33,6 +36,7 @@ export default function AdminProducts() {
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [imagesFor, setImagesFor] = useState<AdminProduct | null>(null);
 
   // Fetch list into state. When `withSpinner` is false the table is NOT blanked
   // (used to refetch after a mutation so the whole table doesn't flash "Loading…").
@@ -153,15 +157,27 @@ export default function AdminProducts() {
               {!loading && products.map((p) => (
                 <tr key={p.id} className="hover:bg-surface-container-low transition-colors group">
                   <td className="py-4 px-6">
-                    <Link href={`/admin/spec-config?product=${p.id}`} className="flex items-center gap-4 group/link">
-                      <div className="w-14 h-14 rounded-lg bg-surface-container-highest shrink-0 flex items-center justify-center border border-outline-variant/20 text-on-surface-variant">
-                        <span aria-hidden="true" className="material-symbols-outlined">description</span>
-                      </div>
-                      <div>
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => setImagesFor(p)}
+                        title={p.imageCount ? "Manage photos" : "Add a photo"}
+                        aria-label={`Manage photos for ${p.name}`}
+                        className="w-14 h-14 rounded-lg bg-surface-container-highest shrink-0 flex items-center justify-center border border-outline-variant/20 text-on-surface-variant overflow-hidden hover:border-secondary transition-colors"
+                      >
+                        {p.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.image} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span aria-hidden="true" className="material-symbols-outlined">add_photo_alternate</span>
+                        )}
+                      </button>
+                      <Link href={`/admin/spec-config?product=${p.id}`} className="group/link">
                         <div className="font-body-md font-bold text-primary group-hover/link:text-secondary transition-colors">{p.name}</div>
-                        <div className="text-label-caps text-on-surface-variant font-medium">{p.slug}</div>
-                      </div>
-                    </Link>
+                        <div className="text-label-caps text-on-surface-variant font-medium">
+                          {p.slug} · {p.imageCount === 0 ? "no photos" : `${p.imageCount} ${p.imageCount === 1 ? "photo" : "photos"}`}
+                        </div>
+                      </Link>
+                    </div>
                   </td>
                   <td className="py-4 px-6 text-body-md text-on-surface">{p.category}</td>
                   <td className="py-4 px-6"><span className="px-3 py-1 bg-surface-container-highest rounded-full text-label-caps font-bold text-on-surface-variant">{pricingLabel[p.pricingModel] ?? p.pricingModel}</span></td>
@@ -186,6 +202,9 @@ export default function AdminProducts() {
                   </td>
                   <td className="py-4 px-6 text-right">
                     <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => setImagesFor(p)} title="Manage photos" aria-label={`Manage photos for ${p.name}`} className="p-2 hover:bg-surface-container-high rounded-full transition-all text-on-surface-variant hover:text-primary">
+                        <span className="material-symbols-outlined text-[20px]" aria-hidden="true">photo_library</span>
+                      </button>
                       <Link href={`/admin/spec-config?product=${p.id}`} title="Configure specs" aria-label={`Configure specs for ${p.name}`} className="p-2 hover:bg-surface-container-high rounded-full transition-all text-on-surface-variant hover:text-primary">
                         <span className="material-symbols-outlined text-[20px]" aria-hidden="true">tune</span>
                       </Link>
@@ -206,6 +225,19 @@ export default function AdminProducts() {
           </table>
         </div>
       </div>
+
+      {imagesFor && (
+        <ProductImagesPanel
+          productId={imagesFor.id}
+          productName={imagesFor.name}
+          onClose={() => setImagesFor(null)}
+          onChanged={(imgs) =>
+            setProducts((prev) =>
+              prev.map((x) => (x.id === imagesFor.id ? { ...x, image: imgs[0]?.url ?? null, imageCount: imgs.length } : x)),
+            )
+          }
+        />
+      )}
     </>
   );
 }

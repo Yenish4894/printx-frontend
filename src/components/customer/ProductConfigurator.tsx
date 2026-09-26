@@ -8,6 +8,7 @@ import { useSession, inr } from "@/components/SessionProvider";
 import { evaluateVisibility, pruneSelections, type VisibilityRuleLite } from "@/lib/visibility";
 import { useToast } from "@/components/ui/UIProvider";
 import Button from "@/components/ui/Button";
+import ProductGallery from "@/components/customer/ProductGallery";
 
 interface Option {
   id: string;
@@ -52,6 +53,7 @@ interface Product {
   printTypeLabel?: string | null;
   standardSizeLabel?: string | null;
   badges: string[];
+  images?: { url: string; alt: string | null }[];
   specGroups: SpecGroup[];
   quantityTiers: { id: string; quantity: number; basePrice: number; label?: string | null }[];
   deliverySpeeds: DeliverySpeed[];
@@ -354,6 +356,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
         {/* Left: Details */}
         <div className="lg:col-span-4 space-y-8">
+          {product.images && product.images.length > 0 && <ProductGallery images={product.images} name={product.name} />}
           <div className="bg-surface-container-lowest rounded-xl custom-shadow p-6">
             <h2 className="font-headline-md text-headline-md text-primary-container mb-6 flex items-center gap-2">
               <span aria-hidden="true" className="material-symbols-outlined text-secondary-container">description</span> Product Details
