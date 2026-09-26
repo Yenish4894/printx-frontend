@@ -15,8 +15,8 @@ import type { ComponentProps, ReactNode } from "react";
  * Variants are named for their job, not their colour, so a call site never has
  * to know which gradient token is current.
  */
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
-export type ButtonSize = "sm" | "md" | "lg";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonSize = "sm" | "md" | "lg";
 
 const BASE =
   "inline-flex items-center justify-center gap-2 font-button rounded-lg " +

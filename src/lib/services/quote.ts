@@ -23,7 +23,7 @@ const PRICING_INCLUDE = {
   visibilityRules: { include: { conditions: true } },
 } satisfies Prisma.ProductInclude;
 
-export type PricingProduct = Prisma.ProductGetPayload<{ include: typeof PRICING_INCLUDE }>;
+type PricingProduct = Prisma.ProductGetPayload<{ include: typeof PRICING_INCLUDE }>;
 
 /**
  * Load the full pricing graph for several products in ONE round trip, keyed by

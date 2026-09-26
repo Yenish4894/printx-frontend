@@ -12,6 +12,8 @@ Versions use `MAJOR.MINOR.PATCH.MICRO`.
 
 - Notification bell for customers and admins. It shows an unread count and the latest updates (payment approved or rejected, order status changes, artwork reviews, refunds; for admins, new signups awaiting approval and bank-detail changes). Clicking one opens the related page.
 
+- Change your own password. Customers reach it from their name in the top bar (My account); admins from the account menu (Change password). It needs the current password, at least 8 characters with a letter and a number, and signs you out on every other device. Staff created with a temporary password can now replace it.
+
 ### Changed
 - There is one login page for everyone. Opening the admin console while logged out, logging out as an admin, or visiting the old /admin-login address all go to /login, which sends admins to the console and customers to their dashboard. A customer who opens the admin console is sent back to their own dashboard.
 - Payment is by direct bank transfer only. UPI is gone from the bank details, the customer payment screen and all marketing copy.
@@ -23,6 +25,7 @@ Versions use `MAJOR.MINOR.PATCH.MICRO`.
 ### Removed
 - The wallet, completely. The wallet ledger, per-customer wallet balances and settings, saved payment methods, the top-up limits and the UPI ID setting are deleted from the database, along with the old Razorpay columns and the retired UPI / card / net-banking / wallet payment types. The old /wallet address is gone. One cancelled test order that had been "paid via wallet" now reads "paid by bank transfer".
 - The retired "Payment Confirmed" order status.
+- Unused starter images, the stock README, the `DEPLOYMENT.md` pointer, the one-off `seed-letterheads` script and the `@types/bcryptjs` package.
 - Two admin endpoints nothing called: editing a product's quantity tiers and its delivery speeds after creation.
 
 ## [0.2.0.0] - 2026-09-22

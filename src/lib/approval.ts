@@ -16,7 +16,7 @@ export const APPROVAL_STATUS: Record<ApprovalStatus, { label: string; badge: str
 };
 
 // Non-breaking spaces so the number never wraps across two lines in an alert box.
-export const SUPPORT_PHONE = "+91\u00A072030\u00A000701";
+const SUPPORT_PHONE = "+91\u00A072030\u00A000701";
 
 /**
  * Why an account cannot get in yet, in words the applicant can act on, or null

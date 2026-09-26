@@ -151,6 +151,8 @@ model User {
   approvalReviewedById String?
   approvalRejectReason String? // shown to the applicant when they try to sign in
   lastLoginAt   DateTime?
+  // Sessions issued before this are dead: set when the user changes their password.
+  passwordChangedAt DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

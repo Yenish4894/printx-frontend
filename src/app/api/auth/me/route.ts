@@ -15,7 +15,10 @@ export async function GET() {
     // A deactivated (or deleted) account must read as logged OUT here. Reporting
     // it as signed in left the UI showing a session while every other endpoint
     // returned 401, so the user saw errors everywhere instead of a login screen.
-    if (!user || !user.isActive || !isApproved(user.approvalStatus)) {
+    // Same rule as requireUser: a password change ends every earlier session.
+    const revoked =
+      !!user?.passwordChangedAt && (session.issuedAt ?? 0) * 1000 < user.passwordChangedAt.getTime();
+    if (!user || !user.isActive || !isApproved(user.approvalStatus) || revoked) {
       await clearSession();
       return ok({ user: null });
     }

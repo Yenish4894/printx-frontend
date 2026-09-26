@@ -18,6 +18,7 @@ import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma-node/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "node:crypto";
 import { buildComboKey } from "../src/lib/services/pricing.ts";
 
 const prisma = new PrismaClient({
@@ -90,7 +91,6 @@ async function assertSafeToWipe() {
    Running it here would destroy live data it cannot restore.
 
    • Fresh/dev database?  SEED_FORCE=1 npm run db:seed
-   • Adding letterheads?  node scripts/seed-letterheads.mjs  (additive, idempotent)
 `);
   process.exit(1);
 }
@@ -115,14 +115,18 @@ async function main() {
   await prisma.user.deleteMany();
 
   // ── Users ──
-  const adminHash = await bcrypt.hash("Admin@123", 10);
+  // No default admin password lives in the repo. Set SEED_ADMIN_PASSWORD, or one is
+  // generated and printed once at the end.
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? randomBytes(9).toString("base64url") + "9a";
+  const adminMobile = process.env.SEED_ADMIN_MOBILE ?? "9033315047";
+  const adminHash = await bcrypt.hash(adminPassword, 10);
   const custHash = await bcrypt.hash("Test@1234", 10);
 
   await prisma.user.create({
     data: {
       businessName: "Bhagini Graphics",
       ownerName: "Super Admin",
-      mobile: "9000000000",
+      mobile: adminMobile,
       email: "admin@bhaginigraphics.co.in",
       passwordHash: adminHash,
       role: "SUPER_ADMIN",
@@ -298,7 +302,7 @@ async function main() {
   });
 
   console.log("✅ Seed complete");
-  console.log(`   Admin:    9000000000 / Admin@123`);
+  console.log(`   Admin:    ${adminMobile} / ${process.env.SEED_ADMIN_PASSWORD ? "(SEED_ADMIN_PASSWORD)" : adminPassword}`);
   console.log(`   Customer: 9812345678 / Test@1234`);
   console.log(`   CMYK Printing: ${cmykRows.length} rate rows (8 GSM × 2 sizes × 2 sides, minus 13×19 Texture)`);
   console.log(`   Stickers: ${stickerRows.length} rate rows (5 materials × 2 sizes, minus 13×19 Golden)`);

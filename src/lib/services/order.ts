@@ -259,7 +259,7 @@ export const unpaidCancelCopy = (payment: { proofUrl: string | null } | null) =>
     : "Your order has been cancelled. No payment was taken.";
 
 /** A payment whose proof is uploaded and not yet reviewed. */
-export const PROOF_IN_REVIEW = { status: "PENDING", proofUrl: { not: null } } satisfies Prisma.PaymentWhereInput;
+const PROOF_IN_REVIEW = { status: "PENDING", proofUrl: { not: null } } satisfies Prisma.PaymentWhereInput;
 
 export const isProofInReview = (o: { status: string; payment: { status: string; proofUrl: string | null } | null }) =>
   o.status === "PAYMENT_PENDING" && o.payment?.status === "PENDING" && !!o.payment.proofUrl;

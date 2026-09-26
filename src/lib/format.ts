@@ -31,7 +31,7 @@ export function formatDate(iso: string | Date | null | undefined): string {
  * parser — two of them read it as an object map and silently rendered nothing
  * (customer) or raw JSON keyed by array index (admin).
  */
-export interface SpecSnapshotEntry {
+interface SpecSnapshotEntry {
   group: string;
   option: string;
   addOn?: number;

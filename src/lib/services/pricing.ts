@@ -11,7 +11,7 @@
 // (MATRIX) products. Delivery is always a taxable service (+18%).
 // ─────────────────────────────────────────────────────────────
 
-export const GST_RATE = 0.18;
+const GST_RATE = 0.18;
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -19,10 +19,10 @@ const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 export const buildComboKey = (optionIds: string[]) =>
   [...optionIds].sort().join("|");
 
-export type PricingModel = "TIERED" | "PER_UNIT" | "MATRIX";
-export type AddOnType = "FLAT" | "PER_UNIT";
+type PricingModel = "TIERED" | "PER_UNIT" | "MATRIX";
+type AddOnType = "FLAT" | "PER_UNIT";
 
-export interface QuantityTierLite {
+interface QuantityTierLite {
   quantity: number;
   basePrice: number;
 }
@@ -83,7 +83,7 @@ export interface PriceBreakdown {
 }
 
 /** Billable units: area×qty for dimension products, else the quantity. */
-export function computeUnits(
+function computeUnits(
   product: PricingProduct,
   quantity: number,
   width?: number | null,
@@ -95,7 +95,7 @@ export function computeUnits(
   return quantity;
 }
 
-export function computeBase(
+function computeBase(
   product: PricingProduct,
   quantity: number,
   units: number,
@@ -130,7 +130,7 @@ export function computeBase(
 }
 
 /** Add-ons: FLAT once, PER_UNIT × (units / perQuantity). */
-export function computeAddOns(addOns: AddOnLite[], units: number): number {
+function computeAddOns(addOns: AddOnLite[], units: number): number {
   let total = 0;
   for (const a of addOns) {
     if (a.addOnType === "PER_UNIT") {

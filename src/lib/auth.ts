@@ -32,6 +32,8 @@ export interface SessionUser {
   id: string;
   mobile: string;
   role: Role;
+  /** Token issue time (epoch seconds); only present on a session read back from the cookie. */
+  issuedAt?: number;
 }
 
 // ── password ──
@@ -82,6 +84,7 @@ export async function getSession(): Promise<SessionUser | null> {
       id: payload.sub as string,
       mobile: payload.mobile as string,
       role: payload.role as Role,
+      issuedAt: payload.iat,
     };
   } catch {
     return null;
@@ -96,13 +99,18 @@ export async function requireUser(): Promise<SessionUser> {
   const { default: prisma } = await import("./prisma");
   const account = await prisma.user.findUnique({
     where: { id: session.id },
-    select: { isActive: true, role: true, approvalStatus: true },
+    select: { isActive: true, role: true, approvalStatus: true, passwordChangedAt: true },
   });
   if (!account || !account.isActive) {
     throw new HttpError(401, "Your account is no longer active");
   }
   if (!isApproved(account.approvalStatus)) {
     throw new HttpError(401, "Your account is not approved");
+  }
+  // A password change kills every session issued before it (a stolen or
+  // forgotten login on another device), which is the point of changing it.
+  if (account.passwordChangedAt && (session.issuedAt ?? 0) * 1000 < account.passwordChangedAt.getTime()) {
+    throw new HttpError(401, "Your password was changed. Please sign in again.");
   }
   // The role in the token is a 7-day-old snapshot. Trusting it would let a
   // demoted admin keep admin powers until their token expired, so the live

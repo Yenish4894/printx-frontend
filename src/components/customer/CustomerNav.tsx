@@ -75,7 +75,7 @@ export default function CustomerNav() {
           >
             <span className="material-symbols-outlined text-on-primary-container" aria-hidden="true">logout</span>
           </button>
-          <div className="hidden sm:flex items-center gap-3 pl-2 border-l border-outline-variant/30">
+          <Link href="/account" aria-label="My account and password" title="My account" className="hidden sm:flex items-center gap-3 pl-2 border-l border-outline-variant/30 rounded-lg hover:opacity-90">
             <div className="text-right hidden xl:block">
               <p className="text-on-primary font-bold text-sm leading-tight">{shortName}</p>
               <p className="text-white/70 text-xs">{user?.businessName ?? "Customer"}</p>
@@ -83,7 +83,7 @@ export default function CustomerNav() {
             <div className="w-9 h-9 rounded-full border-2 border-secondary-container bg-secondary-container text-on-secondary-container flex items-center justify-center font-bold text-sm">
               {initials || "?"}
             </div>
-          </div>
+          </Link>
           {/* Hamburger — mobile/tablet only */}
           <button
             className="lg:hidden p-2 rounded-lg text-on-primary-container hover:bg-primary/20 transition-colors"
@@ -126,10 +126,10 @@ export default function CustomerNav() {
                 <div className="w-9 h-9 rounded-full border-2 border-secondary-container bg-secondary-container text-on-secondary-container flex items-center justify-center font-bold text-sm">
                   {initials || "?"}
                 </div>
-                <div className="flex-1">
+                <Link href="/account" onClick={close} className="flex-1" aria-label="My account and password">
                   <p className="text-on-primary font-bold text-sm">{shortName}</p>
                   <p className="text-white/70 text-xs">{user?.businessName ?? "Customer"}</p>
-                </div>
+                </Link>
                 <button onClick={() => { close(); logout(); }} aria-label="Sign out" className="text-on-primary-container/80 p-2 rounded-lg hover:bg-primary/30">
                   <span className="material-symbols-outlined" aria-hidden="true">logout</span>
                 </button>

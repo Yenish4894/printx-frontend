@@ -102,7 +102,7 @@ const put = <T>(p: string, b?: unknown) => req<T>("PUT", p, b);
 const del = <T>(p: string) => req<T>("DELETE", p);
 
 // ───────────────────────── Types (loose; mirror serializers) ─────────────────────────
-export type Money = number;
+type Money = number;
 export interface SessionUser {
   id: string;
   businessName: string;
@@ -134,6 +134,8 @@ export const auth = {
   register: (data: Record<string, unknown>) =>
     post<{ pending: true; message: string }>("/auth/register", data),
   logout: () => post("/auth/logout"),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    post<{ success: true }>("/auth/change-password", { currentPassword, newPassword }),
   me: () => get<{ user: SessionUser | null }>("/auth/me"),
 };
 

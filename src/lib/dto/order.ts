@@ -5,4 +5,3 @@ export const placeOrderSchema = z.object({
   notes: z.string().max(500).optional(),
 });
 
-export type PlaceOrderInput = z.infer<typeof placeOrderSchema>;

@@ -66,7 +66,7 @@ async function viaDisk<T>(work: () => Promise<T>): Promise<T> {
   }
 }
 
-export const isObjectStorageConfigured = async () => !!(await r2());
+const isObjectStorageConfigured = async () => !!(await r2());
 
 /**
  * Whether an upload can be kept right now: an R2 bucket, or the local-disk

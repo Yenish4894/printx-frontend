@@ -3,8 +3,8 @@
 // the admin screen.
 
 /** PNG, JPG and WebP only. SVG is refused on purpose: it can carry scripts. */
-export const PRODUCT_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
-export const PRODUCT_IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp"] as const;
+const PRODUCT_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+const PRODUCT_IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp"] as const;
 export const PRODUCT_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 export const MAX_PRODUCT_IMAGES = 8;
 export const PRODUCT_IMAGE_LINK_MAX = 500;

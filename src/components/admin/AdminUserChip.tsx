@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSession } from "@/components/SessionProvider";
 
@@ -46,11 +47,20 @@ export default function AdminUserChip() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div role="menu" className="absolute right-0 mt-2 w-48 bg-surface border border-outline-variant rounded-xl shadow-xl z-50 py-2">
+          <div role="menu" className="absolute right-0 mt-2 w-52 bg-surface border border-outline-variant rounded-xl shadow-xl z-50 py-2">
             <div className="px-4 py-2 border-b border-outline-variant">
               <p className="font-button text-on-surface text-sm truncate">{user?.businessName}</p>
               <p className="text-xs text-on-surface-variant truncate">{user?.mobile}</p>
             </div>
+            <Link
+              role="menuitem"
+              href="/admin/account"
+              onClick={() => setOpen(false)}
+              className="w-full text-left px-4 py-2.5 text-sm text-on-surface hover:bg-surface-container flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">lock</span>
+              Change password
+            </Link>
             <button
               role="menuitem"
               onClick={logout}

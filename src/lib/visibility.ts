@@ -17,11 +17,11 @@
 // the two can never disagree.
 // ─────────────────────────────────────────────────────────────
 
-export type RuleTarget = "GROUP" | "OPTION";
-export type RuleOperator = "IS" | "IS_NOT" | "IN";
-export type RuleLogic = "AND" | "OR";
+type RuleTarget = "GROUP" | "OPTION";
+type RuleOperator = "IS" | "IS_NOT" | "IN";
+type RuleLogic = "AND" | "OR";
 
-export interface RuleConditionLite {
+interface RuleConditionLite {
   sourceGroupId: string;
   operator: RuleOperator;
   optionIds: string[];

@@ -28,5 +28,18 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-export type RegisterInput = z.infer<typeof registerSchema>;
-export type LoginInput = z.infer<typeof loginSchema>;
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Enter your current password"),
+    newPassword: z
+      .string()
+      .min(8, "New password must be at least 8 characters")
+      .max(72, "New password must be at most 72 characters")
+      .regex(/[A-Za-z]/, "New password needs at least one letter")
+      .regex(/\d/, "New password needs at least one number"),
+  })
+  .refine((v) => v.newPassword !== v.currentPassword, {
+    path: ["newPassword"],
+    message: "New password must be different from the current one",
+  });
+
