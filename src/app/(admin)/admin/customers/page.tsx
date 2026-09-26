@@ -164,8 +164,15 @@ function CustomersScreen() {
     setReviewBusy(true);
     setDrawerError(null);
     try {
-      await admin.customers.review(detail.id, action, action === "REJECT" ? rejectReason.trim() : undefined);
-      toast(action === "APPROVE" ? "Approved. They can sign in now." : "Application rejected.", "success");
+      const { result } = await admin.customers.review(detail.id, action, action === "REJECT" ? rejectReason.trim() : undefined);
+      toast(
+        action === "REJECT"
+          ? "Application rejected."
+          : result.isActive
+            ? "Approved. They can sign in now."
+            : "Approved, but this account is switched off, so they still can't sign in. Switch it on to let them in.",
+        "success",
+      );
       setRejecting(false);
       setRejectReason("");
       await Promise.all([fetchDetail(detail.id, { silent: true }), load({ silent: true })]);
@@ -227,7 +234,13 @@ function CustomersScreen() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>
           <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight">Customers</h1>
-          <p className="font-body-md text-on-surface-variant">{meta.total} registered customers</p>
+          <p className="font-body-md text-on-surface-variant">
+            {statusFilter === "Pending"
+              ? `${meta.total} ${meta.total === 1 ? "application" : "applications"} waiting for approval`
+              : statusFilter === "Rejected"
+                ? `${meta.total} rejected ${meta.total === 1 ? "application" : "applications"}`
+                : `${meta.total} ${statusFilter === "All" ? "registered" : statusFilter.toLowerCase()} ${meta.total === 1 ? "customer" : "customers"}`}
+          </p>
         </div>
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex flex-col gap-1">
@@ -373,10 +386,12 @@ function CustomersScreen() {
                       <p className="text-sm text-on-surface-variant">{detail.ownerName}</p>
                       <p className="text-xs text-on-surface-variant mt-1">{detail.mobile} · {detail.email}</p>
                       {detail.gstNumber && <p className="text-xs text-on-surface-variant mt-1">GST: {detail.gstNumber}</p>}
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className={`w-1.5 h-1.5 rounded-full ${detail.isActive ? "bg-green-500" : "bg-outline-variant"}`}></span>
-                        <span className={`text-xs font-bold ${detail.isActive ? "text-success" : "text-on-surface-variant"}`}>{detail.isActive ? "Active" : "Inactive"}</span>
-                      </div>
+                      {detail.approvalStatus === "APPROVED" && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className={`w-1.5 h-1.5 rounded-full ${detail.isActive ? "bg-green-500" : "bg-outline-variant"}`}></span>
+                          <span className={`text-xs font-bold ${detail.isActive ? "text-success" : "text-on-surface-variant"}`}>{detail.isActive ? "Active" : "Inactive"}</span>
+                        </div>
+                      )}
                     </div>
                     {detail.approvalStatus === "APPROVED" && (
                       <div className="flex flex-col items-end gap-2">
@@ -404,9 +419,11 @@ function CustomersScreen() {
                           <span className="font-bold text-on-surface">{detail.approvalRejectReason}</span>
                         </p>
                       )}
-                      <p className="mt-3 text-sm text-on-surface-variant">
-                        Check the business details above (GST number, phone) before approving.
-                      </p>
+                      {detail.approvalStatus === "PENDING" && (
+                        <p className="mt-3 text-sm text-on-surface-variant">
+                          Check the business details above (GST number, phone) before approving.
+                        </p>
+                      )}
                       {rejecting ? (
                         <div className="mt-3 space-y-3">
                           <label htmlFor="signup-reject-reason" className="block text-sm font-bold text-on-surface">

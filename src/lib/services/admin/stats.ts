@@ -17,7 +17,8 @@ export async function getStats() {
     pendingSignups,
   ] = await Promise.all([
     prisma.order.count(),
-    prisma.user.count({ where: { role: "CUSTOMER" } }),
+    // Approved only: an applicant waiting for a decision is not a customer yet.
+    prisma.user.count({ where: { role: "CUSTOMER", approvalStatus: "APPROVED" } }),
     prisma.product.count({ where: { isActive: true } }),
     // Revenue is money received: an unpaid order is not revenue yet.
     prisma.order.aggregate({

@@ -15,7 +15,8 @@ export const APPROVAL_STATUS: Record<ApprovalStatus, { label: string; badge: str
   REJECTED: { label: "Rejected", badge: "bg-red-100 text-red-700", dot: "bg-red-500" },
 };
 
-export const SUPPORT_PHONE = "+91 72030 00701";
+// Non-breaking spaces so the number never wraps across two lines in an alert box.
+export const SUPPORT_PHONE = "+91\u00A072030\u00A000701";
 
 /**
  * Why an account cannot get in yet, in words the applicant can act on, or null
@@ -37,6 +38,16 @@ export function approvalBlock(status: string, rejectReason?: string | null): str
   // not let a status it has never heard of through.
   return `Your account can't be used yet. Please call ${SUPPORT_PHONE}.`;
 }
+
+/**
+ * Shown right after signing up. Nothing is emailed or texted when an admin
+ * decides, so this has to tell the applicant to come back and sign in, or they
+ * would wait for a message that never arrives.
+ */
+export const applicationReceived = () =>
+  "Thanks! Your account is awaiting approval. We check every new business before giving access. " +
+  "Once it's approved, come back and sign in with the mobile number and password you just chose. " +
+  `Questions? Call ${SUPPORT_PHONE}.`;
 
 /** Only an approved account may hold a session. */
 export const isApproved = (status: string) => status === "APPROVED";

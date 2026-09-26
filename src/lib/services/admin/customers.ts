@@ -177,5 +177,13 @@ export async function reviewSignup(id: string, adminId: string, input: SignupRev
         : "This application was already rejected.",
     );
   }
-  return { id, approvalStatus: approve ? ("APPROVED" as const) : ("REJECTED" as const) };
+  // Approval and the on/off switch are separate: approving an account an admin had
+  // also switched off doesn't let them in, and the admin should be told that
+  // rather than "they can sign in now".
+  const after = await prisma.user.findUnique({ where: { id }, select: { isActive: true } });
+  return {
+    id,
+    approvalStatus: approve ? ("APPROVED" as const) : ("REJECTED" as const),
+    isActive: after?.isActive ?? true,
+  };
 }

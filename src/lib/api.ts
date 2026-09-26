@@ -281,7 +281,7 @@ export const admin = {
     get: (id: string) => get<{ customer: any }>(`/admin/customers/${id}`),
     setActive: (id: string, isActive: boolean) => patch<any>(`/admin/customers/${id}`, { isActive }),
     review: (id: string, action: "APPROVE" | "REJECT", reason?: string) =>
-      post<{ result: { id: string; approvalStatus: "APPROVED" | "REJECTED" } }>(`/admin/customers/${id}/approval`, { action, reason }),
+      post<{ result: { id: string; approvalStatus: "APPROVED" | "REJECTED"; isActive: boolean } }>(`/admin/customers/${id}/approval`, { action, reason }),
   },
 
   refunds: {

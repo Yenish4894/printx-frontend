@@ -4,7 +4,7 @@
 // Run: npx tsx scripts/test-lib-units.ts
 import { settingsSchema } from "../src/lib/dto/settings";
 import { paymentReviewSchema, orderStatusSchema, signupReviewSchema } from "../src/lib/dto/admin";
-import { approvalBlock, isApproved, APPROVAL_STATUS, APPROVAL_REASON_MAX } from "../src/lib/approval";
+import { approvalBlock, applicationReceived, isApproved, APPROVAL_STATUS, APPROVAL_REASON_MAX } from "../src/lib/approval";
 import { pageParams, pageMeta, firstPage, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "../src/lib/pagination";
 import { specEntries, formatDate, formatDateTime } from "../src/lib/format";
 import {
@@ -191,7 +191,10 @@ eq("reason over the shared max refused", okParse(paymentReviewSchema, { action: 
 console.log("── signup approval ──");
 eq("APPROVED account is not blocked", approvalBlock("APPROVED"), null);
 eq("PENDING account is blocked with a wait message", /awaiting approval/.test(approvalBlock("PENDING") ?? ""), true);
-eq("PENDING message gives a phone number to call", /\+91 72030 00701/.test(approvalBlock("PENDING") ?? ""), true);
+eq("PENDING message gives a phone number to call", /\+91\s72030\s00701/.test(approvalBlock("PENDING") ?? ""), true);
+eq("the phone number can't wrap across lines (non-breaking spaces)", /\+91\u00A072030\u00A000701/.test(approvalBlock("PENDING") ?? ""), true);
+eq("signup confirmation tells them to come back and sign in (nothing is emailed)", /come back and sign in/.test(applicationReceived()), true);
+eq("signup confirmation says they are awaiting approval and gives the phone", /awaiting approval/.test(applicationReceived()) && /72030/.test(applicationReceived()), true);
 eq("REJECTED account is blocked", approvalBlock("REJECTED") !== null, true);
 eq("REJECTED message includes the admin's reason", /GST number does not match/.test(approvalBlock("REJECTED", "GST number does not match") ?? ""), true);
 eq("REJECTED with no reason still reads as a full sentence", /wasn't approved\. /.test(approvalBlock("REJECTED", null) ?? ""), true);

@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
 import { ok, handleError, HttpError } from "@/lib/http";
 import { registerSchema } from "@/lib/dto/auth";
-import { approvalBlock } from "@/lib/approval";
+import { applicationReceived } from "@/lib/approval";
 
 export const runtime = "nodejs";
 
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     if (existing) {
       throw new HttpError(
         409,
-        "An account with this mobile number already exists",
+        "An account with this mobile number already exists. If you applied earlier, sign in to see where your application stands.",
       );
     }
 
@@ -42,13 +42,13 @@ export async function POST(req: Request) {
       });
     } catch (e) {
       if ((e as { code?: string })?.code === "P2002") {
-        throw new HttpError(409, "An account with this mobile number already exists");
+        throw new HttpError(409, "An account with this mobile number already exists. If you applied earlier, sign in to see where your application stands.");
       }
       throw e;
     }
 
     // No session: an applicant has nothing to sign in to until they're approved.
-    return ok({ pending: true, message: approvalBlock("PENDING") }, 201);
+    return ok({ pending: true, message: applicationReceived() }, 201);
   } catch (err) {
     return handleError(err);
   }
