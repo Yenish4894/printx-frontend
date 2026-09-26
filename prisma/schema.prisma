@@ -1,7 +1,7 @@
 // Bhagini Graphics — Prisma schema
 // Models mirror FINALIZED_FLOW.md. Money stored as Decimal(10,2).
 // Auth = mobile + password. Orders = prepaid by bank transfer. No offers/loyalty/ratings.
-// The configurator (Product → SpecGroup → SpecOption + QuantityTier + DeliverySpeed
+// The configurator (Product → SpecGroup → SpecOption + DeliverySpeed
 // + VisibilityRule) is fully dynamic: admin defines everything, no hardcoded specs.
 
 // The app's client. Targets Cloudflare Workers: engine-free, WASM query
@@ -46,7 +46,6 @@ enum ApprovalStatus {
 }
 
 enum PricingModel {
-  TIERED // base price by quantity tier
   PER_UNIT // unitRate × units (pcs / area)
   MATRIX // rate looked up from PriceMatrix by option combination × sheets (CMYK/stickers)
 }
@@ -216,7 +215,7 @@ model Product {
   isActive    Boolean  @default(true)
 
   // Pricing config
-  pricingModel       PricingModel @default(TIERED)
+  pricingModel       PricingModel @default(MATRIX)
   unitType           UnitType? // for PER_UNIT
   requiresDimensions Boolean      @default(false) // width × height inputs
   unitRate           Decimal?     @db.Decimal(10, 2) // for PER_UNIT
@@ -250,7 +249,6 @@ model Product {
   images          ProductImage[]
   priceMatrix     PriceMatrix[]
   specGroups      SpecGroup[]
-  quantityTiers   QuantityTier[]
   deliverySpeeds  DeliverySpeed[]
   visibilityRules VisibilityRule[]
   cartItems       CartItem[]
@@ -317,19 +315,6 @@ model SpecOption {
   targetedBy VisibilityRule[] @relation("RuleTargetOption")
 
   @@index([specGroupId])
-}
-
-model QuantityTier {
-  id           String  @id @default(cuid())
-  productId    String
-  product      Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  quantity     Int
-  basePrice    Decimal @db.Decimal(10, 2)
-  label        String? // e.g. "Bulk discount applied"
-  isActive     Boolean @default(true)
-  displayOrder Int     @default(0)
-
-  @@index([productId])
 }
 
 model DeliverySpeed {

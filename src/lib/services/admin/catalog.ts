@@ -194,7 +194,6 @@ async function assertProductOrderable(productId: string) {
         where: { isActive: true },
         include: { options: { where: { isActive: true }, select: { id: true } } },
       },
-      quantityTiers: { where: { isActive: true }, select: { id: true } },
       priceMatrix: { where: { isActive: true }, select: { id: true } },
     },
   });
@@ -211,9 +210,6 @@ async function assertProductOrderable(productId: string) {
   }
   if (p.pricingModel === "MATRIX" && p.priceMatrix.length === 0) {
     problems.push("matrix pricing needs at least one price row");
-  }
-  if (p.pricingModel === "TIERED" && p.quantityTiers.length === 0) {
-    problems.push("tiered pricing needs at least one quantity tier");
   }
 
   if (problems.length > 0) {
@@ -292,7 +288,6 @@ export async function getAdminProduct(id: string) {
         orderBy: { displayOrder: "asc" },
         include: { options: { orderBy: { displayOrder: "asc" } } },
       },
-      quantityTiers: { orderBy: { quantity: "asc" } },
       deliverySpeeds: { orderBy: { displayOrder: "asc" } },
       priceMatrix: true,
     },
@@ -349,12 +344,6 @@ export async function getAdminProduct(id: string) {
         quantityValue: o.quantityValue,
         code: o.code,
       })),
-    })),
-    quantityTiers: p.quantityTiers.map((t) => ({
-      id: t.id,
-      quantity: t.quantity,
-      basePrice: num(t.basePrice) ?? 0,
-      label: t.label,
     })),
     deliverySpeeds: p.deliverySpeeds.map((d) => ({
       id: d.id,

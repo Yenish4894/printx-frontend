@@ -13,7 +13,7 @@ interface AdminProduct {
   name: string;
   slug: string;
   category: string;
-  pricingModel: "TIERED" | "PER_UNIT" | "MATRIX";
+  pricingModel: "PER_UNIT" | "MATRIX";
   isActive: boolean;
   specGroups: number;
   matrixRows: number;
@@ -23,7 +23,6 @@ interface AdminProduct {
 }
 
 const pricingLabel: Record<string, string> = {
-  TIERED: "Tiered",
   PER_UNIT: "Per-unit",
   MATRIX: "Matrix",
 };

@@ -1,7 +1,6 @@
 // ─────────────────────────────────────────────────────────────
 // Authoritative pricing engine (pure functions — no DB, no I/O).
-// Supports three product pricing modes:
-//   TIERED    base by quantity tier (+ bulk-rate interpolation)
+// Supports two product pricing modes:
 //   PER_UNIT  unitRate × units (pcs / area)
 //   MATRIX    price looked up per option-combination — either a ₹/sheet rate
 //             × sheets (CMYK / stickers) or a flat total for the whole run when
@@ -19,13 +18,8 @@ const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 export const buildComboKey = (optionIds: string[]) =>
   [...optionIds].sort().join("|");
 
-type PricingModel = "TIERED" | "PER_UNIT" | "MATRIX";
+type PricingModel = "PER_UNIT" | "MATRIX";
 type AddOnType = "FLAT" | "PER_UNIT";
-
-interface QuantityTierLite {
-  quantity: number;
-  basePrice: number;
-}
 
 export interface PricingProduct {
   pricingModel: PricingModel;
@@ -35,7 +29,6 @@ export interface PricingProduct {
   pricesIncludeGst: boolean; // MATRIX rates already include GST
   singlePrintThreshold: number | null; // qty below this → flat singlePrintRate
   singlePrintRate: number | null;
-  quantityTiers: QuantityTierLite[];
 }
 
 /**
@@ -115,18 +108,8 @@ function computeBase(
     return round2(rate * quantity);
   }
 
-  if (product.pricingModel === "PER_UNIT") {
-    return round2((product.unitRate ?? 0) * units);
-  }
-
-  // TIERED
-  const tiers = [...product.quantityTiers].sort((a, b) => a.quantity - b.quantity);
-  if (tiers.length === 0) return 0;
-  const exact = tiers.find((t) => t.quantity === quantity);
-  if (exact) return round2(exact.basePrice);
-  let rate = tiers[0].basePrice / tiers[0].quantity;
-  for (const t of tiers) if (quantity >= t.quantity) rate = t.basePrice / t.quantity;
-  return round2(rate * quantity);
+  // PER_UNIT
+  return round2((product.unitRate ?? 0) * units);
 }
 
 /** Add-ons: FLAT once, PER_UNIT × (units / perQuantity). */

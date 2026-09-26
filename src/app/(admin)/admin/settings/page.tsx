@@ -253,7 +253,7 @@ export default function AdminSettings() {
         {/* Delivery note */}
         <section className="col-span-12 lg:col-span-4 bg-surface-container-lowest rounded-xl premium-shadow p-6 border border-outline-variant/10">
           <CardHead icon="local_shipping" title="Delivery" />
-          <p className="text-sm text-on-surface-variant leading-relaxed">Delivery speeds &amp; fees are configured <span className="font-bold text-on-surface">per product</span> in Spec Configuration, so each product can offer its own options and pricing.</p>
+          <p className="text-sm text-on-surface-variant leading-relaxed">Every product ships by <span className="font-bold text-on-surface">Standard</span> delivery at no extra charge. Delivery options cannot be edited from the admin yet.</p>
         </section>
 
         {/* Branding */}

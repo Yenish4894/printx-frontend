@@ -14,10 +14,9 @@ interface Category {
   isActive: boolean;
 }
 
-type PricingModel = "TIERED" | "PER_UNIT" | "MATRIX";
+type PricingModel = "PER_UNIT" | "MATRIX";
 
 const pricingOptions: { value: PricingModel; title: string; hint: string }[] = [
-  { value: "TIERED", title: "Tiered Pricing", hint: "Price reduces with higher quantities" },
   { value: "PER_UNIT", title: "Per-Unit Pricing", hint: "Fixed cost per unit produced" },
   { value: "MATRIX", title: "Matrix Pricing", hint: "Rate per sheet by spec combination" },
 ];
@@ -33,7 +32,7 @@ export default function NewProduct() {
   const [categoryId, setCategoryId] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [pricingModel, setPricingModel] = useState<PricingModel>("TIERED");
+  const [pricingModel, setPricingModel] = useState<PricingModel>("MATRIX");
   const [minQuantity, setMinQuantity] = useState("1");
   const [pricesIncludeGst, setPricesIncludeGst] = useState(false);
   const [singlePrintThreshold, setSinglePrintThreshold] = useState("");

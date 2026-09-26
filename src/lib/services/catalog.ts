@@ -78,10 +78,6 @@ export async function getProductBySlug(slug: string) {
           },
         },
       },
-      quantityTiers: {
-        where: { isActive: true },
-        orderBy: { quantity: "asc" },
-      },
       deliverySpeeds: {
         where: { isActive: true },
         orderBy: { displayOrder: "asc" },
@@ -135,12 +131,6 @@ export async function getProductBySlug(slug: string) {
         quantityValue: o.quantityValue,
         code: o.code,
       })),
-    })),
-    quantityTiers: p.quantityTiers.map((t) => ({
-      id: t.id,
-      quantity: t.quantity,
-      basePrice: num(t.basePrice) ?? 0,
-      label: t.label,
     })),
     deliverySpeeds: p.deliverySpeeds.map((d) => ({
       id: d.id,

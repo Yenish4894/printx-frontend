@@ -15,6 +15,8 @@ Versions use `MAJOR.MINOR.PATCH.MICRO`.
 - Change your own password. Customers reach it from their name in the top bar (My account); admins from the account menu (Change password). It needs the current password, at least 8 characters with a letter and a number, and signs you out on every other device. Staff created with a temporary password can now replace it.
 
 ### Changed
+- New letterhead prices (GST extra), sold in 500 or 1000 sheets: 80 GSM ₹900 / ₹1,200 · 100 GSM ₹1,000 / ₹1,300 · 100 GSM Alabaster ₹1,050 / ₹1,400 · 100 GSM Bond ₹1,150 / ₹1,550 · 80 white + 60 yellow (500 + 500) ₹1,500 for 1000 only. Picking the white + yellow paper moves the quantity to 1000 automatically.
+- The admin Settings delivery card no longer claims delivery can be edited per product.
 - There is one login page for everyone. Opening the admin console while logged out, logging out as an admin, or visiting the old /admin-login address all go to /login, which sends admins to the console and customers to their dashboard. A customer who opens the admin console is sent back to their own dashboard.
 - Payment is by direct bank transfer only. UPI is gone from the bank details, the customer payment screen and all marketing copy.
 - Signing in from the normal login page now takes admins to the admin console and customers to their dashboard. A signed-in visitor who opens the login page is sent straight to their own dashboard, and the Bhagini Graphics logo in the app goes to it too.
@@ -26,6 +28,7 @@ Versions use `MAJOR.MINOR.PATCH.MICRO`.
 - The wallet, completely. The wallet ledger, per-customer wallet balances and settings, saved payment methods, the top-up limits and the UPI ID setting are deleted from the database, along with the old Razorpay columns and the retired UPI / card / net-banking / wallet payment types. The old /wallet address is gone. One cancelled test order that had been "paid via wallet" now reads "paid by bank transfer".
 - The retired "Payment Confirmed" order status.
 - Unused starter images, the stock README, the `DEPLOYMENT.md` pointer, the one-off `seed-letterheads` script and the `@types/bcryptjs` package.
+- Tiered pricing. No product used it and there was no screen to enter the quantity brackets, so a product created as "tiered" could never go live. New products are Matrix or Per-unit.
 - Two admin endpoints nothing called: editing a product's quantity tiers and its delivery speeds after creation.
 
 ## [0.2.0.0] - 2026-09-22

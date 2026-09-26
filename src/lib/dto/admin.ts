@@ -21,7 +21,7 @@ export const categorySchema = z.object({
 });
 
 // ── Products ──
-const pricingModel = z.enum(["TIERED", "PER_UNIT", "MATRIX"]);
+const pricingModel = z.enum(["PER_UNIT", "MATRIX"]);
 const unitType = z.enum(["PIECE", "SQ_FT", "SQ_CM", "SQ_INCH", "SQ_METER"]);
 
 export const createProductSchema = z.object({

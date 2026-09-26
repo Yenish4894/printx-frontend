@@ -128,7 +128,7 @@ export interface PriceBreakdown {
 }
 
 /** Pricing model of a product. */
-export type PricingModel = "TIERED" | "PER_UNIT" | "MATRIX";
+export type PricingModel = "PER_UNIT" | "MATRIX";
 
 /** A saved delivery address (raw row from /me/addresses). */
 export interface Address {
@@ -338,7 +338,6 @@ export interface CatalogProduct {
   fileFormats: string[];
   images: { url: string; alt: string | null }[];
   specGroups: CatalogSpecGroup[];
-  quantityTiers: { id: string; quantity: number; basePrice: number; label: string | null }[];
   deliverySpeeds: DeliverySpeed[];
   visibilityRules: VisibilityRuleData[];
 }
@@ -581,7 +580,6 @@ export interface AdminProduct {
   basePriceFrom: number | null;
   isActive: boolean;
   specGroups: AdminSpecGroup[];
-  quantityTiers: { id: string; quantity: number; basePrice: number; label: string | null }[];
   deliverySpeeds: DeliverySpeed[];
   matrixRows: number;
 }

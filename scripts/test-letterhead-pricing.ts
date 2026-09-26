@@ -22,7 +22,6 @@ const letterhead: PricingProduct = {
   pricesIncludeGst: false,
   singlePrintThreshold: null,
   singlePrintRate: null,
-  quantityTiers: [],
 };
 
 interface Row {

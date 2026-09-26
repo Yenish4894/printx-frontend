@@ -43,7 +43,7 @@ interface Product {
   name: string;
   description?: string | null;
   category: { name: string; slug: string };
-  pricingModel: "TIERED" | "PER_UNIT" | "MATRIX";
+  pricingModel: "PER_UNIT" | "MATRIX";
   minQuantity: number;
   maxQuantity?: number | null;
   quantityStep?: number;
@@ -55,7 +55,6 @@ interface Product {
   badges: string[];
   images?: { url: string; alt: string | null }[];
   specGroups: SpecGroup[];
-  quantityTiers: { id: string; quantity: number; basePrice: number; label?: string | null }[];
   deliverySpeeds: DeliverySpeed[];
   visibilityRules?: VisibilityRuleLite[];
 }
@@ -114,10 +113,9 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
         // threshold, start above it so the real per-sheet matrix price shows (not the
         // flat single-print rate).
         const defaultQty =
-          p.quantityTiers[0]?.quantity ??
-          (p.pricingModel === "MATRIX" && p.singlePrintThreshold
+          p.pricingModel === "MATRIX" && p.singlePrintThreshold
             ? Math.max(100, p.singlePrintThreshold)
-            : Math.max(1, p.minQuantity));
+            : Math.max(1, p.minQuantity);
         // Start on a quantity the server will accept (>= min, on a valid step).
         const step = Math.max(1, p.quantityStep ?? 1);
         const snapped =
@@ -198,9 +196,18 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
   // Drop any selection that a rule has just hidden, so we never quote (or add
   // to cart) an option the customer can no longer see.
   // (State is adjusted during render; React re-renders before committing.)
+  // A required single-choice group whose pick was just hidden falls back to its
+  // first still-visible option (e.g. a paper sold only in 1000s moves the
+  // quantity from 500 to 1000) instead of being left empty.
   if (product?.visibilityRules?.length) {
     const pruned = pruneSelections(selections, visibility);
     if (Object.keys(pruned).length !== Object.keys(selections).length) {
+      for (const g of visibleGroups) {
+        if (pruned[g.id] != null || !g.isRequired || g.selectionType !== "SINGLE_SELECT") continue;
+        const shown = g.options.filter((o) => !visibility.hiddenOptionIds.has(o.id));
+        const next = shown.find((o) => o.isDefault) ?? shown[0];
+        if (next) pruned[g.id] = next.id;
+      }
       setSelections(pruned);
     }
   }
@@ -227,17 +234,15 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
     [minQty, maxQty, qtyStep],
   );
 
-  // Preset chips: the product's own tiers if it has them, else the first few
-  // valid steps from the minimum.
+  // Preset chips: the first few valid steps from the minimum.
   const qtyChips = useMemo(() => {
-    if (product?.quantityTiers.length) return product.quantityTiers.map((t) => t.quantity);
     if (qtyStep > 1 || minQty > 1) {
       return [0, 1, 2, 4, 9]
         .map((i) => minQty + i * qtyStep)
         .filter((n) => n <= maxQty);
     }
     return QTY_CHIPS;
-  }, [product, minQty, maxQty, qtyStep]);
+  }, [minQty, maxQty, qtyStep]);
 
   const qtyError =
     qty < minQty

@@ -25,7 +25,6 @@ const cmyk = {
   pricesIncludeGst: true,
   singlePrintThreshold: 5,
   singlePrintRate: 20,
-  quantityTiers: [],
 };
 
 function priceCmyk(rate: number | null, qty: number, addOns: PricingInput["addOns"] = [], delivery = 0) {
@@ -67,39 +66,6 @@ check("sticker 200 × ₹13", priceCmyk(13, 200).total, 2600);
 b = priceCmyk(8, 100, [], 50);
 check("100 × ₹8 + delivery ₹50 (+GST)", b.total, 800 + 50 + 9);
 
-console.log("\n── TIERED: visiting cards (GST added on top) ──");
-const cards = {
-  pricingModel: "TIERED" as const,
-  requiresDimensions: false,
-  unitRate: null,
-  minQuantity: 100,
-  pricesIncludeGst: false,
-  singlePrintThreshold: null,
-  singlePrintRate: null,
-  quantityTiers: [
-    { quantity: 100, basePrice: 299 },
-    { quantity: 500, basePrice: 999 },
-    { quantity: 1000, basePrice: 1699 },
-  ],
-};
-// exact tier 500 → 999 + 18% GST = 1178.82
-b = computePrice({ product: cards, quantity: 500, addOns: [], deliveryFee: 0 });
-check("500 cards base", b.goodsTaxable, 999);
-check("500 cards + 18% GST", b.total, round2(999 * 1.18));
-// add-on FLAT ₹150 (premium lamination once) → (999+150) * 1.18
-b = computePrice({
-  product: cards,
-  quantity: 500,
-  addOns: [{ addOnType: "FLAT", addOnValue: 150, perQuantity: 1 }],
-  deliveryFee: 0,
-});
-check("500 cards + ₹150 add-on + GST", b.total, round2((999 + 150) * 1.18));
-
-function round2(n: number) {
-  return Math.round((n + Number.EPSILON) * 100) / 100;
-}
-
-
 // ── Cart/order totals + free-shipping threshold ──
 // Regression guard: freeShippingThreshold DEFAULTS TO 0 in the database, so a
 // naive `subtotal >= threshold` would waive delivery on every order ever placed.
@@ -138,6 +104,23 @@ console.log("\n── computeTotals: free-shipping threshold ──");
   check("mixed inclusive + exclusive lines", t.total, 3180);
 }
 
+console.log("\n── Letterhead card 2026-09 (flat totals per paper × slab, GST on top) ──");
+const letterhead = { ...cmyk, pricesIncludeGst: false, singlePrintThreshold: null, singlePrintRate: null, minQuantity: 500 };
+const CARD: [string, number | null, number][] = [
+  ["A4 80 GSM", 900, 1200],
+  ["A4 100 GSM", 1000, 1300],
+  ["A4 100 GSM Alabaster", 1050, 1400],
+  ["A4 100 GSM Bond", 1150, 1550],
+  ["80 white + 60 yellow (500+500)", null, 1500],
+];
+for (const [paper, p500, p1000] of CARD) {
+  for (const [qty, flat] of [[500, p500], [1000, p1000]] as const) {
+    if (flat == null) continue;
+    const r = computePrice({ product: letterhead, quantity: qty, addOns: [], deliveryFee: 0, matrixPrice: { flatPrice: flat } });
+    check(`${paper} × ${qty}: base is the card price`, r.goodsTaxable, flat);
+    check(`${paper} × ${qty}: + 18% GST`, r.total, Math.round(flat * 1.18 * 100) / 100);
+  }
+}
 
 console.log(`\n${fail === 0 ? "🎉 ALL PASS" : "⚠️  FAILURES"}: ${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

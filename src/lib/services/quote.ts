@@ -17,7 +17,6 @@ const PRICING_INCLUDE = {
     where: { isActive: true },
     include: { options: { where: { isActive: true } } },
   },
-  quantityTiers: { where: { isActive: true } },
   deliverySpeeds: { where: { isActive: true } },
   priceMatrix: { where: { isActive: true } },
   visibilityRules: { include: { conditions: true } },
@@ -230,10 +229,6 @@ export async function resolveAndPrice(input: QuoteInput, ctx: PricingContext = {
       pricesIncludeGst: product.pricesIncludeGst,
       singlePrintThreshold: product.singlePrintThreshold,
       singlePrintRate: product.singlePrintRate ? Number(product.singlePrintRate) : null,
-      quantityTiers: product.quantityTiers.map((t) => ({
-        quantity: t.quantity,
-        basePrice: Number(t.basePrice),
-      })),
     },
     quantity,
     width: input.width ?? null,
