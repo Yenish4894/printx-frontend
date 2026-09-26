@@ -1,8 +1,8 @@
 import prisma from "@/lib/prisma";
-import { hashPassword, createSession } from "@/lib/auth";
+import { hashPassword } from "@/lib/auth";
 import { ok, handleError, HttpError } from "@/lib/http";
 import { registerSchema } from "@/lib/dto/auth";
-import { publicUser } from "@/lib/serialize";
+import { approvalBlock } from "@/lib/approval";
 
 export const runtime = "nodejs";
 
@@ -24,9 +24,8 @@ export async function POST(req: Request) {
 
     // The check above is advisory: two simultaneous signups both pass it and one
     // hits the unique index. Catch that so it reads as a conflict, not a 500.
-    let user;
     try {
-      user = await prisma.user.create({
+      await prisma.user.create({
         data: {
           businessName: data.businessName,
           ownerName: data.ownerName,
@@ -34,6 +33,8 @@ export async function POST(req: Request) {
           email: data.email,
           gstNumber: data.gstNumber ? data.gstNumber : null,
           passwordHash,
+          // Nobody gets in on signup alone: an admin approves the business first.
+          approvalStatus: "PENDING",
           // provision cart + wallet settings on signup
           cart: { create: {} },
           walletSettings: { create: {} },
@@ -46,8 +47,8 @@ export async function POST(req: Request) {
       throw e;
     }
 
-    await createSession({ id: user.id, mobile: user.mobile, role: user.role });
-    return ok({ user: publicUser(user) }, 201);
+    // No session: an applicant has nothing to sign in to until they're approved.
+    return ok({ pending: true, message: approvalBlock("PENDING") }, 201);
   } catch (err) {
     return handleError(err);
   }

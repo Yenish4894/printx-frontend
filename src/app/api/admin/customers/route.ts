@@ -14,7 +14,9 @@ export async function GET(req: Request) {
     // rather than silently collapsing to inactive-only.
     const active = sp.get("active");
     const isActive = active === "true" ? true : active === "false" ? false : undefined;
-    return ok(await listCustomers(pageParams(req.url), q, isActive));
+    const a = sp.get("approval");
+    const approval = a === "PENDING" || a === "APPROVED" || a === "REJECTED" ? a : undefined;
+    return ok(await listCustomers(pageParams(req.url), q, isActive, approval));
   } catch (err) {
     return handleError(err);
   }

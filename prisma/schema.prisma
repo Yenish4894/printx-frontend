@@ -37,6 +37,14 @@ enum Role {
   SUPER_ADMIN
 }
 
+// Self-registered customers start PENDING and cannot sign in until an admin
+// approves them.
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum PricingModel {
   TIERED // base price by quantity tier
   PER_UNIT // unitRate × units (pcs / area)
@@ -152,6 +160,13 @@ model User {
   role          Role      @default(CUSTOMER)
   walletBalance Decimal   @default(0) @db.Decimal(10, 2)
   isActive      Boolean   @default(true)
+  // Defaults to APPROVED so every account that already exists, and every staff
+  // account a super admin creates, is unaffected. Only the public signup route
+  // sets PENDING.
+  approvalStatus       ApprovalStatus @default(APPROVED)
+  approvalReviewedAt   DateTime?
+  approvalReviewedById String?
+  approvalRejectReason String? // shown to the applicant when they try to sign in
   lastLoginAt   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -168,6 +183,7 @@ model User {
 
   @@index([role]) // admin + stats queries all filter on role
   @@index([role, createdAt]) // customer and staff lists: by role, newest/oldest first
+  @@index([role, approvalStatus]) // pending-signup count and the admin approval filter
 }
 
 model Address {

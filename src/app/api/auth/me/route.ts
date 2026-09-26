@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { getSession, clearSession } from "@/lib/auth";
 import { ok, handleError } from "@/lib/http";
 import { publicUser } from "@/lib/serialize";
+import { isApproved } from "@/lib/approval";
 
 export const runtime = "nodejs";
 
@@ -14,7 +15,7 @@ export async function GET() {
     // A deactivated (or deleted) account must read as logged OUT here. Reporting
     // it as signed in left the UI showing a session while every other endpoint
     // returned 401, so the user saw errors everywhere instead of a login screen.
-    if (!user || !user.isActive) {
+    if (!user || !user.isActive || !isApproved(user.approvalStatus)) {
       await clearSession();
       return ok({ user: null });
     }

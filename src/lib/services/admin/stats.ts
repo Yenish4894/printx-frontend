@@ -14,6 +14,7 @@ export async function getStats() {
     statusGroups,
     recentOrders,
     paymentsToVerify,
+    pendingSignups,
   ] = await Promise.all([
     prisma.order.count(),
     prisma.user.count({ where: { role: "CUSTOMER" } }),
@@ -34,6 +35,8 @@ export async function getStats() {
     prisma.payment.count({
       where: { status: "PENDING", proofUrl: { not: null }, order: { status: "PAYMENT_PENDING" } },
     }),
+    // New businesses waiting for a yes/no before they can sign in at all.
+    prisma.user.count({ where: { role: "CUSTOMER", approvalStatus: "PENDING" } }),
   ]);
 
   const byStatus: Record<string, number> = {};
@@ -52,6 +55,7 @@ export async function getStats() {
     pendingRefunds,
     awaitingPayment: byStatus.PAYMENT_PENDING ?? 0,
     paymentsToVerify,
+    pendingSignups,
     ordersByStatus: byStatus,
     recentOrders: recentOrders.map((o) => ({
       id: o.id,

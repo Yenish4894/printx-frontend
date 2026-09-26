@@ -3,7 +3,8 @@
 // rules and order numbers. None of these import @/lib/prisma, so they run under tsx.
 // Run: npx tsx scripts/test-lib-units.ts
 import { settingsSchema } from "../src/lib/dto/settings";
-import { paymentReviewSchema, orderStatusSchema } from "../src/lib/dto/admin";
+import { paymentReviewSchema, orderStatusSchema, signupReviewSchema } from "../src/lib/dto/admin";
+import { approvalBlock, isApproved, APPROVAL_STATUS, APPROVAL_REASON_MAX } from "../src/lib/approval";
 import { pageParams, pageMeta, firstPage, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "../src/lib/pagination";
 import { specEntries, formatDate, formatDateTime } from "../src/lib/format";
 import {
@@ -186,6 +187,26 @@ eq("proofUrl stays optional", okParse(paymentReviewSchema, { action: "APPROVE" }
 eq("absurd proofUrl refused", okParse(paymentReviewSchema, { action: "APPROVE", proofUrl: "x".repeat(501) }), false);
 eq("reason at the shared max ok", okParse(paymentReviewSchema, { action: "REJECT", reason: "r".repeat(REJECT_REASON_MAX) }), true);
 eq("reason over the shared max refused", okParse(paymentReviewSchema, { action: "REJECT", reason: "r".repeat(REJECT_REASON_MAX + 1) }), false);
+
+console.log("── signup approval ──");
+eq("APPROVED account is not blocked", approvalBlock("APPROVED"), null);
+eq("PENDING account is blocked with a wait message", /awaiting approval/.test(approvalBlock("PENDING") ?? ""), true);
+eq("PENDING message gives a phone number to call", /\+91 72030 00701/.test(approvalBlock("PENDING") ?? ""), true);
+eq("REJECTED account is blocked", approvalBlock("REJECTED") !== null, true);
+eq("REJECTED message includes the admin's reason", /GST number does not match/.test(approvalBlock("REJECTED", "GST number does not match") ?? ""), true);
+eq("REJECTED with no reason still reads as a full sentence", /wasn't approved\. /.test(approvalBlock("REJECTED", null) ?? ""), true);
+eq("REJECTED with a blank reason is treated as no reason", /approved\. /.test(approvalBlock("REJECTED", "   ") ?? ""), true);
+eq("an unrecognised status is blocked, never let through", approvalBlock("SOMETHING_ELSE") !== null && approvalBlock("") !== null, true);
+eq("approvalBlock and isApproved agree on every status", ["APPROVED", "PENDING", "REJECTED", "X", ""].every((s) => (approvalBlock(s) === null) === isApproved(s)), true);
+eq("only APPROVED may hold a session", [isApproved("APPROVED"), isApproved("PENDING"), isApproved("REJECTED"), isApproved("")], [true, false, false, false]);
+eq("every status has a label and badge", Object.values(APPROVAL_STATUS).every((m) => m.label && m.badge && m.dot), true);
+eq("approve needs no reason", okParse(signupReviewSchema, { action: "APPROVE" }), true);
+eq("reject without a reason refused", okParse(signupReviewSchema, { action: "REJECT" }), false);
+eq("reject with a 2-char reason refused", okParse(signupReviewSchema, { action: "REJECT", reason: "no" }), false);
+eq("reject reason is trimmed before the length check", okParse(signupReviewSchema, { action: "REJECT", reason: "  ab  " }), false);
+eq("reject with a real reason ok", okParse(signupReviewSchema, { action: "REJECT", reason: "Could not verify the business" }), true);
+eq("reject reason over the max refused", okParse(signupReviewSchema, { action: "REJECT", reason: "r".repeat(APPROVAL_REASON_MAX + 1) }), false);
+eq("unknown action refused", okParse(signupReviewSchema, { action: "MAYBE" }), false);
 
 console.log("── order and invoice numbers ──");
 eq("first order of the year", nextOrderNumber(2026, null), "BG-2026-00001");

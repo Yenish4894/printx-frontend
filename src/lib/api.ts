@@ -133,7 +133,7 @@ export const auth = {
   login: (mobile: string, password: string) =>
     post<{ user: SessionUser }>("/auth/login", { mobile, password }),
   register: (data: Record<string, unknown>) =>
-    post<{ user: SessionUser }>("/auth/register", data),
+    post<{ pending: true; message: string }>("/auth/register", data),
   logout: () => post("/auth/logout"),
   me: () => get<{ user: SessionUser | null }>("/auth/me"),
 };
@@ -277,9 +277,11 @@ export const admin = {
   },
 
   customers: {
-    list: (opts: PageOpts & { q?: string; active?: string } = {}) => get<{ customers: any[] } & PageMeta>(`/admin/customers${qs({ ...opts })}`),
+    list: (opts: PageOpts & { q?: string; active?: string; approval?: string } = {}) => get<{ customers: any[]; pendingApproval: number } & PageMeta>(`/admin/customers${qs({ ...opts })}`),
     get: (id: string) => get<{ customer: any }>(`/admin/customers/${id}`),
     setActive: (id: string, isActive: boolean) => patch<any>(`/admin/customers/${id}`, { isActive }),
+    review: (id: string, action: "APPROVE" | "REJECT", reason?: string) =>
+      post<{ result: { id: string; approvalStatus: "APPROVED" | "REJECTED" } }>(`/admin/customers/${id}/approval`, { action, reason }),
   },
 
   refunds: {

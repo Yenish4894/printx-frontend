@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { admin, ApiError } from "@/lib/api";
 import { inr } from "@/components/SessionProvider";
 import { useConfirm, useToast } from "@/components/ui/UIProvider";
@@ -9,6 +10,21 @@ import { statusLabel, statusBadge } from "@/lib/orderStatus";
 import { formatDateTime } from "@/lib/format";
 import Pager from "@/components/ui/Pager";
 import { EmptyState, LoadingState, TableState } from "@/components/ui/States";
+import Button from "@/components/ui/Button";
+import { APPROVAL_STATUS, APPROVAL_REASON_MAX, APPROVAL_REASON_MIN, type ApprovalStatus } from "@/lib/approval";
+
+// Each tab is a filter the server applies. "Active" means approved AND switched
+// on: a pending applicant is technically isActive but can't sign in, so it must
+// not show up as an active customer.
+const FILTERS = ["All", "Pending", "Active", "Inactive", "Rejected"] as const;
+type Filter = (typeof FILTERS)[number];
+const FILTER_QUERY: Record<Filter, { active?: string; approval?: string }> = {
+  All: {},
+  Pending: { approval: "PENDING" },
+  Active: { active: "true", approval: "APPROVED" },
+  Inactive: { active: "false" },
+  Rejected: { approval: "REJECTED" },
+};
 
 
 type Customer = {
@@ -19,6 +35,7 @@ type Customer = {
   email: string;
   gstNumber: string | null;
   isActive: boolean;
+  approvalStatus: ApprovalStatus;
   orderCount: number;
   joinedAt: string;
 };
@@ -31,6 +48,9 @@ type CustomerDetail = {
   email: string;
   gstNumber: string | null;
   isActive: boolean;
+  approvalStatus: ApprovalStatus;
+  approvalRejectReason: string | null;
+  approvalReviewedAt: string | null;
   joinedAt: string;
   totalSpent: number;
   orderCount: number;
@@ -41,14 +61,30 @@ type CustomerDetail = {
   orders: { id: string; orderNumber: string; status: string; totalAmount: number; placedAt: string }[];
 };
 
+// useSearchParams needs a Suspense boundary; the dashboard's "signups to approve"
+// tile links here with ?filter=pending so it lands on the right tab.
 export default function AdminCustomers() {
+  return (
+    <Suspense fallback={<LoadingState label="Loading customers" />}>
+      <CustomersScreen />
+    </Suspense>
+  );
+}
+
+function CustomersScreen() {
   const confirm = useConfirm();
   const toast = useToast();
+  const searchParams = useSearchParams();
 
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Inactive">("All");
+  const [statusFilter, setStatusFilter] = useState<Filter>(searchParams.get("filter") === "pending" ? "Pending" : "All");
+  const [pendingCount, setPendingCount] = useState(0);
+  // Approving / rejecting a signup from the drawer.
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ total: 0, pageSize: 50, hasMore: false });
 
@@ -65,11 +101,9 @@ export default function AdminCustomers() {
     if (!opts?.silent) setLoading(true);
     setError(null);
     try {
-      const res = await admin.customers.list({
-        page,
-        active: statusFilter === "All" ? undefined : String(statusFilter === "Active"),
-      });
+      const res = await admin.customers.list({ page, ...FILTER_QUERY[statusFilter] });
       setCustomers(res.customers as Customer[]);
+      setPendingCount(res.pendingApproval);
       setMeta({ total: res.total, pageSize: res.pageSize, hasMore: res.hasMore });
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Failed to load customers");
@@ -100,14 +134,48 @@ export default function AdminCustomers() {
 
   const openDetail = async (id: string) => {
     setDrawerError(null);
+    setRejecting(false);
+    setRejectReason("");
     await fetchDetail(id);
   };
 
   const closeDrawer = () => {
-    if (toggleBusyId) return; // don't dismiss mid-save
+    if (toggleBusyId || reviewBusy) return; // don't dismiss mid-save
     setDetail(null);
     setDetailError(null);
     setDrawerError(null);
+    setRejecting(false);
+    setRejectReason("");
+  };
+
+  const reviewSignup = async (action: "APPROVE" | "REJECT") => {
+    if (!detail) return;
+    if (action === "APPROVE") {
+      const ok = await confirm({
+        title: `Approve ${detail.businessName}?`,
+        message: "They will be able to sign in and place orders straight away.",
+        confirmLabel: "Approve",
+      });
+      if (!ok) return;
+    } else if (rejectReason.trim().length < APPROVAL_REASON_MIN) {
+      setDrawerError("Tell the applicant why, so they know what to fix or who to call.");
+      return;
+    }
+    setReviewBusy(true);
+    setDrawerError(null);
+    try {
+      await admin.customers.review(detail.id, action, action === "REJECT" ? rejectReason.trim() : undefined);
+      toast(action === "APPROVE" ? "Approved. They can sign in now." : "Application rejected.", "success");
+      setRejecting(false);
+      setRejectReason("");
+      await Promise.all([fetchDetail(detail.id, { silent: true }), load({ silent: true })]);
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : "Could not update this application";
+      setDrawerError(msg);
+      toast(msg, "error");
+    } finally {
+      setReviewBusy(false);
+    }
   };
 
   const toggleActive = async (id: string, isActive: boolean, fromDrawer = false) => {
@@ -165,13 +233,19 @@ export default function AdminCustomers() {
           <div className="flex flex-col gap-1">
             <label className="font-label-caps text-on-surface-variant">Status</label>
             <div className="flex bg-surface-container p-1 rounded-lg">
-              {(["All", "Active", "Inactive"] as const).map((t) => (
+              {FILTERS.map((t) => (
                 <button
                   key={t}
                   onClick={() => { setStatusFilter(t); setPage(1); }}
-                  className={`px-4 py-1.5 rounded-md text-xs font-bold ${statusFilter === t ? "bg-white shadow-sm text-secondary" : "text-on-surface-variant hover:bg-white/50"}`}
+                  aria-pressed={statusFilter === t}
+                  className={`px-4 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 ${statusFilter === t ? "bg-white shadow-sm text-secondary" : "text-on-surface-variant hover:bg-white/50"}`}
                 >
                   {t}
+                  {t === "Pending" && pendingCount > 0 && (
+                    <span aria-label={`${pendingCount} waiting`} className="min-w-5 h-5 px-1 rounded-full bg-secondary text-white text-[11px] flex items-center justify-center">
+                      {pendingCount}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -205,8 +279,8 @@ export default function AdminCustomers() {
                   <EmptyState
                     compact
                     icon="group"
-                    title={statusFilter === "All" ? "No customers yet" : `No ${statusFilter.toLowerCase()} customers`}
-                    description={statusFilter === "All" ? "Businesses that register will appear here." : "Try another filter."}
+                    title={statusFilter === "All" ? "No customers yet" : statusFilter === "Pending" ? "No applications waiting" : `No ${statusFilter.toLowerCase()} customers`}
+                    description={statusFilter === "All" ? "Businesses that register will appear here." : statusFilter === "Pending" ? "New signups will show up here for you to approve." : "Try another filter."}
                   />
                 </TableState>
               ) : (
@@ -223,12 +297,18 @@ export default function AdminCustomers() {
                     <td className="px-6 py-4 text-sm text-on-surface-variant">{c.gstNumber ?? "—"}</td>
                     <td className="px-6 py-4">
                       <div className="flex justify-center">
-                        <Switch
-                          checked={c.isActive}
-                          onChange={() => toggleActive(c.id, c.isActive)}
-                          disabled={toggleBusyId === c.id}
-                          label={c.isActive ? `Deactivate ${c.businessName}` : `Activate ${c.businessName}`}
-                        />
+                        {c.approvalStatus === "APPROVED" ? (
+                          <Switch
+                            checked={c.isActive}
+                            onChange={() => toggleActive(c.id, c.isActive)}
+                            disabled={toggleBusyId === c.id}
+                            label={c.isActive ? `Deactivate ${c.businessName}` : `Activate ${c.businessName}`}
+                          />
+                        ) : (
+                          <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap ${APPROVAL_STATUS[c.approvalStatus].badge}`}>
+                            {APPROVAL_STATUS[c.approvalStatus].label}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right"><button onClick={() => openDetail(c.id)} className="text-secondary font-bold text-sm hover:underline">View</button></td>
@@ -298,16 +378,73 @@ export default function AdminCustomers() {
                         <span className={`text-xs font-bold ${detail.isActive ? "text-success" : "text-on-surface-variant"}`}>{detail.isActive ? "Active" : "Inactive"}</span>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span className="font-label-caps text-on-surface-variant">Active</span>
-                      <Switch
-                        checked={detail.isActive}
-                        onChange={() => toggleActive(detail.id, detail.isActive, true)}
-                        disabled={toggleBusyId === detail.id}
-                        label={detail.isActive ? "Deactivate customer" : "Activate customer"}
-                      />
-                    </div>
+                    {detail.approvalStatus === "APPROVED" && (
+                      <div className="flex flex-col items-end gap-2">
+                        <span className="font-label-caps text-on-surface-variant">Active</span>
+                        <Switch
+                          checked={detail.isActive}
+                          onChange={() => toggleActive(detail.id, detail.isActive, true)}
+                          disabled={toggleBusyId === detail.id}
+                          label={detail.isActive ? "Deactivate customer" : "Activate customer"}
+                        />
+                      </div>
+                    )}
                   </div>
+                  {detail.approvalStatus !== "APPROVED" && (
+                    <div className="mt-4 rounded-lg border border-outline-variant bg-white p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${APPROVAL_STATUS[detail.approvalStatus].badge}`}>
+                          {APPROVAL_STATUS[detail.approvalStatus].label}
+                        </span>
+                        <span className="text-xs text-on-surface-variant">Can&apos;t sign in until approved</span>
+                      </div>
+                      {detail.approvalStatus === "REJECTED" && detail.approvalRejectReason && (
+                        <p className="mt-3 text-sm text-on-surface-variant">
+                          Rejected{detail.approvalReviewedAt ? ` on ${formatDateTime(detail.approvalReviewedAt)}` : ""}:{" "}
+                          <span className="font-bold text-on-surface">{detail.approvalRejectReason}</span>
+                        </p>
+                      )}
+                      <p className="mt-3 text-sm text-on-surface-variant">
+                        Check the business details above (GST number, phone) before approving.
+                      </p>
+                      {rejecting ? (
+                        <div className="mt-3 space-y-3">
+                          <label htmlFor="signup-reject-reason" className="block text-sm font-bold text-on-surface">
+                            Reason. The applicant will see this when they try to sign in.
+                          </label>
+                          <textarea
+                            id="signup-reject-reason"
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                            maxLength={APPROVAL_REASON_MAX}
+                            rows={3}
+                            autoFocus
+                            placeholder="e.g. We couldn't match the GST number to a registered business."
+                            className="w-full rounded-lg border border-outline-variant bg-surface p-3 text-body-md focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+                          />
+                          <div className="flex flex-wrap gap-3">
+                            <Button variant="danger" onClick={() => reviewSignup("REJECT")} loading={reviewBusy} disabled={reviewBusy}>
+                              Reject application
+                            </Button>
+                            <Button variant="ghost" onClick={() => { setRejecting(false); setRejectReason(""); setDrawerError(null); }} disabled={reviewBusy}>
+                              Back
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-3 flex flex-wrap gap-3">
+                          <Button onClick={() => reviewSignup("APPROVE")} loading={reviewBusy} disabled={reviewBusy} icon="check_circle">
+                            {detail.approvalStatus === "REJECTED" ? "Approve after all" : "Approve"}
+                          </Button>
+                          {detail.approvalStatus === "PENDING" && (
+                            <Button variant="secondary" onClick={() => { setRejecting(true); setDrawerError(null); }} disabled={reviewBusy} icon="block">
+                              Reject
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     <div className="bg-surface-container-low p-3 rounded-lg">
                       <p className="text-[10px] font-label-caps text-on-surface-variant">Total Spent</p>

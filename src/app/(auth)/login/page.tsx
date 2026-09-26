@@ -37,6 +37,9 @@ function LoginForm() {
   });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Set once a signup is accepted: the account exists but can't be used until an
+  // admin approves it, so there's nowhere to send the applicant but this notice.
+  const [applied, setApplied] = useState<string | null>(null);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setF((prev) => ({ ...prev, [k]: e.target.value }));
 
@@ -67,8 +70,9 @@ function LoginForm() {
         role = user.role;
       } else {
         // Self-registration always creates a CUSTOMER account; staff are
-        // added by a super admin, never through this form.
-        await auth.register({
+        // added by a super admin, never through this form. It also creates it
+        // unapproved and without a session, so there is no dashboard to go to.
+        const res = await auth.register({
           businessName: f.businessName.trim(),
           ownerName: f.ownerName.trim(),
           mobile: f.mobile.trim(),
@@ -76,6 +80,9 @@ function LoginForm() {
           gstNumber: f.gstNumber.trim() || undefined,
           password: f.password,
         });
+        setApplied(res.message);
+        setBusy(false);
+        return;
       }
       // This is the only login page most people find (/admin-login is a
       // fallback SessionProvider redirects to, not linked from the UI), so a
@@ -146,6 +153,27 @@ function LoginForm() {
       {/* Right Panel: Authentication Form */}
       <section className="w-full lg:w-5/12 xl:w-4/12 bg-surface flex flex-col items-center justify-center relative py-10">
         <div className="w-full max-w-md px-margin-mobile md:px-gutter">
+          {applied ? (
+            <div role="status" className="text-center">
+              <span aria-hidden="true" className="material-symbols-outlined text-[48px] text-secondary mb-4 block">
+                hourglass_top
+              </span>
+              <h2 className="font-headline-lg text-headline-lg text-on-surface mb-3">Application received</h2>
+              <p className="text-on-surface-variant font-body-md mb-8">{applied}</p>
+              <Button
+                variant="secondary"
+                fullWidth
+                onClick={() => {
+                  setApplied(null);
+                  setAuthTab("signin");
+                  setF((prev) => ({ ...prev, password: "" }));
+                }}
+              >
+                Back to sign in
+              </Button>
+            </div>
+          ) : (
+          <>
           {/* Tab Toggle */}
           <div className="mb-10">
             <div className="flex p-1 bg-surface-container rounded-xl">
@@ -172,7 +200,7 @@ function LoginForm() {
             <p className="text-on-surface-variant font-body-md">
               {authTab === "signin"
                 ? "Enter your credentials to access your workspace."
-                : "Sign up to start ordering with live pricing."}
+                : "Sign up to start ordering with live pricing. Our team approves every new business before its first sign-in."}
             </p>
           </div>
 
@@ -274,6 +302,8 @@ function LoginForm() {
               </p>
             )}
           </form>
+          </>
+          )}
         </div>
       </section>
     </main>

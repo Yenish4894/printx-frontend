@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { REJECT_REASON_MAX, REJECT_REASON_MIN } from "@/lib/paymentRules";
+import { APPROVAL_REASON_MAX, APPROVAL_REASON_MIN } from "@/lib/approval";
 
 export const slugify = (s: string) =>
   s
@@ -154,6 +155,18 @@ export const fileReviewSchema = z.object({
 export const customerUpdateSchema = z.object({
   isActive: z.boolean().optional(),
 });
+// Approve or reject a new signup. The applicant reads a rejection reason when
+// they try to sign in, so it is required.
+export const signupReviewSchema = z
+  .object({
+    action: z.enum(["APPROVE", "REJECT"]),
+    reason: z.string().trim().max(APPROVAL_REASON_MAX).optional(),
+  })
+  .refine((v) => v.action !== "REJECT" || (v.reason && v.reason.length >= APPROVAL_REASON_MIN), {
+    message: "Tell the applicant why their account was not approved",
+    path: ["reason"],
+  });
+export type SignupReviewInput = z.infer<typeof signupReviewSchema>;
 
 // ── Refunds ──
 export const refundProcessSchema = z.object({

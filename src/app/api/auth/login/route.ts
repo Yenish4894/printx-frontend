@@ -3,6 +3,7 @@ import { verifyPassword, createSession } from "@/lib/auth";
 import { ok, handleError, HttpError } from "@/lib/http";
 import { loginSchema } from "@/lib/dto/auth";
 import { publicUser } from "@/lib/serialize";
+import { approvalBlock } from "@/lib/approval";
 
 export const runtime = "nodejs";
 
@@ -18,6 +19,11 @@ export async function POST(req: Request) {
     if (!user || !valid) {
       throw new HttpError(401, "Invalid mobile number or password");
     }
+    // Only after the password checks out, so this can't be used to find out which
+    // numbers have applied. 403, not 401: the credentials were right, and the
+    // client treats any protected-route 401 as "your session died".
+    const notYet = approvalBlock(user.approvalStatus, user.approvalRejectReason);
+    if (notYet) throw new HttpError(403, notYet);
 
     await createSession({ id: user.id, mobile: user.mobile, role: user.role });
     await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });

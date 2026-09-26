@@ -3,6 +3,7 @@ import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import type { Role } from "@/generated/prisma/client";
 import { HttpError } from "./http";
+import { isApproved } from "./approval";
 
 // The signing key is the ONLY thing standing between a stranger and a forged
 // SUPER_ADMIN session. Falling back to a literal committed in this repo would
@@ -95,10 +96,13 @@ export async function requireUser(): Promise<SessionUser> {
   const { default: prisma } = await import("./prisma");
   const account = await prisma.user.findUnique({
     where: { id: session.id },
-    select: { isActive: true, role: true },
+    select: { isActive: true, role: true, approvalStatus: true },
   });
   if (!account || !account.isActive) {
     throw new HttpError(401, "Your account is no longer active");
+  }
+  if (!isApproved(account.approvalStatus)) {
+    throw new HttpError(401, "Your account is not approved");
   }
   // The role in the token is a 7-day-old snapshot. Trusting it would let a
   // demoted admin keep admin powers until their token expired, so the live

@@ -3,6 +3,22 @@
 All notable changes to Bhagini Graphics (PrintX) are recorded here.
 Versions use `MAJOR.MINOR.PATCH.MICRO`.
 
+## [Unreleased]
+
+### Added
+- Admin approval for new customers. A new signup can no longer sign in until an admin approves it: they see an "Application received" notice, and trying to sign in shows that the account is awaiting approval. Admins get a "Pending" tab (with a count) on Customers, a "Signups to Approve" tile on the dashboard, and Approve / Reject (with a reason the applicant sees) in the customer profile. Every account that existed before, and every staff account, is unaffected.
+- Product catalogue category filters and the order/refund status tabs now show edge fades and scroll arrows when there are more options than fit, instead of silently running off-screen.
+
+### Changed
+- Payment is by direct bank transfer only. UPI is gone from the bank details, the customer payment screen and all marketing copy.
+- Signing in from the normal login page now takes admins to the admin console and customers to their dashboard. A signed-in visitor who opens the login page is sent straight to their own dashboard, and the Bhagini Graphics logo in the app goes to it too.
+- A deactivated, demoted or un-approved account is signed out on its next action instead of carrying on with stale menus until a reload.
+- The admin customer profile shows the real lifetime order count (it stopped at 20).
+- The catalogue page heading is now "Our Print Catalog".
+
+### Removed
+- The old "Wallet & Transactions" admin page and the unused wallet top-up limits in Settings.
+
 ## [0.2.0.0] - 2026-09-22
 
 ### Added

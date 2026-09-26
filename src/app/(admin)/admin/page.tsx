@@ -27,6 +27,7 @@ type Stats = {
   pendingRefunds: number;
   awaitingPayment: number;
   paymentsToVerify: number;
+  pendingSignups: number;
   ordersByStatus: Record<string, number>;
   recentOrders: RecentOrder[];
 };
@@ -170,8 +171,23 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Money waiting on the team: payments to verify, refunds to send. */}
+          {/* Work waiting on the team: signups to approve, payments to verify, refunds to send. */}
           <div className="col-span-4 lg:col-span-1 flex flex-col gap-5">
+            <Link
+              href="/admin/customers?filter=pending"
+              className={`flex-1 p-6 rounded-xl shadow-sm border flex flex-col justify-between hover:shadow-lg transition-all hover:-translate-y-1 ${
+                stats.pendingSignups > 0 ? "bg-secondary/5 border-secondary/40" : "bg-white border-outline-variant"
+              }`}
+            >
+              <div>
+                <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center mb-3"><span aria-hidden="true" className="material-symbols-outlined text-secondary">how_to_reg</span></div>
+                <span className="text-label-caps text-on-surface-variant uppercase">Signups to Approve</span>
+                <p className="font-headline-md text-headline-md mt-1">{stats.pendingSignups.toLocaleString("en-IN")}</p>
+              </div>
+              <p className="text-xs text-on-surface-variant mt-3">
+                {stats.pendingSignups > 0 ? "New businesses can't sign in until you approve them →" : "No applications waiting"}
+              </p>
+            </Link>
             <Link
               href="/admin/orders"
               className={`flex-1 p-6 rounded-xl shadow-sm border flex flex-col justify-between hover:shadow-lg transition-all hover:-translate-y-1 ${
