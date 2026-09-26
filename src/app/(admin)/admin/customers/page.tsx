@@ -112,8 +112,12 @@ function CustomersScreen() {
     }
   }, [page, statusFilter]);
 
+  // Started from a timer callback, not synchronously in the effect body.
   useEffect(() => {
-    load();
+    const t = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(t);
   }, [load]);
 
   const fetchDetail = async (id: string, opts?: { silent?: boolean }) => {

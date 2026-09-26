@@ -66,8 +66,12 @@ export default function AdminUsers() {
     }
   }, []);
 
+  // Started from a timer callback, not synchronously in the effect body.
   useEffect(() => {
-    load();
+    const t = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(t);
   }, [load]);
 
   const mobileValid = /^[6-9][0-9]{9}$/.test(form.mobile);

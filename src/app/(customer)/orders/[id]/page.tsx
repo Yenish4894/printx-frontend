@@ -90,8 +90,12 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
     }
   }, [id]);
 
+  // Started from a timer callback, not synchronously in the effect body.
   useEffect(() => {
-    load();
+    const t = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(t);
   }, [load]);
 
   async function handleCancel() {

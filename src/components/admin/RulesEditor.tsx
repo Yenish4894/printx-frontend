@@ -71,8 +71,12 @@ export default function RulesEditor({ product }: { product: ProductLite }) {
     }
   }, [product.id]);
 
+  // Started from a timer callback, not synchronously in the effect body.
   useEffect(() => {
-    void load();
+    const t = setTimeout(() => {
+      void load();
+    }, 0);
+    return () => clearTimeout(t);
   }, [load]);
 
   // A group can't be gated on itself — it would have to be visible to be

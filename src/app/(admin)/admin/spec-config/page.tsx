@@ -107,8 +107,12 @@ function ProductPicker() {
     }
   }, []);
 
+  // Started from a timer callback, not synchronously in the effect body.
   useEffect(() => {
-    load();
+    const t = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(t);
   }, [load]);
 
   return (
@@ -178,9 +182,13 @@ function ProductEditor({ productId }: { productId: string }) {
     }
   }, [productId]);
 
+  // Started from a timer callback, not synchronously in the effect body.
   useEffect(() => {
-    setLoading(true);
-    loadProduct().finally(() => setLoading(false));
+    const t = setTimeout(() => {
+      setLoading(true);
+      loadProduct().finally(() => setLoading(false));
+    }, 0);
+    return () => clearTimeout(t);
   }, [loadProduct]);
 
   if (loading) return <div className="p-16 text-center text-on-surface-variant">Loading product…</div>;
@@ -527,17 +535,21 @@ function MatrixEditor({ productId, matrix, onReload }: { productId: string; matr
   const [baseline, setBaseline] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  // Prefill from existing matrix rows whenever the matrix reloads.
-  useEffect(() => {
-    if (!matrix) return;
-    const next: Record<string, string> = {};
-    for (const row of matrix.rows) {
-      // A row prices either per sheet or as a flat run total — show whichever it uses.
-      next[comboKey(row.optionIds)] = String(row.flatPrice ?? row.ratePerSheet ?? "");
+  // Prefill from existing matrix rows whenever the matrix reloads (state is
+  // adjusted during render, keyed on the matrix identity, rather than in an effect).
+  const [prefilledFrom, setPrefilledFrom] = useState<Matrix | null>(null);
+  if (matrix !== prefilledFrom) {
+    setPrefilledFrom(matrix);
+    if (matrix) {
+      const next: Record<string, string> = {};
+      for (const row of matrix.rows) {
+        // A row prices either per sheet or as a flat run total — show whichever it uses.
+        next[comboKey(row.optionIds)] = String(row.flatPrice ?? row.ratePerSheet ?? "");
+      }
+      setRates(next);
+      setBaseline(next);
     }
-    setRates(next);
-    setBaseline(next);
-  }, [matrix]);
+  }
 
   const combos = useMemo(() => (matrix ? cartesian(matrix.dimensions) : []), [matrix]);
   const dims = useMemo(() => matrix?.dimensions ?? [], [matrix]);

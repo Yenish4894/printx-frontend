@@ -20,7 +20,7 @@ export default function MarketingCatalog() {
     // A landing teaser grid, not the catalogue: one bounded page is plenty.
     catalog
       .products(undefined, { pageSize: 9 })
-      .then((r) => setProducts(r.products as unknown as Card[]))
+      .then((r) => setProducts(r.products))
       .catch(() => setProducts([]));
   }, []);
 

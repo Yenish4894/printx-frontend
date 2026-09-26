@@ -53,8 +53,12 @@ export default function AdminProducts() {
     }
   }
 
+  // Started from a timer callback, not synchronously in the effect body.
   useEffect(() => {
-    fetchProducts(true);
+    const t = setTimeout(() => {
+      fetchProducts(true);
+    }, 0);
+    return () => clearTimeout(t);
   }, []);
 
   async function handleDelete(id: string, name: string) {

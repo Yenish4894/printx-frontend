@@ -77,7 +77,7 @@ export default function ProductsListing() {
       const acc: ProductCardData[] = [];
       for (let page = 1; page <= MAX_PAGES; page++) {
         const r = await catalog.products(undefined, { page, pageSize: PAGE_SIZE });
-        acc.push(...(r.products as unknown as ProductCardData[]));
+        acc.push(...(r.products));
         if (!r.hasMore) break;
       }
       return acc;
@@ -86,8 +86,12 @@ export default function ProductsListing() {
       .catch((e) => setError(e instanceof ApiError ? e.message : "Failed to load products"));
   }, []);
 
+  // Started from a timer callback, not synchronously in the effect body.
   useEffect(() => {
-    load();
+    const t = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(t);
   }, [load]);
 
   // Top-level list derived from the FULL catalogue (stable across filtering):

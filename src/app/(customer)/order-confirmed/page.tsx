@@ -85,12 +85,10 @@ function OrderConfirmedInner() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!orderId) {
-      setLoading(false);
-      return;
-    }
+    if (!orderId) return;
     let cancelled = false;
-    (async () => {
+    // Loads from a timer callback, not synchronously in the effect body.
+    const t = setTimeout(async () => {
       try {
         setLoading(true);
         setError(null);
@@ -101,9 +99,10 @@ function OrderConfirmedInner() {
       } finally {
         if (!cancelled) setLoading(false);
       }
-    })();
+    }, 0);
     return () => {
       cancelled = true;
+      clearTimeout(t);
     };
   }, [orderId]);
 

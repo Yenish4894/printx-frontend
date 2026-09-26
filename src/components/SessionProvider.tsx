@@ -64,8 +64,12 @@ export function SessionProvider({
     }
   }, [router]);
 
+  // Started from a timer callback, not synchronously in the effect body.
   useEffect(() => {
-    refresh();
+    const t = setTimeout(() => {
+      refresh();
+    }, 0);
+    return () => clearTimeout(t);
   }, [refresh]);
 
   // Every API call that gets a 401 fires this (see src/lib/api.ts). Without

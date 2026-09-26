@@ -127,6 +127,222 @@ export interface PriceBreakdown {
   gstInclusive: boolean;
 }
 
+/** Pricing model of a product. */
+export type PricingModel = "TIERED" | "PER_UNIT" | "MATRIX";
+
+/** A saved delivery address (raw row from /me/addresses). */
+export interface Address {
+  id: string;
+  userId: string;
+  label: string;
+  name: string;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string;
+  pincode: string;
+  phone: string;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+/** One line of the customer's cart. specSnapshot is what the server priced (opaque here). */
+export interface CartItem {
+  id: string;
+  productName: string;
+  productSlug: string;
+  image: string | null;
+  quantity: number;
+  minQuantity: number;
+  quantityStep: number;
+  maxQuantity: number | null;
+  specSnapshot: unknown;
+  deliverySpeed: string | null;
+  deliveryFee: number;
+  unitPrice: number;
+  lineSubtotal: number;
+  gstAmount: number;
+  lineTotal: number;
+  fileStatus: string | null;
+  fileName: string | null;
+  notes: string | null;
+}
+
+export interface Cart {
+  items: CartItem[];
+  subtotal: number;
+  deliveryCharge: number;
+  gst: number;
+  total: number;
+  count: number;
+}
+
+export interface BankDetails {
+  accountName: string | null;
+  bankName: string | null;
+  accountNumber: string | null;
+  ifsc: string | null;
+}
+
+/** The order's payment, as the customer sees it. */
+export interface OrderPayment {
+  method: string;
+  status: string;
+  amount: number;
+  proofUrl: string | null;
+  proofName: string | null;
+  proofUploadedAt: string | null;
+  reference: string | null;
+  rejectReason: string | null;
+  reviewedAt: string | null;
+}
+
+export interface OrderItem {
+  id: string;
+  productName: string;
+  quantity: number;
+  specSnapshot: unknown;
+  unitPrice: number;
+  lineSubtotal: number;
+  deliveryEtaLabel: string | null;
+  fileStatus: string | null;
+  fileName: string | null;
+  fileRejectReason: string | null;
+}
+
+export interface OrderStatusEntry {
+  status: string;
+  note: string | null;
+  at: string;
+}
+
+/** The address the order was placed with (a JSON snapshot, so every field is optional). */
+export interface ShippingSnapshot {
+  label?: string;
+  name?: string;
+  line1?: string;
+  line2?: string | null;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  phone?: string;
+}
+
+/** GET /orders/:id (also what the item-file and payment-proof uploads return). */
+export interface OrderDetail {
+  id: string;
+  orderNumber: string;
+  invoiceNumber: string | null;
+  status: string;
+  subtotal: number;
+  deliveryCharge: number;
+  gstAmount: number;
+  totalAmount: number;
+  shipping: ShippingSnapshot | null;
+  notes: string | null;
+  placedAt: string;
+  items: OrderItem[];
+  statusHistory: OrderStatusEntry[];
+  payment: OrderPayment | null;
+  bankDetails: BankDetails | null;
+  refunds: { amount: number; status: string; reason: string | null; processedAt: string | null }[];
+}
+
+/** One row of the customer's order list. */
+export interface OrderSummary {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: number;
+  itemCount: number;
+  items: string[];
+  placedAt: string;
+}
+
+/** A product card in the catalogue listing. */
+export interface ProductCard {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  category: { slug: string; name: string; parent: { slug: string; name: string } | null };
+  badges: string[];
+  priceFrom: number | null;
+  image: string | null;
+}
+
+export interface CatalogOption {
+  id: string;
+  name: string;
+  description: string | null;
+  addOnType: "FLAT" | "PER_UNIT";
+  addOnValue: number;
+  perQuantity: number;
+  isDefault: boolean;
+  quantityValue: number | null;
+  code: string | null;
+}
+
+export interface CatalogSpecGroup {
+  id: string;
+  name: string;
+  selectionType: "SINGLE_SELECT" | "MULTI_SELECT";
+  isRequired: boolean;
+  isPricingDimension: boolean;
+  isQuantityDimension: boolean;
+  icon: string | null;
+  options: CatalogOption[];
+}
+
+export interface DeliverySpeed {
+  id: string;
+  name: string;
+  fee: number;
+  etaMinDays: number;
+  etaMaxDays: number;
+}
+
+export interface VisibilityRuleData {
+  id: string;
+  targetType: "GROUP" | "OPTION";
+  targetGroupId: string | null;
+  targetOptionId: string | null;
+  logic: "AND" | "OR";
+  conditions: { sourceGroupId: string; operator: "IS" | "IS_NOT" | "IN"; optionIds: string[] }[];
+}
+
+/** GET /products/:slug, everything the configurator needs. */
+export interface CatalogProduct {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  category: { slug: string; name: string };
+  pricingModel: PricingModel;
+  unitType: string | null;
+  requiresDimensions: boolean;
+  unitRate: number | null;
+  minQuantity: number;
+  maxQuantity: number | null;
+  quantityStep: number;
+  productCode: string | null;
+  productClass: string | null;
+  productionTime: string | null;
+  pricesIncludeGst: boolean;
+  singlePrintThreshold: number | null;
+  singlePrintRate: number | null;
+  badges: string[];
+  printTypeLabel: string | null;
+  standardSizeLabel: string | null;
+  bleedArea: string | null;
+  fileFormats: string[];
+  images: { url: string; alt: string | null }[];
+  specGroups: CatalogSpecGroup[];
+  quantityTiers: { id: string; quantity: number; basePrice: number; label: string | null }[];
+  deliverySpeeds: DeliverySpeed[];
+  visibilityRules: VisibilityRuleData[];
+}
+
 // ───────────────────────── Auth ─────────────────────────
 export const auth = {
   login: (mobile: string, password: string) =>
@@ -165,8 +381,8 @@ export interface PageOpts {
 // ───────────────────────── Catalog (customer) ─────────────────────────
 export const catalog = {
   products: (category?: string, opts: PageOpts = {}) =>
-    get<{ products: unknown[] } & PageMeta>(`/products${qs({ category, ...opts })}`),
-  product: (slug: string) => get<{ product: Record<string, any> }>(`/products/${slug}`),
+    get<{ products: ProductCard[] } & PageMeta>(`/products${qs({ category, ...opts })}`),
+  product: (slug: string) => get<{ product: CatalogProduct }>(`/products/${slug}`),
   quote: (input: {
     productId: string;
     quantity: number;
@@ -179,14 +395,14 @@ export const catalog = {
 
 // ───────────────────────── Cart ─────────────────────────
 export const cart = {
-  get: () => get<any>("/cart"),
-  add: (input: Record<string, unknown>) => post<any>("/cart/items", input),
-  updateQty: (id: string, quantity: number) => patch<any>(`/cart/items/${id}`, { quantity }),
-  remove: (id: string) => del<any>(`/cart/items/${id}`),
+  get: () => get<Cart>("/cart"),
+  add: (input: Record<string, unknown>) => post<Cart>("/cart/items", input),
+  updateQty: (id: string, quantity: number) => patch<Cart>(`/cart/items/${id}`, { quantity }),
+  remove: (id: string) => del<Cart>(`/cart/items/${id}`),
   uploadFile: (id: string, file: File) => {
     const fd = new FormData();
     fd.append("file", file);
-    return post<any>(`/cart/items/${id}/file`, fd);
+    return post<Cart>(`/cart/items/${id}/file`, fd);
   },
 };
 
@@ -201,8 +417,8 @@ export interface ProductImage {
 
 // ───────────────────────── Addresses ─────────────────────────
 export const addresses = {
-  list: () => get<{ addresses: any[] }>("/me/addresses"),
-  create: (input: Record<string, unknown>) => post<any>("/me/addresses", input),
+  list: () => get<{ addresses: Address[] }>("/me/addresses"),
+  create: (input: Record<string, unknown>) => post<{ address: Address }>("/me/addresses", input),
   remove: (id: string) => del<{ success: boolean }>(`/me/addresses/${id}`),
 };
 
@@ -211,26 +427,32 @@ export const orders = {
   list: (opts: PageOpts & { bucket?: string; q?: string } = {}) =>
     get<
       {
-        orders: any[];
+        orders: OrderSummary[];
         buckets: { all: number; active: number; completed: number; cancelled: number };
         stats: { totalOrders: number; inProgress: number; awaitingPayment: number; paidOrderCount: number; totalSpent: number };
       } & PageMeta
     >(`/orders${qs({ ...opts })}`),
-  get: (id: string) => get<{ order: any }>(`/orders/${id}`),
+  get: (id: string) => get<{ order: OrderDetail }>(`/orders/${id}`),
   place: (addressId: string, notes?: string) =>
-    post<{ order: any }>("/orders", { addressId, notes }),
-  cancel: (id: string, reason?: string) => post<{ order: any }>(`/orders/${id}/cancel`, { reason }),
+    post<{ order: { id: string; orderNumber: string; totalAmount: number; status: "PAYMENT_PENDING" } }>("/orders", {
+      addressId,
+      notes,
+    }),
+  cancel: (id: string, reason?: string) => post<{ order: { id: string; status: "CANCELLED"; refundAmount: number; refundPending: boolean } }>(
+      `/orders/${id}/cancel`,
+      { reason },
+    ),
   uploadItemFile: (id: string, itemId: string, file: File) => {
     const fd = new FormData();
     fd.append("file", file);
-    return post<any>(`/orders/${id}/items/${itemId}/file`, fd);
+    return post<{ order: OrderDetail }>(`/orders/${id}/items/${itemId}/file`, fd);
   },
   /** Proof of bank transfer: a screenshot or PDF, plus the optional UTR. */
   uploadPaymentProof: (id: string, file: File, reference?: string) => {
     const fd = new FormData();
     fd.append("file", file);
     if (reference) fd.append("reference", reference);
-    return post<{ order: any }>(`/orders/${id}/payment`, fd);
+    return post<{ order: OrderDetail }>(`/orders/${id}/payment`, fd);
   },
 };
 
@@ -252,23 +474,289 @@ export const notifications = {
   markRead: (id?: string) => post<{ updated: number }>("/notifications/read", id ? { id } : {}),
 };
 
+// ───────────────────────── Admin types ─────────────────────────
+export interface AdminStats {
+  totalOrders: number;
+  activeOrders: number;
+  customers: number;
+  products: number;
+  revenue: number;
+  pendingRefunds: number;
+  awaitingPayment: number;
+  paymentsToVerify: number;
+  pendingSignups: number;
+  ordersByStatus: Record<string, number>;
+  recentOrders: {
+    id: string;
+    orderNumber: string;
+    customer: string;
+    status: string;
+    totalAmount: number;
+    placedAt: string;
+  }[];
+}
+
+export interface AdminCategory {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string | null;
+  displayOrder: number;
+  isActive: boolean;
+  productCount: number;
+  parentId: string | null;
+  parentName: string | null;
+  childCount: number;
+}
+
+/** One row of the admin product list. */
+export interface AdminProductRow {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  pricingModel: PricingModel;
+  isActive: boolean;
+  specGroups: number;
+  matrixRows: number;
+  orderCount: number;
+  image: string | null;
+  imageCount: number;
+}
+
+export interface AdminSpecOption {
+  id: string;
+  name: string;
+  description: string | null;
+  addOnType: "FLAT" | "PER_UNIT";
+  addOnValue: number;
+  perQuantity: number;
+  isDefault: boolean;
+  displayOrder: number;
+  isActive: boolean;
+  quantityValue: number | null;
+  code: string | null;
+}
+
+export interface AdminSpecGroup {
+  id: string;
+  name: string;
+  selectionType: "SINGLE_SELECT" | "MULTI_SELECT";
+  isPricingDimension: boolean;
+  isQuantityDimension: boolean;
+  isRequired: boolean;
+  icon: string | null;
+  displayOrder: number;
+  isActive: boolean;
+  options: AdminSpecOption[];
+}
+
+/** GET /admin/products/:id */
+export interface AdminProduct {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  categoryId: string;
+  category: string;
+  pricingModel: PricingModel;
+  unitType: string | null;
+  requiresDimensions: boolean;
+  unitRate: number | null;
+  minQuantity: number;
+  maxQuantity: number | null;
+  quantityStep: number;
+  additionalDesignCharge: number | null;
+  productCode: string | null;
+  productClass: string | null;
+  productionTime: string | null;
+  pricesIncludeGst: boolean;
+  singlePrintThreshold: number | null;
+  singlePrintRate: number | null;
+  badges: string[];
+  printTypeLabel: string | null;
+  standardSizeLabel: string | null;
+  bleedArea: string | null;
+  fileFormats: string[];
+  basePriceFrom: number | null;
+  isActive: boolean;
+  specGroups: AdminSpecGroup[];
+  quantityTiers: { id: string; quantity: number; basePrice: number; label: string | null }[];
+  deliverySpeeds: DeliverySpeed[];
+  matrixRows: number;
+}
+
+/** GET /admin/products/:id/matrix */
+export interface PriceMatrix {
+  productId: string;
+  pricingModel: PricingModel;
+  pricesIncludeGst: boolean;
+  dimensions: {
+    id: string;
+    name: string;
+    isQuantityDimension: boolean;
+    options: { id: string; name: string }[];
+  }[];
+  rows: {
+    id: string;
+    optionIds: string[];
+    labels: string[];
+    ratePerSheet: number | null;
+    flatPrice: number | null;
+    isActive: boolean;
+  }[];
+}
+
+export interface VisibilityRule {
+  id: string;
+  targetType: "GROUP" | "OPTION";
+  targetGroupId: string | null;
+  targetOptionId: string | null;
+  targetLabel: string;
+  logic: "AND" | "OR";
+  conditions: {
+    id: string;
+    sourceGroupId: string;
+    sourceGroupName: string;
+    operator: "IS" | "IS_NOT" | "IN";
+    optionIds: string[];
+    optionNames: string[];
+  }[];
+}
+
+/** The payment on an admin order: the customer's view plus other orders quoting the same UTR. */
+export interface AdminOrderPayment extends OrderPayment {
+  referenceUsedOn: string[];
+}
+
+export interface AdminOrderRow {
+  id: string;
+  orderNumber: string;
+  status: string;
+  payment: { status: string; hasProof: boolean } | null;
+  customer: string;
+  customerMobile: string;
+  totalAmount: number;
+  itemCount: number;
+  placedAt: string;
+}
+
+/** GET /admin/orders/:id */
+export interface AdminOrder {
+  id: string;
+  orderNumber: string;
+  invoiceNumber: string | null;
+  status: string;
+  customer: { id: string; businessName: string; ownerName: string; mobile: string; email: string };
+  subtotal: number;
+  deliveryCharge: number;
+  gstAmount: number;
+  totalAmount: number;
+  shipping: ShippingSnapshot | null;
+  notes: string | null;
+  placedAt: string;
+  items: (OrderItem & { gstAmount: number; fileUrl: string | null })[];
+  statusHistory: OrderStatusEntry[];
+  refunds: { id: string; amount: number; status: string; reason: string | null }[];
+  payment: AdminOrderPayment | null;
+}
+
+export type ApprovalStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export interface AdminCustomerRow {
+  id: string;
+  businessName: string;
+  ownerName: string;
+  mobile: string;
+  email: string;
+  gstNumber: string | null;
+  isActive: boolean;
+  approvalStatus: ApprovalStatus;
+  orderCount: number;
+  joinedAt: string;
+}
+
+/** GET /admin/customers/:id */
+export interface AdminCustomer {
+  id: string;
+  businessName: string;
+  ownerName: string;
+  mobile: string;
+  email: string;
+  gstNumber: string | null;
+  isActive: boolean;
+  approvalStatus: ApprovalStatus;
+  approvalRejectReason: string | null;
+  approvalReviewedAt: string | null;
+  joinedAt: string;
+  totalSpent: number;
+  orderCount: number;
+  addresses: Omit<Address, "userId" | "createdAt">[];
+  orders: { id: string; orderNumber: string; status: string; totalAmount: number; placedAt: string }[];
+}
+
+export interface AdminRefund {
+  id: string;
+  orderNumber: string;
+  customer: string;
+  customerMobile: string;
+  amount: number;
+  status: string;
+  reason: string | null;
+  createdAt: string;
+  processedAt: string | null;
+}
+
+/** GET /admin/settings. Bank details are nested here; the settings form flattens them. */
+export interface PlatformSettings {
+  gstPercent: number;
+  gstRate: number;
+  freeShippingThreshold: number;
+  autoRoundPrices: boolean;
+  cancellationWindowHours: number;
+  fileGracePeriod: boolean;
+  defaultDpi: string;
+  defaultColorProfile: string;
+  standardBleedMm: number;
+  businessGstNumber: string | null;
+  supportPhone: string | null;
+  supportEmail: string | null;
+  socialFacebook: string | null;
+  socialInstagram: string | null;
+  socialTwitter: string | null;
+  socialLinkedin: string | null;
+  bank: BankDetails;
+}
+
+export interface StaffMember {
+  id: string;
+  name: string;
+  businessName: string;
+  mobile: string;
+  email: string;
+  role: "ADMIN" | "SUPER_ADMIN";
+  isActive: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+}
+
 // ───────────────────────── Admin ─────────────────────────
 export const admin = {
-  stats: () => get<{ stats: any }>("/admin/stats"),
+  stats: () => get<{ stats: AdminStats }>("/admin/stats"),
 
   categories: {
-    list: () => get<{ categories: any[] }>("/admin/categories"),
-    create: (input: Record<string, unknown>) => post<any>("/admin/categories", input),
-    update: (id: string, input: Record<string, unknown>) => patch<any>(`/admin/categories/${id}`, input),
-    remove: (id: string) => del<any>(`/admin/categories/${id}`),
+    list: () => get<{ categories: AdminCategory[] }>("/admin/categories"),
+    create: (input: Record<string, unknown>) => post<{ category: { id: string } }>("/admin/categories", input),
+    update: (id: string, input: Record<string, unknown>) => patch<{ category: { id: string } }>(`/admin/categories/${id}`, input),
+    remove: (id: string) => del<{ id: string }>(`/admin/categories/${id}`),
   },
 
   products: {
-    list: () => get<{ products: any[] }>("/admin/products"),
-    get: (id: string) => get<{ product: any }>(`/admin/products/${id}`),
+    list: () => get<{ products: AdminProductRow[] }>("/admin/products"),
+    get: (id: string) => get<{ product: AdminProduct }>(`/admin/products/${id}`),
     create: (input: Record<string, unknown>) => post<{ product: { id: string; slug: string } }>("/admin/products", input),
-    update: (id: string, input: Record<string, unknown>) => patch<any>(`/admin/products/${id}`, input),
-    remove: (id: string) => del<any>(`/admin/products/${id}`),
+    update: (id: string, input: Record<string, unknown>) => patch<{ product: { id: string } }>(`/admin/products/${id}`, input),
+    remove: (id: string) => del<{ id: string; softDeleted: boolean }>(`/admin/products/${id}`),
     images: {
       list: (id: string) => get<{ images: ProductImage[] }>(`/admin/products/${id}/images`),
       addLink: (id: string, url: string, alt?: string) =>
@@ -282,61 +770,64 @@ export const admin = {
         patch<{ images: ProductImage[] }>(`/admin/products/${id}/images/${imageId}`, { primary: true }),
       remove: (id: string, imageId: string) => del<{ id: string }>(`/admin/products/${id}/images/${imageId}`),
     },
-    addSpecGroup: (id: string, input: Record<string, unknown>) => post<any>(`/admin/products/${id}/spec-groups`, input),
-    getMatrix: (id: string) => get<{ matrix: any }>(`/admin/products/${id}/matrix`),
-    setMatrix: (id: string, rows: unknown[]) => put<any>(`/admin/products/${id}/matrix`, { rows }),
+    addSpecGroup: (id: string, input: Record<string, unknown>) => post<{ specGroup: { id: string } }>(`/admin/products/${id}/spec-groups`, input),
+    getMatrix: (id: string) => get<{ matrix: PriceMatrix }>(`/admin/products/${id}/matrix`),
+    setMatrix: (id: string, rows: unknown[]) => put<{ count: number }>(`/admin/products/${id}/matrix`, { rows }),
   },
 
   rules: {
-    list: (productId: string) => get<{ rules: any[] }>(`/admin/products/${productId}/rules`),
+    list: (productId: string) => get<{ rules: VisibilityRule[] }>(`/admin/products/${productId}/rules`),
     create: (productId: string, input: Record<string, unknown>) =>
-      post<{ rule: any }>(`/admin/products/${productId}/rules`, input),
-    update: (id: string, input: Record<string, unknown>) => patch<{ rule: any }>(`/admin/rules/${id}`, input),
-    remove: (id: string) => del<any>(`/admin/rules/${id}`),
+      post<{ rule: VisibilityRule }>(`/admin/products/${productId}/rules`, input),
+    update: (id: string, input: Record<string, unknown>) => patch<{ rule: VisibilityRule }>(`/admin/rules/${id}`, input),
+    remove: (id: string) => del<{ id: string }>(`/admin/rules/${id}`),
   },
 
   specGroups: {
-    update: (id: string, input: Record<string, unknown>) => patch<any>(`/admin/spec-groups/${id}`, input),
-    remove: (id: string) => del<any>(`/admin/spec-groups/${id}`),
-    addOption: (id: string, input: Record<string, unknown>) => post<any>(`/admin/spec-groups/${id}/options`, input),
+    update: (id: string, input: Record<string, unknown>) => patch<{ specGroup: { id: string } }>(`/admin/spec-groups/${id}`, input),
+    remove: (id: string) => del<{ id: string }>(`/admin/spec-groups/${id}`),
+    addOption: (id: string, input: Record<string, unknown>) => post<{ option: { id: string } }>(`/admin/spec-groups/${id}/options`, input),
   },
   specOptions: {
-    update: (id: string, input: Record<string, unknown>) => patch<any>(`/admin/spec-options/${id}`, input),
-    remove: (id: string) => del<any>(`/admin/spec-options/${id}`),
+    update: (id: string, input: Record<string, unknown>) => patch<{ option: { id: string } }>(`/admin/spec-options/${id}`, input),
+    remove: (id: string) => del<{ id: string }>(`/admin/spec-options/${id}`),
   },
 
   orders: {
-    list: (status?: string, opts: PageOpts & { q?: string } = {}) => get<{ orders: any[] } & PageMeta>(`/admin/orders${qs({ status, ...opts })}`),
-    get: (id: string) => get<{ order: any }>(`/admin/orders/${id}`),
-    setStatus: (id: string, status: string, note?: string) => patch<any>(`/admin/orders/${id}/status`, { status, note }),
+    list: (status?: string, opts: PageOpts & { q?: string } = {}) => get<{ orders: AdminOrderRow[] } & PageMeta>(`/admin/orders${qs({ status, ...opts })}`),
+    get: (id: string) => get<{ order: AdminOrder }>(`/admin/orders/${id}`),
+    setStatus: (id: string, status: string, note?: string) => patch<{ order: { id: string; status: string; refundAmount: number } }>(`/admin/orders/${id}/status`, {
+        status,
+        note,
+      }),
     reviewPayment: (id: string, action: "APPROVE" | "REJECT", proofUrl: string, reason?: string) =>
-      post<{ result: { status: string; payment: string } }>(`/admin/orders/${id}/payment`, { action, reason, proofUrl }),
+      post<{ result: { id: string; status: string; payment: string } }>(`/admin/orders/${id}/payment`, { action, reason, proofUrl }),
     reviewFile: (id: string, itemId: string, action: "APPROVE" | "REJECT", reason?: string) =>
-      patch<any>(`/admin/orders/${id}/items/${itemId}/review`, { action, reason }),
+      patch<{ item: { id: string; fileStatus: string } }>(`/admin/orders/${id}/items/${itemId}/review`, { action, reason }),
   },
 
   customers: {
-    list: (opts: PageOpts & { q?: string; active?: string; approval?: string } = {}) => get<{ customers: any[]; pendingApproval: number } & PageMeta>(`/admin/customers${qs({ ...opts })}`),
-    get: (id: string) => get<{ customer: any }>(`/admin/customers/${id}`),
-    setActive: (id: string, isActive: boolean) => patch<any>(`/admin/customers/${id}`, { isActive }),
+    list: (opts: PageOpts & { q?: string; active?: string; approval?: string } = {}) => get<{ customers: AdminCustomerRow[]; pendingApproval: number } & PageMeta>(`/admin/customers${qs({ ...opts })}`),
+    get: (id: string) => get<{ customer: AdminCustomer }>(`/admin/customers/${id}`),
+    setActive: (id: string, isActive: boolean) => patch<{ customer: { id: string; isActive: boolean } }>(`/admin/customers/${id}`, { isActive }),
     review: (id: string, action: "APPROVE" | "REJECT", reason?: string) =>
       post<{ result: { id: string; approvalStatus: "APPROVED" | "REJECTED"; isActive: boolean } }>(`/admin/customers/${id}/approval`, { action, reason }),
   },
 
   refunds: {
-    list: (status?: string, opts: PageOpts = {}) => get<{ refunds: any[]; counts: Record<string, number> } & PageMeta>(`/admin/refunds${qs({ status, ...opts })}`),
-    process: (id: string, action: "APPROVE" | "REJECT", note?: string) => patch<any>(`/admin/refunds/${id}`, { action, note }),
+    list: (status?: string, opts: PageOpts = {}) => get<{ refunds: AdminRefund[]; counts: Record<string, number> } & PageMeta>(`/admin/refunds${qs({ status, ...opts })}`),
+    process: (id: string, action: "APPROVE" | "REJECT", note?: string) => patch<{ refund: { id: string; status: string; amount?: number } }>(`/admin/refunds/${id}`, { action, note }),
   },
 
   settings: {
-    get: () => get<{ settings: any }>("/admin/settings"),
-    update: (input: Record<string, unknown>) => put<{ settings: any }>("/admin/settings", input),
+    get: () => get<{ settings: PlatformSettings }>("/admin/settings"),
+    update: (input: Record<string, unknown>) => put<{ settings: PlatformSettings }>("/admin/settings", input),
   },
 
   staff: {
-    list: () => get<{ staff: any[]; stats: any }>("/admin/staff"),
-    create: (input: Record<string, unknown>) => post<{ staff: any }>("/admin/staff", input),
-    update: (id: string, input: Record<string, unknown>) => patch<{ staff: any }>(`/admin/staff/${id}`, input),
-    remove: (id: string) => del<any>(`/admin/staff/${id}`),
+    list: () => get<{ staff: StaffMember[]; stats: { total: number; superAdmins: number; active: number } }>("/admin/staff"),
+    create: (input: Record<string, unknown>) => post<{ staff: StaffMember }>("/admin/staff", input),
+    update: (id: string, input: Record<string, unknown>) => patch<{ staff: StaffMember }>(`/admin/staff/${id}`, input),
+    remove: (id: string) => del<{ id: string; deactivated: boolean }>(`/admin/staff/${id}`),
   },
 };

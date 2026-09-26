@@ -101,7 +101,7 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
       .product(slug)
       .then(({ product }) => {
         if (!alive) return;
-        const p = product as unknown as Product;
+        const p: Product = product;
         setProduct(p);
         const init: Record<string, string> = {};
         for (const g of p.specGroups) {
@@ -197,18 +197,16 @@ export default function ProductConfigurator({ slug }: { slug: string }) {
 
   // Drop any selection that a rule has just hidden, so we never quote (or add
   // to cart) an option the customer can no longer see.
-  useEffect(() => {
-    if (!product?.visibilityRules?.length) return;
+  // (State is adjusted during render; React re-renders before committing.)
+  if (product?.visibilityRules?.length) {
     const pruned = pruneSelections(selections, visibility);
     if (Object.keys(pruned).length !== Object.keys(selections).length) {
       setSelections(pruned);
     }
-  }, [product, selections, visibility]);
+  }
 
   // Keep the quoted quantity in step with the selected slab.
-  useEffect(() => {
-    if (slabQty != null && slabQty !== qty) setQty(slabQty);
-  }, [slabQty, qty]);
+  if (slabQty != null && slabQty !== qty) setQty(slabQty);
 
   const total = breakdown?.total ?? 0;
   // Quantity rules come from the product, not from constants — a product with

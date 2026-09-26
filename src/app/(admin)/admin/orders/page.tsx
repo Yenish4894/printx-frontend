@@ -80,8 +80,12 @@ export default function AdminOrders() {
     }
   }, [activeFilter, page, term]);
 
+  // Started from a timer callback, not synchronously in the effect body.
   useEffect(() => {
-    load();
+    const t = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(t);
   }, [load]);
 
   const visible = orders;

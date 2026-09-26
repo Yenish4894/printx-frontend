@@ -27,8 +27,8 @@ Key routing rules:
   shared lib modules (`test-lib-units.ts`: DTOs, payment rules, order/invoice
   numbers, status sets). Put new business rules in a pure `src/lib` module so
   they land here.
-- Also gate on `npx tsc --noEmit`, `npm run lint` (baseline: 71 pre-existing
-  errors, add none) and `npm run build`.
+- Also gate on `npx tsc --noEmit`, `npm run lint` (must stay at 0
+  errors) and `npm run build`.
 - Services import the Cloudflare (wasm) Prisma client, so they cannot be unit
   tested from Node; exercise them over HTTP against `npm run dev`. Local dev
   talks to the production Neon database, so clean up anything a test creates.

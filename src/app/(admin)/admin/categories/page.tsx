@@ -62,8 +62,12 @@ export default function AdminCategories() {
     }
   }
 
+  // Started from a timer callback, not synchronously in the effect body.
   useEffect(() => {
-    fetchCategories(true);
+    const t = setTimeout(() => {
+      fetchCategories(true);
+    }, 0);
+    return () => clearTimeout(t);
   }, []);
 
   // Autofocus the name field + Escape to close when the modal opens.

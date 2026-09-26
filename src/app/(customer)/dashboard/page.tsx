@@ -43,8 +43,12 @@ export default function CustomerDashboard() {
     }
   }, []);
 
+  // Started from a timer callback, not synchronously in the effect body.
   useEffect(() => {
-    loadOrders();
+    const t = setTimeout(() => {
+      loadOrders();
+    }, 0);
+    return () => clearTimeout(t);
   }, [loadOrders]);
 
   const { totalOrders, inProgress, awaitingPayment, paidOrderCount, totalSpent } = stats;
