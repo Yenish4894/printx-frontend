@@ -90,7 +90,7 @@ Redeploy (`npm run deploy`). `storage.ts` uses this binding automatically.
 Customers pay each order by bank transfer, upload a screenshot of the payment,
 and an admin approves it on the order page. Log in to the admin panel as a
 **super admin** → **Settings** and fill in the account holder name, account
-number and IFSC (bank name and UPI ID are optional). Until those three are set,
+number and IFSC (bank name is optional). Until those three are set,
 checkout stays closed. No payment gateway keys or extra secrets are needed.
 
 ---
@@ -103,5 +103,14 @@ checkout stays closed. No payment gateway keys or extra secrets are needed.
 ## Notes
 - Free Worker size limit is 3 MiB gzipped; this app is ~2.94 MiB. If a future
   dependency pushes it over, either trim it or move to Workers Paid ($5/mo, 10 MiB).
-- Ignore the older `DEPLOYMENT.md` / `S3_*` env vars — this file supersedes them
+- `DEPLOYMENT.md` is only a pointer to this file. There are no `S3_*` variables: file storage is the R2 binding described above.
   (storage is now the R2 binding, not the AWS SDK).
+
+## Before launch: checklist
+
+- [ ] `DATABASE_URL` and `JWT_SECRET` set as Worker secrets (a strong, unique `JWT_SECRET`)
+- [ ] R2 bucket created and the `UPLOADS` binding uncommented, then a test artwork upload and download verified
+- [ ] Bank details saved in admin Settings, then a test order placed, paid, proof uploaded and approved
+- [ ] A real super admin created in Admin Users, and the demo admin (`9000000000` / `Admin@123`) deactivated or removed. There is no change-password screen yet.
+- [ ] Demo customers and test orders removed; real catalogue and product photos added
+- [ ] New signups need approval: someone is checking the Customers > Pending tab (nothing is emailed or texted)

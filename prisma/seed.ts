@@ -141,8 +141,6 @@ async function main() {
       gstNumber: "27ABCDE1234F1Z5",
       passwordHash: custHash,
       role: "CUSTOMER",
-      walletBalance: 5000,
-      walletSettings: { create: {} },
       addresses: {
         create: {
           label: "Office",
@@ -304,7 +302,7 @@ async function main() {
 
   console.log("✅ Seed complete");
   console.log(`   Admin:    9000000000 / Admin@123`);
-  console.log(`   Customer: 9812345678 / Test@1234  (wallet ₹5000)`);
+  console.log(`   Customer: 9812345678 / Test@1234`);
   console.log(`   CMYK Printing: ${cmykRows.length} rate rows (8 GSM × 2 sizes × 2 sides, minus 13×19 Texture)`);
   console.log(`   Stickers: ${stickerRows.length} rate rows (5 materials × 2 sizes, minus 13×19 Golden)`);
 }

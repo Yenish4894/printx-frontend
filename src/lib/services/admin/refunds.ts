@@ -54,7 +54,7 @@ export async function processRefund(id: string, input: RefundProcessInput) {
     if (!refund) throw new HttpError(404, "Refund not found");
 
     // Atomically claim this refund out of its pending state so concurrent
-    // approvals credit the wallet at most once.
+    // approvals mark it sent at most once.
     const nextStatus = input.action === "REJECT" ? "REJECTED" : "CREDITED";
     const claimed = await tx.refund.updateMany({
       where: { id, status: { in: ["PENDING", "PROCESSING"] } },

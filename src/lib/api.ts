@@ -111,7 +111,6 @@ export interface SessionUser {
   email: string;
   gstNumber?: string | null;
   role: "CUSTOMER" | "ADMIN" | "SUPER_ADMIN";
-  walletBalance: Money;
 }
 
 export interface PriceBreakdown {

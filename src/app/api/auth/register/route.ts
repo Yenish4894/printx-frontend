@@ -35,9 +35,7 @@ export async function POST(req: Request) {
           passwordHash,
           // Nobody gets in on signup alone: an admin approves the business first.
           approvalStatus: "PENDING",
-          // provision cart + wallet settings on signup
           cart: { create: {} },
-          walletSettings: { create: {} },
         },
       });
     } catch (e) {

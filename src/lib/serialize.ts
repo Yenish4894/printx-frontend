@@ -10,6 +10,5 @@ export function publicUser(u: User) {
     email: u.email,
     gstNumber: u.gstNumber,
     role: u.role,
-    walletBalance: Number(u.walletBalance),
   };
 }
