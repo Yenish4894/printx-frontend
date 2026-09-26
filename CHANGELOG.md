@@ -11,6 +11,7 @@ Versions use `MAJOR.MINOR.PATCH.MICRO`.
 - Product catalogue category filters and the order/refund status tabs now show edge fades and scroll arrows when there are more options than fit, instead of silently running off-screen.
 
 ### Changed
+- There is one login page for everyone. Opening the admin console while logged out, logging out as an admin, or visiting the old /admin-login address all go to /login, which sends admins to the console and customers to their dashboard. A customer who opens the admin console is sent back to their own dashboard.
 - Payment is by direct bank transfer only. UPI is gone from the bank details, the customer payment screen and all marketing copy.
 - Signing in from the normal login page now takes admins to the admin console and customers to their dashboard. A signed-in visitor who opens the login page is sent straight to their own dashboard, and the Bhagini Graphics logo in the app goes to it too.
 - A deactivated, demoted or un-approved account is signed out on its next action instead of carrying on with stale menus until a reload.

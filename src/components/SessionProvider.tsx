@@ -33,12 +33,14 @@ export function SessionProvider({
     try {
       const { user } = await auth.me();
       setUser(user);
+      // One login page for everyone: /login sends each account to its own app.
       if (requireRole && !user) {
-        router.replace(requireRole === "ADMIN" ? "/admin-login" : "/login");
+        router.replace("/login");
         return;
       }
+      // A customer who wandered into the admin console goes back to their own app.
       if (requireRole === "ADMIN" && user && user.role === "CUSTOMER") {
-        router.replace("/admin-login");
+        router.replace("/dashboard");
       }
       // A staff account viewing the customer app: send them to the tool
       // they actually work in instead of a dashboard that will only ever
@@ -58,9 +60,9 @@ export function SessionProvider({
       await auth.logout();
     } finally {
       setUser(null);
-      router.replace(requireRole === "ADMIN" ? "/admin-login" : "/login");
+      router.replace("/login");
     }
-  }, [requireRole, router]);
+  }, [router]);
 
   useEffect(() => {
     refresh();

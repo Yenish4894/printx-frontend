@@ -84,11 +84,8 @@ function LoginForm() {
         setBusy(false);
         return;
       }
-      // This is the only login page most people find (/admin-login is a
-      // fallback SessionProvider redirects to, not linked from the UI), so a
-      // staff account signing in here must land on /admin, not the customer
-      // dashboard — which otherwise renders for them too since it never
-      // checks the account's role.
+      // This is the only login page: a staff account signing in here must land
+      // on /admin, not the customer dashboard, so it goes by the account's role.
       router.push(role ? homeFor(role) : "/dashboard");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
